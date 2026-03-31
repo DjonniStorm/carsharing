@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "moon": "moon",
+	"dev": "moon run :dev"
+  },
+  "devDependencies": {
+    "@moonrepo/cli": "^2.1.3"
+  }
+}
