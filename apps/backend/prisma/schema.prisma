@@ -12,13 +12,171 @@ datasource db {
   provider = "postgresql"
 }
 
-/// Application user (minimal bootstrap model).
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Role {
+  id    Int    @id @default(autoincrement())
+  name  String @db.VarChar(255)
+  users User[]
 
+  @@map("role")
+}
+
+/// Auth profile; plain `password` column from spec omitted — store only hash (see db.md notes).
+model User {
+  id            Int            @id @default(autoincrement())
+  name          String         @db.Text()
+  email         String?        @db.Text()
+  phone         String         @db.Text()
+  isActive      Boolean        @map("is_active")
+  passwordHash  String         @map("hash_password") @db.Text()
+  roleId        Int            @map("role_id")
+  isDeleted     Boolean        @map("is_deleted")
+  role          Role           @relation(fields: [roleId], references: [id])
+  trips         Trip[]
+  notifications Notification[]
+
+  @@index([roleId])
   @@index([email])
+  @@map("user")
+}
+
+model CarStatus {
+  id   Int    @id @default(autoincrement())
+  name String @db.Text()
+  cars Car[]
+
+  @@map("car_status")
+}
+
+/// Lookup / session type (no FK in db.md); kept for reference or future links.
+model CarSession {
+  id   Int    @id @default(autoincrement())
+  name String @db.Text()
+
+  @@map("car_session")
+}
+
+model Car {
+  id          Int             @id @default(autoincrement())
+  mileage     Float
+  fuelLevel   Float           @map("fuel_level")
+  isAvailable Boolean         @map("is_available")
+  carStatusId Int             @map("car_status_id")
+  isDeleted   Boolean         @map("is_deleted")
+  carStatus   CarStatus       @relation(fields: [carStatusId], references: [id])
+  sessionInfo CarSessionInfo?
+  trips       Trip[]
+
+  @@index([carStatusId])
+  @@map("car")
+}
+
+/// Vehicle identity/details; linked 1:1 to `Car` (db.md suggests this relation).
+model CarSessionInfo {
+  id           Int    @id @default(autoincrement())
+  brand        String @db.Text()
+  model        String @db.Text()
+  licensePlate String @map("license_plate") @db.Text()
+  color        String @db.Text()
+  carId        Int    @unique @map("car_id")
+  car          Car    @relation(fields: [carId], references: [id], onDelete: Cascade)
+  currentLat  Decimal         @map("current_lat") @db.Decimal(9, 6)
+  currentLon  Decimal         @map("current_lon") @db.Decimal(9, 6)
+
+  @@map("car_session_info")
+}
+
+model GeoZone {
+  id      Int      @id @default(autoincrement())
+  name    String   @db.Text()
+  type    String   @db.VarChar(50)
+  polygon Unsupported("geometry(Polygon,4326)")
+  tariffs Tariff[]
+
+  @@map("geo_zone")
+}
+
+model Tariff {
+  id             Int     @id @default(autoincrement())
+  name           String  @db.Text()
+  pricePerMinute Decimal @map("price_per_minute") @db.Decimal(10, 2)
+  pricePerKm     Decimal @map("price_per_km") @db.Decimal(10, 2)
+  geoZoneId      Int     @map("geo_zone_id")
+  isDeleted      Boolean @map("is_deleted")
+  geoZone        GeoZone @relation(fields: [geoZoneId], references: [id])
+  trips          Trip[]
+
+  @@index([geoZoneId])
+  @@map("tariff")
+}
+
+model Trip {
+  id          Int         @id @default(autoincrement())
+  startTime   DateTime    @map("start_time")
+  endTime     DateTime?   @map("end_time")
+  distance    Float
+  duration    Float
+  status      String      @db.VarChar(255)
+  userId      Int         @map("user_id")
+  carId       Int         @map("car_id")
+  tariffId    Int         @map("tariff_id")
+  user        User        @relation(fields: [userId], references: [id])
+  car         Car         @relation(fields: [carId], references: [id])
+  tariff      Tariff      @relation(fields: [tariffId], references: [id])
+  telemetries Telemetry[]
+  violations  Violation[]
+
+  @@index([userId])
+  @@index([carId])
+  @@index([tariffId])
+  @@map("trip")
+}
+
+model Telemetry {
+  id           Int      @id @default(autoincrement())
+  timestamp    DateTime
+  lat          Decimal  @db.Decimal(9, 6)
+  lon          Decimal  @db.Decimal(9, 6)
+  speed        Decimal  @db.Decimal(5, 2)
+  acceleration Float
+  fuelLevel    Float    @map("fuel_level")
+  tripId       Int      @map("trip_id")
+  trip         Trip     @relation(fields: [tripId], references: [id])
+
+  @@index([tripId])
+  @@index([timestamp])
+  @@map("telemetry")
+}
+
+model Violation {
+  id            Int                     @id @default(autoincrement())
+  type          Int
+  description   String                  @db.Text()
+  tripId        Int                     @map("trip_id")
+  trip          Trip                    @relation(fields: [tripId], references: [id])
+  notifications ViolationNotification[]
+
+  @@index([tripId])
+  @@map("violation")
+}
+
+model Notification {
+  id         Int                     @id @default(autoincrement())
+  message    String                  @db.Text()
+  status     String                  @db.VarChar(50)
+  userId     Int                     @map("user_id")
+  user       User                    @relation(fields: [userId], references: [id])
+  violations ViolationNotification[]
+
+  @@index([userId])
+  @@map("notification")
+}
+
+model ViolationNotification {
+  violationId    Int          @map("violation_id")
+  notificationId Int          @map("notification_id")
+  violation      Violation    @relation(fields: [violationId], references: [id], onDelete: Cascade)
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@id([violationId, notificationId])
+  @@map("violation_notification")
 }
