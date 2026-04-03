@@ -1,9 +1,15 @@
 {
+  "pnpm": {
+    "onlyBuiltDependencies": ["@prisma/engines", "prisma"]
+  },
   "scripts": {
     "moon": "moon",
-	"dev": "moon run :dev"
+    "dev": "moon run :dev"
   },
   "devDependencies": {
     "@moonrepo/cli": "^2.1.3"
+  },
+  "dependencies": {
+    "prettier": "^3.8.1"
   }
 }
