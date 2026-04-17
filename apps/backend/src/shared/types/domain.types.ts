@@ -29,6 +29,7 @@ export interface TripType {
   id: number;
   driverId: number;
   vehicleId: number;
+  tariffId: number;
   status: TripStatus;
   startTime: Date;
   endTime: Date | null;

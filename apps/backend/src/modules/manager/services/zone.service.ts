@@ -57,9 +57,27 @@ export class ZoneService {
       throw new Error('Invalid point');
     }
     this.assertGeoJsonPolygon(zoneGeometry);
-    void point;
-    void zoneGeometry;
-    return false;
+    const outerRing = zoneGeometry.coordinates[0];
+    let isInside = false;
+
+    for (let currentIndex = 0; currentIndex < outerRing.length; currentIndex++) {
+      const nextIndex = (currentIndex + 1) % outerRing.length;
+      const [currentLon, currentLat] = outerRing[currentIndex];
+      const [nextLon, nextLat] = outerRing[nextIndex];
+
+      const intersects =
+        currentLat > point.lat !== nextLat > point.lat &&
+        point.lon <
+          ((nextLon - currentLon) * (point.lat - currentLat)) /
+            (nextLat - currentLat) +
+            currentLon;
+
+      if (intersects) {
+        isInside = !isInside;
+      }
+    }
+
+    return isInside;
   }
 
   private assertZoneInput(data: CreateZoneInput): void {
@@ -84,7 +102,9 @@ export class ZoneService {
     }
     if (
       !Array.isArray(geometry.coordinates) ||
-      geometry.coordinates.length === 0
+      geometry.coordinates.length === 0 ||
+      !Array.isArray(geometry.coordinates[0]) ||
+      geometry.coordinates[0].length < 4
     ) {
       throw new Error('Invalid geometry coordinates');
     }

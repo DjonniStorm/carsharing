@@ -20,6 +20,34 @@ export class UserPrismaRepository implements UserRepository {
     return user ? this.toUserEntity(user) : null;
   }
 
+  async findByEmail(email: string): Promise<UserEntity | null> {
+    const user = await this.prisma.user.findFirst({ where: { email } });
+    return user ? this.toUserEntity(user) : null;
+  }
+
+  async findByIdentifier(identifier: string): Promise<UserEntity | null> {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ phone: identifier }, { email: identifier }],
+      },
+    });
+    return user ? this.toUserEntity(user) : null;
+  }
+
+  async getOrCreateRoleId(roleName: string): Promise<number> {
+    const existing = await this.prisma.role.findFirst({
+      where: { name: roleName },
+    });
+    if (existing) {
+      return existing.id;
+    }
+
+    const created = await this.prisma.role.create({
+      data: { name: roleName },
+    });
+    return created.id;
+  }
+
   async create(data: CreateUserInput): Promise<UserEntity> {
     const created = await this.prisma.user.create({
       data: {

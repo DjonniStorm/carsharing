@@ -36,8 +36,15 @@ export class TripService {
     if (driverTrips.some((trip) => trip.status === 'ACTIVE')) {
       throw new Error('Driver already has active trip');
     }
+    const activeVehicleTrip = await this.tripRepository.findActiveByVehicleId(
+      data.vehicleId,
+    );
+    if (activeVehicleTrip) {
+      throw new Error('Vehicle already has active trip');
+    }
 
     const trip = await this.tripRepository.create(data);
+    await this.vehicleRepository.update(data.vehicleId, { status: 'IN_USE' });
     const payload: TripStartedEvent = {
       tripId: trip.id,
       driverId: trip.driverId,
@@ -63,6 +70,7 @@ export class TripService {
       endTime: data.endTime ?? new Date(),
     };
     const trip = await this.tripRepository.update(id, updateData);
+    await this.vehicleRepository.update(trip.vehicleId, { status: 'ACTIVE' });
     const payload: TripFinishedEvent = {
       tripId: trip.id,
       driverId: trip.driverId,
@@ -81,7 +89,12 @@ export class TripService {
     if (existing.status !== 'ACTIVE') {
       throw new Error('Only active trip can be cancelled');
     }
-    return this.tripRepository.update(id, { ...data, status: 'CANCELLED' });
+    const trip = await this.tripRepository.update(id, {
+      ...data,
+      status: 'CANCELLED',
+    });
+    await this.vehicleRepository.update(trip.vehicleId, { status: 'ACTIVE' });
+    return trip;
   }
 
   async getTrip(id: number) {
@@ -100,6 +113,7 @@ export class TripService {
     }
     this.assertPositiveId(data.driverId, 'driverId');
     this.assertPositiveId(data.vehicleId, 'vehicleId');
+    this.assertPositiveId(data.tariffId, 'tariffId');
     if (
       !(data.startTime instanceof Date) ||
       Number.isNaN(data.startTime.getTime())

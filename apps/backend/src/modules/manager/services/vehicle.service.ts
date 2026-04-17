@@ -64,7 +64,13 @@ export class VehicleService {
     this.assertPositiveId(vehicleId, 'vehicleId');
     this.assertFiniteNumber(lat, 'lat');
     this.assertFiniteNumber(lon, 'lon');
-    const updatedVehicle = await this.vehicleRepository.findById(vehicleId);
+    const currentVehicle = await this.vehicleRepository.findById(vehicleId);
+    if (!currentVehicle) {
+      throw new Error('Vehicle not found');
+    }
+    const updatedVehicle = await this.vehicleRepository.update(vehicleId, {
+      location: { lat, lon },
+    });
     if (!updatedVehicle) {
       throw new Error('Vehicle not found');
     }

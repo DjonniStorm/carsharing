@@ -13,6 +13,7 @@ describe('TripService', () => {
     tripRepository = {
       findById: jest.fn(),
       findByDriverId: jest.fn(),
+      findActiveByVehicleId: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
     };
@@ -36,6 +37,7 @@ describe('TripService', () => {
         const payload = {
           driverId: 5,
           vehicleId: 10,
+          tariffId: 3,
           status: 'ACTIVE' as const,
           startTime: new Date('2026-04-17T10:00:00Z'),
           startLocation: { lat: 50.45, lon: 30.52 },
@@ -45,6 +47,7 @@ describe('TripService', () => {
           status: 'ACTIVE',
         } as never);
         tripRepository.findByDriverId.mockResolvedValue([]);
+        tripRepository.findActiveByVehicleId.mockResolvedValue(null);
         tripRepository.create.mockResolvedValue({
           id: 100,
           ...payload,
@@ -57,6 +60,9 @@ describe('TripService', () => {
 
         // assert
         expect(tripRepository.create).toHaveBeenCalledWith(payload);
+        expect(vehicleRepository.update).toHaveBeenCalledWith(10, {
+          status: 'IN_USE',
+        });
         expect(eventEmitter.emit).toHaveBeenCalledTimes(1);
         expect(eventEmitter.emit).toHaveBeenCalledWith('trip.started', {
           tripId: 100,
@@ -75,6 +81,7 @@ describe('TripService', () => {
           payload: {
             driverId: 5,
             vehicleId: 0,
+            tariffId: 1,
             status: 'ACTIVE',
             startTime: new Date(),
             startLocation: { lat: 1, lon: 2 },
@@ -85,6 +92,7 @@ describe('TripService', () => {
           payload: {
             driverId: -1,
             vehicleId: 1,
+            tariffId: 1,
             status: 'ACTIVE',
             startTime: new Date(),
             startLocation: { lat: 1, lon: 2 },
@@ -95,6 +103,7 @@ describe('TripService', () => {
           payload: {
             driverId: 5,
             vehicleId: 1,
+            tariffId: 1,
             status: 'WRONG',
             startTime: new Date(),
             startLocation: { lat: 1, lon: 2 },
@@ -116,6 +125,7 @@ describe('TripService', () => {
           service.startTrip({
             driverId: 1,
             vehicleId: 2,
+            tariffId: 1,
             status: 'ACTIVE',
             startTime: new Date(),
             startLocation: { lat: 1, lon: 2 },
@@ -137,6 +147,7 @@ describe('TripService', () => {
           service.startTrip({
             driverId: 1,
             vehicleId: 2,
+            tariffId: 1,
             status: 'ACTIVE',
             startTime: new Date(),
             startLocation: { lat: 1, lon: 2 },
@@ -154,18 +165,43 @@ describe('TripService', () => {
         tripRepository.findByDriverId.mockResolvedValue([
           { id: 1, status: 'ACTIVE' } as never,
         ]);
+        tripRepository.findActiveByVehicleId.mockResolvedValue(null);
 
         // act + assert
         await expect(
           service.startTrip({
             driverId: 1,
             vehicleId: 2,
+            tariffId: 1,
             status: 'ACTIVE',
             startTime: new Date(),
             startLocation: { lat: 1, lon: 2 },
           }),
         ).rejects.toThrow('Driver already has active trip');
         expect(tripRepository.create).not.toHaveBeenCalled();
+      });
+
+      it('throws when vehicle already has active trip', async () => {
+        vehicleRepository.findById.mockResolvedValue({
+          id: 2,
+          status: 'ACTIVE',
+        } as never);
+        tripRepository.findByDriverId.mockResolvedValue([]);
+        tripRepository.findActiveByVehicleId.mockResolvedValue({
+          id: 99,
+          status: 'ACTIVE',
+        } as never);
+
+        await expect(
+          service.startTrip({
+            driverId: 1,
+            vehicleId: 2,
+            tariffId: 1,
+            status: 'ACTIVE',
+            startTime: new Date(),
+            startLocation: { lat: 1, lon: 2 },
+          }),
+        ).rejects.toThrow('Vehicle already has active trip');
       });
     });
   });
@@ -176,12 +212,14 @@ describe('TripService', () => {
       tripRepository.findById.mockResolvedValue({
         id: 7,
         driverId: 5,
+        vehicleId: 10,
         status: 'ACTIVE',
         endTime: null,
       } as never);
       tripRepository.update.mockResolvedValue({
         id: 7,
         driverId: 5,
+        vehicleId: 10,
         status: 'FINISHED',
         endTime: new Date(),
       } as never);
@@ -191,6 +229,9 @@ describe('TripService', () => {
 
       // assert
       expect(tripRepository.update).toHaveBeenCalled();
+      expect(vehicleRepository.update).toHaveBeenCalledWith(10, {
+        status: 'ACTIVE',
+      });
       expect(eventEmitter.emit).toHaveBeenCalledTimes(1);
       expect(eventEmitter.emit).toHaveBeenCalledWith(
         'trip.finished',
@@ -218,10 +259,12 @@ describe('TripService', () => {
       // arrange
       tripRepository.findById.mockResolvedValue({
         id: 9,
+        vehicleId: 3,
         status: 'ACTIVE',
       } as never);
       tripRepository.update.mockResolvedValue({
         id: 9,
+        vehicleId: 3,
         status: 'CANCELLED',
       } as never);
 
@@ -231,6 +274,9 @@ describe('TripService', () => {
       // assert
       expect(tripRepository.update).toHaveBeenCalledWith(9, {
         status: 'CANCELLED',
+      });
+      expect(vehicleRepository.update).toHaveBeenCalledWith(3, {
+        status: 'ACTIVE',
       });
     });
 

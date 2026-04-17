@@ -6,57 +6,69 @@ import {
   RefreshDto,
   RegisterDto,
   ResendCodeDto,
+  VerifyEmailDto,
   VerifySmsDto,
 } from './auth.dto';
+import { AuthService } from './services/auth.service';
 
-@ApiTags('Auth')
+@ApiTags('Аутентификация')
 @Controller('auth')
 export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user account' })
+  @ApiOperation({ summary: 'Регистрация пользователя' })
   @ApiBody({ type: RegisterDto })
-  @ApiResponse({ status: 201, description: 'User registration accepted' })
+  @ApiResponse({ status: 201, description: 'Пользователь зарегистрирован' })
   register(@Body() dto: RegisterDto) {
-    return { endpoint: 'register', dto };
+    return this.authService.register(dto);
   }
 
   @Post('login')
-  @ApiOperation({ summary: 'Login with credentials' })
+  @ApiOperation({ summary: 'Вход по email или телефону' })
   @ApiBody({ type: LoginDto })
-  @ApiResponse({ status: 200, description: 'Login accepted' })
+  @ApiResponse({ status: 200, description: 'Вход выполнен успешно' })
   login(@Body() dto: LoginDto) {
-    return { endpoint: 'login', dto };
+    return this.authService.login(dto);
   }
 
   @Post('verify-sms')
-  @ApiOperation({ summary: 'Verify SMS code' })
+  @ApiOperation({ summary: 'Подтвердить код из SMS' })
   @ApiBody({ type: VerifySmsDto })
-  @ApiResponse({ status: 200, description: 'SMS code verification accepted' })
+  @ApiResponse({ status: 200, description: 'Код SMS обработан' })
   verifySms(@Body() dto: VerifySmsDto) {
-    return { endpoint: 'verify-sms', dto };
+    return this.authService.verifySms(dto);
+  }
+
+  @Post('verify-email')
+  @ApiOperation({ summary: 'Подтвердить код из email' })
+  @ApiBody({ type: VerifyEmailDto })
+  @ApiResponse({ status: 200, description: 'Код email обработан' })
+  verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto);
   }
 
   @Post('resend-code')
-  @ApiOperation({ summary: 'Resend SMS verification code' })
+  @ApiOperation({ summary: 'Повторно отправить код подтверждения' })
   @ApiBody({ type: ResendCodeDto })
-  @ApiResponse({ status: 200, description: 'SMS code resend accepted' })
+  @ApiResponse({ status: 200, description: 'Код поставлен в очередь на отправку' })
   resendCode(@Body() dto: ResendCodeDto) {
-    return { endpoint: 'resend-code', dto };
+    return this.authService.resendVerificationCode(dto);
   }
 
   @Post('refresh')
-  @ApiOperation({ summary: 'Refresh JWT tokens' })
+  @ApiOperation({ summary: 'Обновить access и refresh токены' })
   @ApiBody({ type: RefreshDto })
-  @ApiResponse({ status: 200, description: 'Token refresh accepted' })
+  @ApiResponse({ status: 200, description: 'Токены обновлены' })
   refresh(@Body() dto: RefreshDto) {
-    return { endpoint: 'refresh', dto };
+    return this.authService.refreshToken(dto);
   }
 
   @Post('logout')
-  @ApiOperation({ summary: 'Invalidate current session token' })
+  @ApiOperation({ summary: 'Завершить текущую сессию' })
   @ApiBody({ type: LogoutDto })
-  @ApiResponse({ status: 200, description: 'Logout accepted' })
+  @ApiResponse({ status: 200, description: 'Сессия завершена' })
   logout(@Body() dto: LogoutDto) {
-    return { endpoint: 'logout', dto };
+    return this.authService.logout(dto);
   }
 }

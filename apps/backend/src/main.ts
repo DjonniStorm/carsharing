@@ -14,7 +14,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Carsharing API')
-    .setDescription('Stub API documentation for carsharing backend modules')
+    .setDescription('Документация API для backend-модулей каршеринга')
     .setVersion('1.0')
     .build();
   const document = SwaggerModule.createDocument(app, config);

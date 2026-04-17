@@ -9,6 +9,7 @@ describe('TripPrismaRepository', () => {
   let prisma: PrismaService;
   let userId: number;
   let carId: number;
+  let tariffId: number;
 
   beforeAll(async () => {
     prisma = new PrismaService({
@@ -65,6 +66,21 @@ describe('TripPrismaRepository', () => {
     });
     userId = user.id;
     carId = car.id;
+    const [zoneRow] = await prisma.$queryRaw<Array<{ id: number }>>`
+      INSERT INTO geo_zone (name, type, polygon)
+      VALUES ('Test zone', 'ALLOWED', ST_GeomFromText('POLYGON((0 0, 1 0, 1 1, 0 1, 0 0))', 4326))
+      RETURNING id
+    `;
+    const tariff = await prisma.tariff.create({
+      data: {
+        name: 'Base tariff',
+        pricePerMinute: 1,
+        pricePerKm: 1,
+        geoZoneId: zoneRow.id,
+        isDeleted: false,
+      },
+    });
+    tariffId = tariff.id;
   });
 
   afterAll(async () => {
@@ -76,6 +92,7 @@ describe('TripPrismaRepository', () => {
     const input = {
       driverId: userId,
       vehicleId: carId,
+      tariffId,
       status: 'ACTIVE' as const,
       startTime: new Date('2026-04-17T10:00:00Z'),
       startLocation: { lat: 50.45, lon: 30.52 },
@@ -87,6 +104,7 @@ describe('TripPrismaRepository', () => {
     // assert
     expect(created.id).toBeGreaterThan(0);
     expect(created.driverId).toBe(userId);
+    expect(created.tariffId).toBe(tariffId);
     expect(created.endTime).toBeNull();
   });
 
@@ -95,6 +113,7 @@ describe('TripPrismaRepository', () => {
     const created = await repository.create({
       driverId: userId,
       vehicleId: carId,
+      tariffId,
       status: 'ACTIVE',
       startTime: new Date('2026-04-17T10:00:00Z'),
       startLocation: { lat: 50.45, lon: 30.52 },
@@ -112,6 +131,7 @@ describe('TripPrismaRepository', () => {
     await repository.create({
       driverId: userId,
       vehicleId: carId,
+      tariffId,
       status: 'ACTIVE',
       startTime: new Date('2026-04-17T10:00:00Z'),
       startLocation: { lat: 50.45, lon: 30.52 },
@@ -119,6 +139,7 @@ describe('TripPrismaRepository', () => {
     await repository.create({
       driverId: userId + 1,
       vehicleId: carId,
+      tariffId,
       status: 'ACTIVE',
       startTime: new Date('2026-04-17T10:05:00Z'),
       startLocation: { lat: 50.45, lon: 30.52 },

@@ -30,6 +30,8 @@ describe('ZoneService', () => {
             [
               [30, 50],
               [30.1, 50],
+              [30.1, 50.1],
+              [30, 50.1],
               [30, 50],
             ],
           ],
@@ -81,16 +83,18 @@ describe('ZoneService', () => {
   });
 
   describe('checkPointInZone', () => {
-    it('returns boolean for valid point', async () => {
+    it('returns true for point inside polygon', async () => {
       // act
       const result = await service.checkPointInZone(
-        { lat: 50.45, lon: 30.52 },
+        { lat: 50.2, lon: 30.2 },
         {
           type: 'Polygon',
           coordinates: [
             [
               [30, 50],
-              [30.1, 50],
+              [30.4, 50],
+              [30.4, 50.4],
+              [30, 50.4],
               [30, 50],
             ],
           ],
@@ -98,7 +102,27 @@ describe('ZoneService', () => {
       );
 
       // assert
-      expect(typeof result).toBe('boolean');
+      expect(result).toBe(true);
+    });
+
+    it('returns false for point outside polygon', async () => {
+      const result = await service.checkPointInZone(
+        { lat: 51, lon: 31 },
+        {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [30, 50],
+              [30.4, 50],
+              [30.4, 50.4],
+              [30, 50.4],
+              [30, 50],
+            ],
+          ],
+        },
+      );
+
+      expect(result).toBe(false);
     });
 
     it('throws for invalid point format', async () => {
@@ -112,6 +136,8 @@ describe('ZoneService', () => {
               [
                 [30, 50],
                 [30.1, 50],
+                [30.1, 50.1],
+                [30, 50.1],
                 [30, 50],
               ],
             ],

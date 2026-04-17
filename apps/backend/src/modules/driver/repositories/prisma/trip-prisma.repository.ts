@@ -27,13 +27,30 @@ export class TripPrismaRepository implements TripRepository {
     return trips.map((trip) => this.toTripEntity(trip));
   }
 
+  async findActiveByVehicleId(vehicleId: number): Promise<TripEntity | null> {
+    const trip = await this.prisma.trip.findFirst({
+      where: { carId: vehicleId, status: 'ACTIVE' },
+      orderBy: { id: 'desc' },
+    });
+    return trip ? this.toTripEntity(trip) : null;
+  }
+
   async create(data: CreateTripInput): Promise<TripEntity> {
-    const tariff = await this.ensureTariffId();
+    const tariff = await this.prisma.tariff.findFirst({
+      where: {
+        id: data.tariffId,
+        isDeleted: false,
+      },
+    });
+    if (!tariff) {
+      throw new Error(`Tariff ${data.tariffId} not found`);
+    }
+
     const created = await this.prisma.trip.create({
       data: {
         userId: data.driverId,
         carId: data.vehicleId,
-        tariffId: tariff.id,
+        tariffId: data.tariffId,
         startTime: data.startTime,
         endTime: data.endTime ?? null,
         distance: 0,
@@ -50,6 +67,7 @@ export class TripPrismaRepository implements TripRepository {
       data: {
         userId: data.driverId ?? undefined,
         carId: data.vehicleId ?? undefined,
+        tariffId: data.tariffId ?? undefined,
         startTime: data.startTime ?? undefined,
         endTime: data.endTime ?? undefined,
         status: data.status ?? undefined,
@@ -62,6 +80,7 @@ export class TripPrismaRepository implements TripRepository {
     id: number;
     userId: number;
     carId: number;
+    tariffId: number;
     status: string;
     startTime: Date;
     endTime: Date | null;
@@ -70,6 +89,7 @@ export class TripPrismaRepository implements TripRepository {
       id: trip.id,
       driverId: trip.userId,
       vehicleId: trip.carId,
+      tariffId: trip.tariffId,
       status:
         trip.status === 'FINISHED' || trip.status === 'CANCELLED'
           ? trip.status
@@ -79,40 +99,5 @@ export class TripPrismaRepository implements TripRepository {
       startLocation: { lat: 0, lon: 0 },
       endLocation: null,
     };
-  }
-
-  private async ensureTariffId() {
-    const existing = await this.prisma.tariff.findFirst({
-      where: { isDeleted: false },
-    });
-    if (existing) {
-      return existing;
-    }
-    const zone = await this.prisma.geoZone.findFirst();
-    if (zone) {
-      return this.prisma.tariff.create({
-        data: {
-          name: 'Default tariff',
-          pricePerMinute: 1,
-          pricePerKm: 1,
-          geoZoneId: zone.id,
-          isDeleted: false,
-        },
-      });
-    }
-    const [zoneRow] = await this.prisma.$queryRaw<Array<{ id: number }>>`
-      INSERT INTO geo_zone (name, type, polygon)
-      VALUES ('Default zone', 'ALLOWED', ST_GeomFromText('POLYGON((0 0, 1 0, 1 1, 0 0))', 4326))
-      RETURNING id
-    `;
-    return this.prisma.tariff.create({
-      data: {
-        name: 'Default tariff',
-        pricePerMinute: 1,
-        pricePerKm: 1,
-        geoZoneId: zoneRow.id,
-        isDeleted: false,
-      },
-    });
   }
 }

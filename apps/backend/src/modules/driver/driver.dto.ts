@@ -28,11 +28,11 @@ export class NearbyVehiclesQueryDto {
 }
 
 export class StartTripDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'Идентификатор автомобиля' })
   @IsNumber()
   vehicleId: number;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Идентификатор тарифа' })
   @IsNumber()
   tariffId: number;
 }

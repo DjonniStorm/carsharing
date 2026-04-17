@@ -182,17 +182,25 @@ describe('VehicleService', () => {
     it('emits event exactly once with payload on success', async () => {
       // arrange
       repository.findById.mockResolvedValue({ id: 11 } as never);
+      repository.update.mockResolvedValue({
+        id: 11,
+        location: { lat: 50.45, lon: 30.52 },
+      } as never);
 
       // act
-      await service.updatePosition(11, 50.45, 30.52);
+      const result = await service.updatePosition(11, 50.45, 30.52);
 
       // assert
+      expect(repository.update).toHaveBeenCalledWith(11, {
+        location: { lat: 50.45, lon: 30.52 },
+      });
       expect(eventEmitter.emit).toHaveBeenCalledTimes(1);
       expect(eventEmitter.emit).toHaveBeenCalledWith('vehicle.updated', {
         vehicleId: 11,
         lat: 50.45,
         lon: 30.52,
       });
+      expect(result.location).toEqual({ lat: 50.45, lon: 30.52 });
     });
 
     it('does not emit event on failure', async () => {
@@ -203,6 +211,7 @@ describe('VehicleService', () => {
       await expect(service.updatePosition(11, 50.45, 30.52)).rejects.toThrow(
         'Vehicle not found',
       );
+      expect(repository.update).not.toHaveBeenCalled();
       expect(eventEmitter.emit).not.toHaveBeenCalled();
     });
   });
