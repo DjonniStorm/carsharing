@@ -1,3 +1,23 @@
 tasks:
   dev:
     command: pnpm start:dev
+  build:
+    command: pnpm build
+  start:
+    command: pnpm start
+  start-prod:
+    command: pnpm start:prod
+  lint:
+    command: pnpm lint
+  test:
+    command: pnpm test
+  test-repos:
+    command: pnpm test:repos
+  test-services:
+    command: pnpm test:services
+  prisma-generate:
+    command: pnpm prisma:generate
+  prisma-migrate-status:
+    command: pnpm prisma:migrate:status
+  prisma-studio:
+    command: pnpm prisma:studio

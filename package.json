@@ -1,10 +1,31 @@
 {
+  "packageManager": "pnpm@10.33.0",
   "pnpm": {
     "onlyBuiltDependencies": ["@prisma/engines", "prisma"]
   },
   "scripts": {
     "moon": "moon",
-    "dev": "moon run :dev"
+    "dev": "moon run :dev",
+    "dev:backend": "moon run backend:dev",
+    "dev:web": "moon run web:dev",
+    "build:backend": "moon run backend:build",
+    "build:web": "moon run web:build",
+    "start:backend": "moon run backend:start",
+    "start:backend:prod": "moon run backend:start-prod",
+    "lint:backend": "moon run backend:lint",
+    "lint:web": "moon run web:lint",
+    "test:backend": "moon run backend:test",
+    "test:backend:repos": "moon run backend:test-repos",
+    "test:backend:services": "moon run backend:test-services",
+    "test:notification": "moon run notification:test",
+    "test:telemetry": "moon run telemetry:test",
+    "db:up:backend": "pnpm -F @carsharing/backend db:up",
+    "db:down:backend": "pnpm -F @carsharing/backend db:down",
+    "db:logs:backend": "pnpm -F @carsharing/backend db:logs",
+    "db:reset:backend": "pnpm -F @carsharing/backend db:reset",
+    "prisma:generate:backend": "moon run backend:prisma-generate",
+    "prisma:migrate:status:backend": "moon run backend:prisma-migrate-status",
+    "prisma:studio:backend": "moon run backend:prisma-studio"
   },
   "devDependencies": {
     "@moonrepo/cli": "^2.1.3"

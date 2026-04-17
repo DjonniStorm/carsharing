@@ -1,3 +1,9 @@
 tasks:
   dev:
     command: pnpm dev
+  build:
+    command: pnpm build
+  lint:
+    command: pnpm lint
+  preview:
+    command: pnpm preview
