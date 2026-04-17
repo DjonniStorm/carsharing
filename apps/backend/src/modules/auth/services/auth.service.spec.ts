@@ -93,7 +93,9 @@ describe('AuthService', () => {
     });
 
     it('rejects invalid password', async () => {
-      const passwordHash = await (service as never).hashPassword('valid-password');
+      const passwordHash = await (service as never).hashPassword(
+        'valid-password',
+      );
       repository.findByIdentifier.mockResolvedValue({
         id: 1,
         name: 'Driver',

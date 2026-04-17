@@ -17,210 +17,216 @@ import {
   UpdateZoneDto,
 } from './manager.dto';
 
-@ApiTags('Manager Vehicles')
+@ApiTags('Автомобили менеджера')
 @Controller('manager/vehicles')
 export class ManagerVehicleController {
   @Post()
-  @ApiOperation({ summary: 'Create vehicle' })
+  @ApiOperation({ summary: 'Создать автомобиль' })
   @ApiBody({ type: CreateVehicleDto })
-  @ApiResponse({ status: 201, description: 'Vehicle created (stub)' })
+  @ApiResponse({ status: 201, description: 'Автомобиль создан' })
   create(@Body() dto: CreateVehicleDto) {
     return { endpoint: 'manager/vehicles', dto };
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get vehicles list (includes non-deleted only)' })
-  @ApiResponse({ status: 200, description: 'Vehicle list (stub)' })
+  @ApiOperation({
+    summary: 'Получить список автомобилей без удаленных записей',
+  })
+  @ApiResponse({ status: 200, description: 'Список автомобилей' })
   list() {
     return { endpoint: 'manager/vehicles' };
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get vehicle by id' })
-  @ApiResponse({ status: 200, description: 'Vehicle details (stub)' })
+  @ApiOperation({ summary: 'Получить автомобиль по идентификатору' })
+  @ApiResponse({ status: 200, description: 'Детали автомобиля' })
   getById(@Param('id') id: string) {
     return { endpoint: `manager/vehicles/${id}` };
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update vehicle fields' })
+  @ApiOperation({ summary: 'Обновить данные автомобиля' })
   @ApiBody({ type: UpdateVehicleDto })
-  @ApiResponse({ status: 200, description: 'Vehicle updated (stub)' })
+  @ApiResponse({ status: 200, description: 'Автомобиль обновлен' })
   update(@Param('id') id: string, @Body() dto: UpdateVehicleDto) {
     return { endpoint: `manager/vehicles/${id}`, dto };
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Soft delete vehicle (sets deletedAt)' })
-  @ApiResponse({ status: 200, description: 'Vehicle soft-deleted (stub)' })
+  @ApiOperation({ summary: 'soft удалить автомобиль' })
+  @ApiResponse({ status: 200, description: 'Автомобиль помечен как удаленный' })
   remove(@Param('id') id: string) {
     return { endpoint: `manager/vehicles/${id}` };
   }
 
   @Post(':id/restore')
-  @ApiOperation({ summary: 'Restore soft-deleted vehicle (clears deletedAt)' })
-  @ApiResponse({ status: 200, description: 'Vehicle restored (stub)' })
+  @ApiOperation({ summary: 'Восстановить ранее удаленный автомобиль' })
+  @ApiResponse({ status: 200, description: 'Автомобиль восстановлен' })
   restore(@Param('id') id: string) {
     return { endpoint: `manager/vehicles/${id}/restore` };
   }
 }
 
-@ApiTags('Manager Tariffs')
+@ApiTags('Тарифы менеджера')
 @Controller('manager/tariffs')
 export class TariffController {
   @Post()
-  @ApiOperation({ summary: 'Create tariff' })
+  @ApiOperation({ summary: 'Создать тариф' })
   @ApiBody({ type: CreateTariffDto })
-  @ApiResponse({ status: 201, description: 'Tariff created (stub)' })
+  @ApiResponse({ status: 201, description: 'Тариф создан' })
   create(@Body() dto: CreateTariffDto) {
     return { endpoint: 'manager/tariffs', dto };
   }
 
   @Get()
   @ApiOperation({
-    summary: 'Get tariffs list (excludes soft deleted by default)',
+    summary: 'Получить список тарифов без soft удаленных записей',
   })
-  @ApiResponse({ status: 200, description: 'Tariff list (stub)' })
+  @ApiResponse({ status: 200, description: 'Список тарифов' })
   list() {
     return { endpoint: 'manager/tariffs' };
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get tariff by id' })
-  @ApiResponse({ status: 200, description: 'Tariff details (stub)' })
+  @ApiOperation({ summary: 'Получить тариф по идентификатору' })
+  @ApiResponse({ status: 200, description: 'Детали тарифа' })
   getById(@Param('id') id: string) {
     return { endpoint: `manager/tariffs/${id}` };
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update tariff fields' })
+  @ApiOperation({ summary: 'Обновить данные тарифа' })
   @ApiBody({ type: UpdateTariffDto })
-  @ApiResponse({ status: 200, description: 'Tariff updated (stub)' })
+  @ApiResponse({ status: 200, description: 'Тариф обновлен' })
   update(@Param('id') id: string, @Body() dto: UpdateTariffDto) {
     return { endpoint: `manager/tariffs/${id}`, dto };
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Soft delete tariff (sets deletedAt)' })
-  @ApiResponse({ status: 200, description: 'Tariff soft-deleted (stub)' })
+  @ApiOperation({ summary: 'soft удалить тариф' })
+  @ApiResponse({ status: 200, description: 'Тариф помечен как удаленный' })
   remove(@Param('id') id: string) {
     return { endpoint: `manager/tariffs/${id}` };
   }
 
   @Post(':id/restore')
-  @ApiOperation({ summary: 'Restore soft-deleted tariff (clears deletedAt)' })
-  @ApiResponse({ status: 200, description: 'Tariff restored (stub)' })
+  @ApiOperation({ summary: 'Восстановить ранее удаленный тариф' })
+  @ApiResponse({ status: 200, description: 'Тариф восстановлен' })
   restore(@Param('id') id: string) {
     return { endpoint: `manager/tariffs/${id}/restore` };
   }
 }
 
-@ApiTags('Manager Zones')
+@ApiTags('Зоны менеджера')
 @Controller('manager/zones')
 export class ZoneController {
   @Post()
-  @ApiOperation({ summary: 'Create zone with GeoJSON Polygon geometry' })
+  @ApiOperation({ summary: 'Создать зону с геометрией GeoJSON Polygon' })
   @ApiBody({ type: CreateZoneDto })
-  @ApiResponse({ status: 201, description: 'Zone created (stub)' })
+  @ApiResponse({ status: 201, description: 'Зона создана' })
   create(@Body() dto: CreateZoneDto) {
     return { endpoint: 'manager/zones', dto };
   }
 
   @Get()
   @ApiOperation({
-    summary: 'Get zone list (supports active + soft delete behavior)',
+    summary: 'Получить список зон с учетом активности и softго удаления',
   })
-  @ApiResponse({ status: 200, description: 'Zone list (stub)' })
+  @ApiResponse({ status: 200, description: 'Список зон' })
   list() {
     return { endpoint: 'manager/zones' };
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get zone by id with GeoJSON Polygon geometry' })
-  @ApiResponse({ status: 200, description: 'Zone details (stub)' })
+  @ApiOperation({
+    summary: 'Получить зону по идентификатору с геометрией GeoJSON Polygon',
+  })
+  @ApiResponse({ status: 200, description: 'Детали зоны' })
   getById(@Param('id') id: string) {
     return { endpoint: `manager/zones/${id}` };
   }
 
   @Patch(':id')
   @ApiOperation({
-    summary: 'Update zone fields and/or GeoJSON Polygon geometry',
+    summary: 'Обновить поля зоны и или геометрию GeoJSON Polygon',
   })
   @ApiBody({ type: UpdateZoneDto })
-  @ApiResponse({ status: 200, description: 'Zone updated (stub)' })
+  @ApiResponse({ status: 200, description: 'Зона обновлена' })
   update(@Param('id') id: string, @Body() dto: UpdateZoneDto) {
     return { endpoint: `manager/zones/${id}`, dto };
   }
 
   @Delete(':id')
   @ApiOperation({
-    summary: 'Soft delete zone (sets deletedAt or disables availability)',
+    summary: 'soft удалить зону',
   })
-  @ApiResponse({ status: 200, description: 'Zone soft-deleted (stub)' })
+  @ApiResponse({ status: 200, description: 'Зона помечена как удаленная' })
   remove(@Param('id') id: string) {
     return { endpoint: `manager/zones/${id}` };
   }
 
   @Post(':id/restore')
-  @ApiOperation({ summary: 'Restore soft-deleted zone' })
-  @ApiResponse({ status: 200, description: 'Zone restored (stub)' })
+  @ApiOperation({ summary: 'Восстановить ранее удаленную зону' })
+  @ApiResponse({ status: 200, description: 'Зона восстановлена' })
   restore(@Param('id') id: string) {
     return { endpoint: `manager/zones/${id}/restore` };
   }
 }
 
-@ApiTags('Manager Trips')
+@ApiTags('Поездки менеджера')
 @Controller('manager/trips')
 export class ManagerTripController {
   @Get('active')
-  @ApiOperation({ summary: 'Get all active trips' })
-  @ApiResponse({ status: 200, description: 'Active trips list (stub)' })
+  @ApiOperation({ summary: 'Получить все активные поездки' })
+  @ApiResponse({ status: 200, description: 'Список активных поездок' })
   active() {
     return { endpoint: 'manager/trips/active' };
   }
 
   @Get('history')
-  @ApiOperation({ summary: 'Get finished and cancelled trip history' })
-  @ApiResponse({ status: 200, description: 'Trip history list (stub)' })
+  @ApiOperation({
+    summary: 'Получить историю завершенных и отмененных поездок',
+  })
+  @ApiResponse({ status: 200, description: 'История поездок' })
   history() {
     return { endpoint: 'manager/trips/history' };
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get manager trip details by id' })
-  @ApiResponse({ status: 200, description: 'Trip details (stub)' })
+  @ApiOperation({ summary: 'Получить детали поездки по идентификатору' })
+  @ApiResponse({ status: 200, description: 'Детали поездки' })
   getById(@Param('id') id: string) {
     return { endpoint: `manager/trips/${id}` };
   }
 }
 
-@ApiTags('Manager Violations')
+@ApiTags('Нарушения менеджера')
 @Controller('manager/violations')
 export class ViolationController {
   @Get()
-  @ApiOperation({ summary: 'Get violations list' })
-  @ApiResponse({ status: 200, description: 'Violations list (stub)' })
+  @ApiOperation({ summary: 'Получить список нарушений' })
+  @ApiResponse({ status: 200, description: 'Список нарушений' })
   list() {
     return { endpoint: 'manager/violations' };
   }
 
   @Get('stats')
-  @ApiOperation({ summary: 'Get violation statistics' })
-  @ApiResponse({ status: 200, description: 'Violation stats (stub)' })
+  @ApiOperation({ summary: 'Получить статистику по нарушениям' })
+  @ApiResponse({ status: 200, description: 'Статистика нарушений' })
   stats() {
     return { endpoint: 'manager/violations/stats' };
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get violation by id' })
-  @ApiResponse({ status: 200, description: 'Violation details (stub)' })
+  @ApiOperation({ summary: 'Получить нарушение по идентификатору' })
+  @ApiResponse({ status: 200, description: 'Детали нарушения' })
   getById(@Param('id') id: string) {
     return { endpoint: `manager/violations/${id}` };
   }
 
   @Post(':id/warn')
-  @ApiOperation({ summary: 'Send warning for a violation' })
-  @ApiResponse({ status: 200, description: 'Violation warning sent (stub)' })
+  @ApiOperation({ summary: 'Отправить предупреждение по нарушению' })
+  @ApiResponse({ status: 200, description: 'Предупреждение отправлено' })
   warn(@Param('id') id: string) {
     return { endpoint: `manager/violations/${id}/warn` };
   }

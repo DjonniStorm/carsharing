@@ -51,7 +51,10 @@ export class AuthController {
   @Post('resend-code')
   @ApiOperation({ summary: 'Повторно отправить код подтверждения' })
   @ApiBody({ type: ResendCodeDto })
-  @ApiResponse({ status: 200, description: 'Код поставлен в очередь на отправку' })
+  @ApiResponse({
+    status: 200,
+    description: 'Код поставлен в очередь на отправку',
+  })
   resendCode(@Body() dto: ResendCodeDto) {
     return this.authService.resendVerificationCode(dto);
   }

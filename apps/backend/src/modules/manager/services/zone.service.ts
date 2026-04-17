@@ -60,7 +60,11 @@ export class ZoneService {
     const outerRing = zoneGeometry.coordinates[0];
     let isInside = false;
 
-    for (let currentIndex = 0; currentIndex < outerRing.length; currentIndex++) {
+    for (
+      let currentIndex = 0;
+      currentIndex < outerRing.length;
+      currentIndex++
+    ) {
       const nextIndex = (currentIndex + 1) % outerRing.length;
       const [currentLon, currentLat] = outerRing[currentIndex];
       const [nextLon, nextLat] = outerRing[nextIndex];

@@ -1,14 +1,17 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { createHmac, randomBytes, randomUUID, scrypt, timingSafeEqual } from 'node:crypto';
+import {
+  createHmac,
+  randomBytes,
+  randomUUID,
+  scrypt,
+  timingSafeEqual,
+} from 'node:crypto';
 import { promisify } from 'node:util';
 import { AuthTokens } from '../types/auth.types';
 import type { UserRepository } from '../repositories/user.repository';
 import { REPOSITORY_TOKENS } from '../../../shared/tokens/repository.tokens';
 import { CreateUserInput } from '../../../shared/types/repository.types';
-import {
-  RegisterDeviceType,
-  VerificationChannel,
-} from '../auth.dto';
+import { RegisterDeviceType, VerificationChannel } from '../auth.dto';
 
 const scryptAsync = promisify(scrypt);
 
@@ -79,18 +82,16 @@ export class AuthService {
     const normalizedEmail = this.normalizeEmail(input.email);
 
     if (normalizedPhone) {
-      const existingByPhone = await this.userRepository.findByPhone(
-        normalizedPhone,
-      );
+      const existingByPhone =
+        await this.userRepository.findByPhone(normalizedPhone);
       if (existingByPhone) {
         throw new Error('Пользователь с таким телефоном уже существует');
       }
     }
 
     if (normalizedEmail) {
-      const existingByEmail = await this.userRepository.findByEmail(
-        normalizedEmail,
-      );
+      const existingByEmail =
+        await this.userRepository.findByEmail(normalizedEmail);
       if (existingByEmail) {
         throw new Error('Пользователь с таким email уже существует');
       }
@@ -184,7 +185,9 @@ export class AuthService {
 
   async refreshToken(input: RefreshTokenInput): Promise<AuthTokens> {
     const payload = this.verifyToken(input.refreshToken, 'refresh');
-    const session = this.refreshSessions.get(this.hashToken(input.refreshToken));
+    const session = this.refreshSessions.get(
+      this.hashToken(input.refreshToken),
+    );
     if (
       !session ||
       session.revoked ||
@@ -238,8 +241,8 @@ export class AuthService {
 
   private normalizeIdentifier(identifier: string): string {
     return identifier.includes('@')
-      ? this.normalizeEmail(identifier) ?? identifier.trim()
-      : this.normalizePhone(identifier) ?? identifier.trim();
+      ? (this.normalizeEmail(identifier) ?? identifier.trim())
+      : (this.normalizePhone(identifier) ?? identifier.trim());
   }
 
   private normalizeEmail(email?: string | null): string | null {
@@ -307,7 +310,10 @@ export class AuthService {
       Buffer.from(payload, 'base64url').toString('utf8'),
     ) as TokenPayload;
 
-    if (decodedPayload.type !== expectedType || decodedPayload.exp <= Date.now()) {
+    if (
+      decodedPayload.type !== expectedType ||
+      decodedPayload.exp <= Date.now()
+    ) {
       throw new UnauthorizedException('Токен истек или имеет неверный тип');
     }
 
@@ -321,9 +327,7 @@ export class AuthService {
   }
 
   private hashToken(token: string): string {
-    return createHmac('sha256', this.tokenSecret)
-      .update(token)
-      .digest('hex');
+    return createHmac('sha256', this.tokenSecret).update(token).digest('hex');
   }
 
   private toBase64Url(value: string): string {

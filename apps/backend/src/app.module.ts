@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { AuthController } from './modules/auth/auth.controller';
 import { AuthService } from './modules/auth/services/auth.service';
 import {
@@ -38,7 +36,6 @@ import { repositoryProviders } from './shared/providers/repository.providers';
     PrismaModule,
   ],
   controllers: [
-    AppController,
     AuthController,
     DriverVehicleController,
     DriverTripController,
@@ -50,7 +47,6 @@ import { repositoryProviders } from './shared/providers/repository.providers';
     ViolationController,
   ],
   providers: [
-    AppService,
     AuthService,
     VehicleService,
     TripService,

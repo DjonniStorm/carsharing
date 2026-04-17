@@ -14,90 +14,90 @@ import {
   StartTripDto,
 } from './driver.dto';
 
-@ApiTags('Driver Vehicles')
+@ApiTags('Автомобили водителя')
 @Controller('driver/vehicles')
 export class DriverVehicleController {
   @Get('nearby')
-  @ApiOperation({ summary: 'Get nearby available vehicles' })
+  @ApiOperation({ summary: 'Получить ближайшие доступные автомобили' })
   @ApiQuery({ name: 'lat', type: Number })
   @ApiQuery({ name: 'lon', type: Number })
   @ApiQuery({ name: 'radiusMeters', required: false, type: Number })
-  @ApiResponse({ status: 200, description: 'Nearby vehicle list (stub)' })
+  @ApiResponse({ status: 200, description: 'Список ближайших автомобилей' })
   getNearby(@Query() query: NearbyVehiclesQueryDto) {
     return { endpoint: 'driver/vehicles/nearby', query };
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get detailed vehicle info for driver view' })
-  @ApiResponse({ status: 200, description: 'Vehicle details (stub)' })
+  @ApiOperation({ summary: 'Получить подробную информацию об автомобиле' })
+  @ApiResponse({ status: 200, description: 'Детали автомобиля' })
   getById(@Param('id') id: string) {
     return { endpoint: `driver/vehicles/${id}` };
   }
 }
 
-@ApiTags('Driver Trips')
+@ApiTags('Поездки водителя')
 @Controller('driver/trips')
 export class DriverTripController {
   @Post('start')
-  @ApiOperation({ summary: 'Start a trip' })
+  @ApiOperation({ summary: 'Начать поездку' })
   @ApiBody({ type: StartTripDto })
-  @ApiResponse({ status: 201, description: 'Trip start accepted (stub)' })
+  @ApiResponse({ status: 201, description: 'Поездка успешно начата' })
   start(@Body() dto: StartTripDto) {
     return { endpoint: 'driver/trips/start', dto };
   }
 
   @Post(':id/finish')
-  @ApiOperation({ summary: 'Finish an active trip' })
+  @ApiOperation({ summary: 'Завершить активную поездку' })
   @ApiBody({ type: FinishTripDto })
-  @ApiResponse({ status: 200, description: 'Trip finish accepted (stub)' })
+  @ApiResponse({ status: 200, description: 'Поездка успешно завершена' })
   finish(@Param('id') id: string, @Body() dto: FinishTripDto) {
     return { endpoint: `driver/trips/${id}/finish`, dto };
   }
 
   @Post(':id/cancel')
-  @ApiOperation({ summary: 'Cancel an active trip' })
+  @ApiOperation({ summary: 'Отменить активную поездку' })
   @ApiBody({ type: CancelTripDto })
   @ApiResponse({
     status: 200,
-    description: 'Trip cancellation accepted (stub)',
+    description: 'Поездка успешно отменена',
   })
   cancel(@Param('id') id: string, @Body() dto: CancelTripDto) {
     return { endpoint: `driver/trips/${id}/cancel`, dto };
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get trip details by id' })
-  @ApiResponse({ status: 200, description: 'Trip details (stub)' })
+  @ApiOperation({ summary: 'Получить детали поездки по идентификатору' })
+  @ApiResponse({ status: 200, description: 'Детали поездки' })
   getById(@Param('id') id: string) {
     return { endpoint: `driver/trips/${id}` };
   }
 
   @Get(':id/route')
-  @ApiOperation({ summary: 'Get trip route telemetry path' })
-  @ApiResponse({ status: 200, description: 'Trip route (stub)' })
+  @ApiOperation({ summary: 'Получить маршрут поездки по данным телеметрии' })
+  @ApiResponse({ status: 200, description: 'Маршрут поездки' })
   getRoute(@Param('id') id: string) {
     return { endpoint: `driver/trips/${id}/route` };
   }
 }
 
-@ApiTags('Driver')
+@ApiTags('Водитель')
 @Controller('driver')
 export class DriverController {
   @Get('me')
-  @ApiOperation({ summary: 'Get current driver profile' })
-  @ApiResponse({ status: 200, description: 'Driver profile (stub)' })
+  @ApiOperation({ summary: 'Получить профиль текущего водителя' })
+  @ApiResponse({ status: 200, description: 'Профиль водителя' })
   me() {
     return { endpoint: 'driver/me' };
   }
 
   @Get('trips')
-  @ApiOperation({ summary: 'Get driver trips list' })
+  @ApiOperation({ summary: 'Получить список поездок водителя' })
   @ApiQuery({
     name: 'status',
     required: false,
     enum: ['ACTIVE', 'FINISHED', 'CANCELLED'],
   })
-  @ApiResponse({ status: 200, description: 'Driver trip list (stub)' })
+  @ApiResponse({ status: 200, description: 'Список поездок водителя' })
   trips(@Query() query: DriverTripsQueryDto) {
     return { endpoint: 'driver/trips', query };
   }

@@ -8,12 +8,12 @@ import {
 } from 'class-validator';
 
 export class GeoJsonPolygonDto {
-  @ApiProperty({ example: 'Polygon' })
+  @ApiProperty({ example: 'Polygon', description: 'Тип геометрии GeoJSON' })
   type: 'Polygon';
 
   @ApiProperty({
     description:
-      'Array of linear rings. Each ring is [longitude, latitude] coordinate tuples.',
+      'Массив линейных колец. Каждое кольцо содержит координаты в формате [долгота, широта].',
     type: 'array',
     items: {
       type: 'array',
@@ -27,54 +27,60 @@ export class GeoJsonPolygonDto {
 }
 
 export class CreateVehicleDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'Марка автомобиля' })
   @IsString()
   brand: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Модель автомобиля' })
   @IsString()
   model: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Государственный номер автомобиля' })
   @IsString()
   plateNumber: string;
 }
 
 export class UpdateVehicleDto {
-  @ApiPropertyOptional({ enum: ['ACTIVE', 'IN_USE', 'BLOCKED'] })
+  @ApiPropertyOptional({
+    enum: ['ACTIVE', 'IN_USE', 'BLOCKED'],
+    description: 'Новый статус автомобиля',
+  })
   @IsOptional()
   @IsIn(['ACTIVE', 'IN_USE', 'BLOCKED'])
   status?: 'ACTIVE' | 'IN_USE' | 'BLOCKED';
 }
 
 export class CreateTariffDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'Название тарифа' })
   @IsString()
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Стоимость минуты поездки' })
   @IsNumber()
   pricePerMinute: number;
 }
 
 export class UpdateTariffDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Новое название тарифа' })
   @IsOptional()
   @IsString()
   name?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Новая стоимость минуты поездки' })
   @IsOptional()
   @IsNumber()
   pricePerMinute?: number;
 }
 
 export class CreateZoneDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'Название зоны' })
   @IsString()
   name: string;
 
-  @ApiProperty({ enum: ['ALLOWED', 'PARKING', 'RESTRICTED'] })
+  @ApiProperty({
+    enum: ['ALLOWED', 'PARKING', 'RESTRICTED'],
+    description: 'Тип зоны',
+  })
   @IsIn(['ALLOWED', 'PARKING', 'RESTRICTED'])
   type: 'ALLOWED' | 'PARKING' | 'RESTRICTED';
 
@@ -95,18 +101,21 @@ export class CreateZoneDto {
   })
   geometry: GeoJsonPolygonDto;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Признак активности зоны' })
   @IsBoolean()
   isActive: boolean;
 }
 
 export class UpdateZoneDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Новое название зоны' })
   @IsOptional()
   @IsString()
   name?: string;
 
-  @ApiPropertyOptional({ enum: ['ALLOWED', 'PARKING', 'RESTRICTED'] })
+  @ApiPropertyOptional({
+    enum: ['ALLOWED', 'PARKING', 'RESTRICTED'],
+    description: 'Новый тип зоны',
+  })
   @IsOptional()
   @IsIn(['ALLOWED', 'PARKING', 'RESTRICTED'])
   type?: 'ALLOWED' | 'PARKING' | 'RESTRICTED';
