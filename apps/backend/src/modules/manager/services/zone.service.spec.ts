@@ -24,10 +24,23 @@ describe('ZoneService', () => {
       const payload = {
         name: 'Center',
         type: 'ALLOWED' as const,
-        geometry: { type: 'Polygon' as const, coordinates: [[[30, 50], [30.1, 50], [30, 50]]] },
+        geometry: {
+          type: 'Polygon' as const,
+          coordinates: [
+            [
+              [30, 50],
+              [30.1, 50],
+              [30, 50],
+            ],
+          ],
+        },
         isActive: true,
       };
-      repository.create.mockResolvedValue({ id: 1, ...payload, deletedAt: null });
+      repository.create.mockResolvedValue({
+        id: 1,
+        ...payload,
+        deletedAt: null,
+      });
 
       // act
       const result = await service.createZone(payload);
@@ -38,9 +51,28 @@ describe('ZoneService', () => {
     });
 
     it.each([
-      { label: 'wrong GeoJSON type', payload: { name: 'Z', type: 'ALLOWED', geometry: { type: 'LineString', coordinates: [] }, isActive: true } },
-      { label: 'missing coordinates', payload: { name: 'Z', type: 'ALLOWED', geometry: { type: 'Polygon' }, isActive: true } },
-      { label: 'invalid geometry structure', payload: { name: 'Z', type: 'ALLOWED', geometry: null, isActive: true } },
+      {
+        label: 'wrong GeoJSON type',
+        payload: {
+          name: 'Z',
+          type: 'ALLOWED',
+          geometry: { type: 'LineString', coordinates: [] },
+          isActive: true,
+        },
+      },
+      {
+        label: 'missing coordinates',
+        payload: {
+          name: 'Z',
+          type: 'ALLOWED',
+          geometry: { type: 'Polygon' },
+          isActive: true,
+        },
+      },
+      {
+        label: 'invalid geometry structure',
+        payload: { name: 'Z', type: 'ALLOWED', geometry: null, isActive: true },
+      },
     ])('rejects for $label', async ({ payload }) => {
       // act + assert
       await expect(service.createZone(payload as never)).rejects.toThrow();
@@ -53,7 +85,16 @@ describe('ZoneService', () => {
       // act
       const result = await service.checkPointInZone(
         { lat: 50.45, lon: 30.52 },
-        { type: 'Polygon', coordinates: [[[30, 50], [30.1, 50], [30, 50]]] },
+        {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [30, 50],
+              [30.1, 50],
+              [30, 50],
+            ],
+          ],
+        },
       );
 
       // assert
@@ -63,7 +104,19 @@ describe('ZoneService', () => {
     it('throws for invalid point format', async () => {
       // act + assert
       await expect(
-        service.checkPointInZone({ lat: Number.NaN, lon: 30.52 }, { type: 'Polygon', coordinates: [[[30, 50], [30.1, 50], [30, 50]]] }),
+        service.checkPointInZone(
+          { lat: Number.NaN, lon: 30.52 },
+          {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [30, 50],
+                [30.1, 50],
+                [30, 50],
+              ],
+            ],
+          },
+        ),
       ).rejects.toThrow('Invalid point');
     });
   });

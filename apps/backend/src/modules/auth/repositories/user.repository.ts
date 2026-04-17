@@ -1,4 +1,7 @@
-import { CreateUserInput, UserEntity } from '../../../shared/types/repository.types';
+import {
+  CreateUserInput,
+  UserEntity,
+} from '../../../shared/types/repository.types';
 
 export interface UserRepository {
   findById(id: number): Promise<UserEntity | null>;

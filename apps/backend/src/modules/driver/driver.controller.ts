@@ -57,7 +57,10 @@ export class DriverTripController {
   @Post(':id/cancel')
   @ApiOperation({ summary: 'Cancel an active trip' })
   @ApiBody({ type: CancelTripDto })
-  @ApiResponse({ status: 200, description: 'Trip cancellation accepted (stub)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Trip cancellation accepted (stub)',
+  })
   cancel(@Param('id') id: string, @Body() dto: CancelTripDto) {
     return { endpoint: `driver/trips/${id}/cancel`, dto };
   }
@@ -89,7 +92,11 @@ export class DriverController {
 
   @Get('trips')
   @ApiOperation({ summary: 'Get driver trips list' })
-  @ApiQuery({ name: 'status', required: false, enum: ['ACTIVE', 'FINISHED', 'CANCELLED'] })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['ACTIVE', 'FINISHED', 'CANCELLED'],
+  })
   @ApiResponse({ status: 200, description: 'Driver trip list (stub)' })
   trips(@Query() query: DriverTripsQueryDto) {
     return { endpoint: 'driver/trips', query };

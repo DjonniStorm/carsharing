@@ -21,7 +21,11 @@ describe('ViolationService', () => {
     it('calls repository and emits event for valid input', async () => {
       // arrange
       const payload = { tripId: 10, type: 'SPEEDING' as const };
-      repository.create.mockResolvedValue({ id: 77, ...payload, createdAt: new Date() });
+      repository.create.mockResolvedValue({
+        id: 77,
+        ...payload,
+        createdAt: new Date(),
+      });
 
       // act
       const result = await service.createViolation(payload);
@@ -51,10 +55,19 @@ describe('ViolationService', () => {
   describe('detectViolation', () => {
     it('returns violation for valid scenario', async () => {
       // arrange
-      repository.create.mockResolvedValue({ id: 5, tripId: 20, type: 'OUT_OF_ZONE', createdAt: new Date() });
+      repository.create.mockResolvedValue({
+        id: 5,
+        tripId: 20,
+        type: 'OUT_OF_ZONE',
+        createdAt: new Date(),
+      });
 
       // act
-      const result = await service.detectViolation({ tripId: 20, type: 'OUT_OF_ZONE', trigger: true });
+      const result = await service.detectViolation({
+        tripId: 20,
+        type: 'OUT_OF_ZONE',
+        trigger: true,
+      });
 
       // assert
       expect(result).not.toBeNull();
@@ -63,7 +76,11 @@ describe('ViolationService', () => {
 
     it('returns null when trigger is false', async () => {
       // act
-      const result = await service.detectViolation({ tripId: 20, type: 'OUT_OF_ZONE', trigger: false });
+      const result = await service.detectViolation({
+        tripId: 20,
+        type: 'OUT_OF_ZONE',
+        trigger: false,
+      });
 
       // assert
       expect(result).toBeNull();
@@ -72,9 +89,13 @@ describe('ViolationService', () => {
 
     it('handles invalid data safely', async () => {
       // act + assert
-      await expect(service.detectViolation({ tripId: -1, type: 'OUT_OF_ZONE', trigger: true })).rejects.toThrow(
-        'Invalid tripId',
-      );
+      await expect(
+        service.detectViolation({
+          tripId: -1,
+          type: 'OUT_OF_ZONE',
+          trigger: true,
+        }),
+      ).rejects.toThrow('Invalid tripId');
       expect(repository.create).not.toHaveBeenCalled();
       expect(eventEmitter.emit).not.toHaveBeenCalled();
     });

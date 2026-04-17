@@ -1,3 +1,7 @@
 tasks:
+  lint:
+    command: pnpm exec eslint . --no-error-on-unmatched-pattern
+  format:
+    command: pnpm exec prettier --write "**/*.{js,ts,json,md}"
   test:
     command: pnpm test

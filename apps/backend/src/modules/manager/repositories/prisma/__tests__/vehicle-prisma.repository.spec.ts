@@ -1,10 +1,27 @@
 import { VehiclePrismaRepository } from '../vehicle-prisma.repository';
+import { PrismaService } from '../../../../../prisma/prisma.service';
+import { resetTestDatabase } from '../../../../../test-utils/prisma-test.utils';
 
 describe('VehiclePrismaRepository', () => {
+  const TEST_DB_URL =
+    'postgresql://carsharing:carsharing@localhost:5432/carsharing_test?schema=public';
   let repository: VehiclePrismaRepository;
+  let prisma: PrismaService;
 
-  beforeEach(() => {
-    repository = new VehiclePrismaRepository();
+  beforeAll(async () => {
+    prisma = new PrismaService({
+      getOrThrow: () => TEST_DB_URL,
+    } as never);
+    await prisma.$connect();
+  });
+
+  beforeEach(async () => {
+    await resetTestDatabase(prisma);
+    repository = new VehiclePrismaRepository(prisma as never);
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
   });
 
   it('creates a vehicle', async () => {
@@ -57,7 +74,7 @@ describe('VehiclePrismaRepository', () => {
       brand: 'Ford',
       model: 'Focus',
       plateNumber: 'AA0004AA',
-      status: 'BLOCKED',
+      status: 'BLOCKED' as const,
       location: { lat: 50.45, lon: 30.52 },
     });
     await repository.softDelete(hidden.id);

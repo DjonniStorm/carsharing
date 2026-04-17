@@ -46,7 +46,10 @@ export class ZoneService {
     return this.zoneRepository.findAll();
   }
 
-  async checkPointInZone(point: GeoPoint, zoneGeometry: GeoJSONPolygon): Promise<boolean> {
+  async checkPointInZone(
+    point: GeoPoint,
+    zoneGeometry: GeoJSONPolygon,
+  ): Promise<boolean> {
     if (!point || typeof point !== 'object') {
       throw new Error('Invalid point');
     }
@@ -79,7 +82,10 @@ export class ZoneService {
     if (geometry.type !== 'Polygon') {
       throw new Error('Invalid geometry type');
     }
-    if (!Array.isArray(geometry.coordinates) || geometry.coordinates.length === 0) {
+    if (
+      !Array.isArray(geometry.coordinates) ||
+      geometry.coordinates.length === 0
+    ) {
       throw new Error('Invalid geometry coordinates');
     }
   }

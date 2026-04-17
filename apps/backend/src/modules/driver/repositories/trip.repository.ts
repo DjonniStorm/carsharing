@@ -1,4 +1,8 @@
-import { CreateTripInput, TripEntity, UpdateTripInput } from '../../../shared/types/repository.types';
+import {
+  CreateTripInput,
+  TripEntity,
+  UpdateTripInput,
+} from '../../../shared/types/repository.types';
 
 export interface TripRepository {
   findById(id: number): Promise<TripEntity | null>;

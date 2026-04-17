@@ -1,10 +1,27 @@
 import { ZonePrismaRepository } from '../zone-prisma.repository';
+import { PrismaService } from '../../../../../prisma/prisma.service';
+import { resetTestDatabase } from '../../../../../test-utils/prisma-test.utils';
 
 describe('ZonePrismaRepository', () => {
+  const TEST_DB_URL =
+    'postgresql://carsharing:carsharing@localhost:5432/carsharing_test?schema=public';
   let repository: ZonePrismaRepository;
+  let prisma: PrismaService;
 
-  beforeEach(() => {
-    repository = new ZonePrismaRepository();
+  beforeAll(async () => {
+    prisma = new PrismaService({
+      getOrThrow: () => TEST_DB_URL,
+    } as never);
+    await prisma.$connect();
+  });
+
+  beforeEach(async () => {
+    await resetTestDatabase(prisma);
+    repository = new ZonePrismaRepository(prisma as never);
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
   });
 
   it('creates zone with GeoJSON Polygon and keeps geometry unchanged', async () => {
@@ -39,13 +56,31 @@ describe('ZonePrismaRepository', () => {
     const zoneA = await repository.create({
       name: 'A',
       type: 'ALLOWED',
-      geometry: { type: 'Polygon', coordinates: [[[30, 50], [30.1, 50], [30, 50]]] },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [30, 50],
+            [30.1, 50],
+            [30, 50],
+          ],
+        ],
+      },
       isActive: true,
     });
     const zoneB = await repository.create({
       name: 'B',
       type: 'PARKING',
-      geometry: { type: 'Polygon', coordinates: [[[31, 51], [31.1, 51], [31, 51]]] },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [31, 51],
+            [31.1, 51],
+            [31, 51],
+          ],
+        ],
+      },
       isActive: false,
     });
     await repository.softDelete(zoneB.id);
@@ -62,13 +97,31 @@ describe('ZonePrismaRepository', () => {
     await repository.create({
       name: 'Active',
       type: 'ALLOWED',
-      geometry: { type: 'Polygon', coordinates: [[[30, 50], [30.1, 50], [30, 50]]] },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [30, 50],
+            [30.1, 50],
+            [30, 50],
+          ],
+        ],
+      },
       isActive: true,
     });
     await repository.create({
       name: 'Inactive',
       type: 'PARKING',
-      geometry: { type: 'Polygon', coordinates: [[[31, 51], [31.1, 51], [31, 51]]] },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [31, 51],
+            [31.1, 51],
+            [31, 51],
+          ],
+        ],
+      },
       isActive: false,
     });
 
@@ -85,7 +138,16 @@ describe('ZonePrismaRepository', () => {
     const created = await repository.create({
       name: 'Temp',
       type: 'RESTRICTED',
-      geometry: { type: 'Polygon', coordinates: [[[32, 52], [32.1, 52], [32, 52]]] },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [32, 52],
+            [32.1, 52],
+            [32, 52],
+          ],
+        ],
+      },
       isActive: true,
     });
 

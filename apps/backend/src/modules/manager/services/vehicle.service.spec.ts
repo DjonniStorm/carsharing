@@ -32,7 +32,11 @@ describe('VehicleService', () => {
           status: 'ACTIVE' as const,
           location: { lat: 50.45, lon: 30.52 },
         };
-        repository.create.mockResolvedValue({ id: 1, ...input, deletedAt: null });
+        repository.create.mockResolvedValue({
+          id: 1,
+          ...input,
+          deletedAt: null,
+        });
 
         // act
         const result = await service.createVehicle(input);
@@ -45,11 +49,56 @@ describe('VehicleService', () => {
 
     describe('invalid inputs', () => {
       it.each([
-        { label: 'missing brand', payload: { brand: '', model: 'M', plateNumber: 'AA', status: 'ACTIVE', location: { lat: 1, lon: 2 } } },
-        { label: 'missing model', payload: { brand: 'B', model: '', plateNumber: 'AA', status: 'ACTIVE', location: { lat: 1, lon: 2 } } },
-        { label: 'missing plateNumber', payload: { brand: 'B', model: 'M', plateNumber: '', status: 'ACTIVE', location: { lat: 1, lon: 2 } } },
-        { label: 'invalid status', payload: { brand: 'B', model: 'M', plateNumber: 'AA', status: 'WRONG', location: { lat: 1, lon: 2 } } },
-        { label: 'null location', payload: { brand: 'B', model: 'M', plateNumber: 'AA', status: 'ACTIVE', location: null } },
+        {
+          label: 'missing brand',
+          payload: {
+            brand: '',
+            model: 'M',
+            plateNumber: 'AA',
+            status: 'ACTIVE',
+            location: { lat: 1, lon: 2 },
+          },
+        },
+        {
+          label: 'missing model',
+          payload: {
+            brand: 'B',
+            model: '',
+            plateNumber: 'AA',
+            status: 'ACTIVE',
+            location: { lat: 1, lon: 2 },
+          },
+        },
+        {
+          label: 'missing plateNumber',
+          payload: {
+            brand: 'B',
+            model: 'M',
+            plateNumber: '',
+            status: 'ACTIVE',
+            location: { lat: 1, lon: 2 },
+          },
+        },
+        {
+          label: 'invalid status',
+          payload: {
+            brand: 'B',
+            model: 'M',
+            plateNumber: 'AA',
+            status: 'WRONG',
+            location: { lat: 1, lon: 2 },
+          },
+        },
+        {
+          label: 'null location',
+          payload: {
+            brand: 'B',
+            model: 'M',
+            plateNumber: 'AA',
+            status: 'ACTIVE',
+            location: null,
+          },
+        },
       ])('throws for $label', async ({ payload }) => {
         // act + assert
         await expect(service.createVehicle(payload as never)).rejects.toThrow();
@@ -92,7 +141,9 @@ describe('VehicleService', () => {
       repository.findById.mockResolvedValue(null);
 
       // act + assert
-      await expect(service.softDeleteVehicle(99)).rejects.toThrow('Vehicle not found');
+      await expect(service.softDeleteVehicle(99)).rejects.toThrow(
+        'Vehicle not found',
+      );
       expect(repository.softDelete).not.toHaveBeenCalled();
     });
   });
@@ -100,7 +151,10 @@ describe('VehicleService', () => {
   describe('restoreVehicle', () => {
     it('restores when entity is deleted', async () => {
       // arrange
-      repository.findById.mockResolvedValue({ id: 1, deletedAt: new Date() } as never);
+      repository.findById.mockResolvedValue({
+        id: 1,
+        deletedAt: new Date(),
+      } as never);
       repository.restore.mockResolvedValue({ id: 1, deletedAt: null } as never);
 
       // act
@@ -146,7 +200,9 @@ describe('VehicleService', () => {
       repository.findById.mockResolvedValue(null);
 
       // act + assert
-      await expect(service.updatePosition(11, 50.45, 30.52)).rejects.toThrow('Vehicle not found');
+      await expect(service.updatePosition(11, 50.45, 30.52)).rejects.toThrow(
+        'Vehicle not found',
+      );
       expect(eventEmitter.emit).not.toHaveBeenCalled();
     });
   });

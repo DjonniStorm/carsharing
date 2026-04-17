@@ -1,12 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class GeoJsonPolygonDto {
   @ApiProperty({ example: 'Polygon' })
   type: 'Polygon';
 
   @ApiProperty({
-    description: 'Array of linear rings. Each ring is [longitude, latitude] coordinate tuples.',
+    description:
+      'Array of linear rings. Each ring is [longitude, latitude] coordinate tuples.',
     type: 'array',
     items: {
       type: 'array',
@@ -104,7 +111,9 @@ export class UpdateZoneDto {
   @IsIn(['ALLOWED', 'PARKING', 'RESTRICTED'])
   type?: 'ALLOWED' | 'PARKING' | 'RESTRICTED';
 
-  @ApiPropertyOptional({ description: 'GeoJSON Polygon compatible with PostGIS.' })
+  @ApiPropertyOptional({
+    description: 'GeoJSON Polygon compatible with PostGIS.',
+  })
   @IsOptional()
   geometry?: GeoJsonPolygonDto;
 

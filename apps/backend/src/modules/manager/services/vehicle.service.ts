@@ -6,7 +6,10 @@ import {
   DOMAIN_EVENTS,
   VehicleUpdatedEvent,
 } from '../../../shared/events/domain.events';
-import { CreateVehicleInput, UpdateVehicleInput } from '../../../shared/types/repository.types';
+import {
+  CreateVehicleInput,
+  UpdateVehicleInput,
+} from '../../../shared/types/repository.types';
 
 @Injectable()
 export class VehicleService {
@@ -81,7 +84,10 @@ export class VehicleService {
     if (typeof data.model !== 'string' || data.model.trim().length === 0) {
       throw new Error('Invalid model');
     }
-    if (typeof data.plateNumber !== 'string' || data.plateNumber.trim().length === 0) {
+    if (
+      typeof data.plateNumber !== 'string' ||
+      data.plateNumber.trim().length === 0
+    ) {
       throw new Error('Invalid plateNumber');
     }
     if (!validStatuses.includes(data.status)) {

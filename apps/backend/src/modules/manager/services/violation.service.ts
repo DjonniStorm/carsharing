@@ -28,7 +28,11 @@ export class ViolationService {
     return violation;
   }
 
-  async detectViolation(input?: { tripId?: number; type?: string; trigger?: boolean }) {
+  async detectViolation(input?: {
+    tripId?: number;
+    type?: string;
+    trigger?: boolean;
+  }) {
     if (!input) {
       return null;
     }

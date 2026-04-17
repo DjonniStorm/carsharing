@@ -1,4 +1,8 @@
-import { CreateZoneInput, UpdateZoneInput, ZoneEntity } from '../../../shared/types/repository.types';
+import {
+  CreateZoneInput,
+  UpdateZoneInput,
+  ZoneEntity,
+} from '../../../shared/types/repository.types';
 
 export interface ZoneRepository {
   findAll(): Promise<ZoneEntity[]>;

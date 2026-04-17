@@ -5,5 +5,7 @@ tasks:
     command: pnpm build
   lint:
     command: pnpm lint
+  format:
+    command: pnpm exec prettier --write "src/**/*.{ts,tsx,js,jsx,json,css,md}"
   preview:
     command: pnpm preview

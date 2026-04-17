@@ -40,9 +40,17 @@ describe('TripService', () => {
           startTime: new Date('2026-04-17T10:00:00Z'),
           startLocation: { lat: 50.45, lon: 30.52 },
         };
-        vehicleRepository.findById.mockResolvedValue({ id: 10, status: 'ACTIVE' } as never);
+        vehicleRepository.findById.mockResolvedValue({
+          id: 10,
+          status: 'ACTIVE',
+        } as never);
         tripRepository.findByDriverId.mockResolvedValue([]);
-        tripRepository.create.mockResolvedValue({ id: 100, ...payload, endTime: null, endLocation: null });
+        tripRepository.create.mockResolvedValue({
+          id: 100,
+          ...payload,
+          endTime: null,
+          endLocation: null,
+        });
 
         // act
         const result = await service.startTrip(payload);
@@ -62,9 +70,36 @@ describe('TripService', () => {
 
     describe('invalid cases', () => {
       it.each([
-        { label: 'missing vehicleId', payload: { driverId: 5, vehicleId: 0, status: 'ACTIVE', startTime: new Date(), startLocation: { lat: 1, lon: 2 } } },
-        { label: 'invalid driverId', payload: { driverId: -1, vehicleId: 1, status: 'ACTIVE', startTime: new Date(), startLocation: { lat: 1, lon: 2 } } },
-        { label: 'invalid status', payload: { driverId: 5, vehicleId: 1, status: 'WRONG', startTime: new Date(), startLocation: { lat: 1, lon: 2 } } },
+        {
+          label: 'missing vehicleId',
+          payload: {
+            driverId: 5,
+            vehicleId: 0,
+            status: 'ACTIVE',
+            startTime: new Date(),
+            startLocation: { lat: 1, lon: 2 },
+          },
+        },
+        {
+          label: 'invalid driverId',
+          payload: {
+            driverId: -1,
+            vehicleId: 1,
+            status: 'ACTIVE',
+            startTime: new Date(),
+            startLocation: { lat: 1, lon: 2 },
+          },
+        },
+        {
+          label: 'invalid status',
+          payload: {
+            driverId: 5,
+            vehicleId: 1,
+            status: 'WRONG',
+            startTime: new Date(),
+            startLocation: { lat: 1, lon: 2 },
+          },
+        },
       ])('rejects for $label', async ({ payload }) => {
         // act + assert
         await expect(service.startTrip(payload as never)).rejects.toThrow();
@@ -92,7 +127,10 @@ describe('TripService', () => {
 
       it('throws when vehicle is already in use', async () => {
         // arrange
-        vehicleRepository.findById.mockResolvedValue({ id: 2, status: 'IN_USE' } as never);
+        vehicleRepository.findById.mockResolvedValue({
+          id: 2,
+          status: 'IN_USE',
+        } as never);
 
         // act + assert
         await expect(
@@ -109,8 +147,13 @@ describe('TripService', () => {
 
       it('throws when driver already has active trip', async () => {
         // arrange
-        vehicleRepository.findById.mockResolvedValue({ id: 2, status: 'ACTIVE' } as never);
-        tripRepository.findByDriverId.mockResolvedValue([{ id: 1, status: 'ACTIVE' } as never]);
+        vehicleRepository.findById.mockResolvedValue({
+          id: 2,
+          status: 'ACTIVE',
+        } as never);
+        tripRepository.findByDriverId.mockResolvedValue([
+          { id: 1, status: 'ACTIVE' } as never,
+        ]);
 
         // act + assert
         await expect(
@@ -130,8 +173,18 @@ describe('TripService', () => {
   describe('finishTrip', () => {
     it('finishes active trip and emits event', async () => {
       // arrange
-      tripRepository.findById.mockResolvedValue({ id: 7, driverId: 5, status: 'ACTIVE', endTime: null } as never);
-      tripRepository.update.mockResolvedValue({ id: 7, driverId: 5, status: 'FINISHED', endTime: new Date() } as never);
+      tripRepository.findById.mockResolvedValue({
+        id: 7,
+        driverId: 5,
+        status: 'ACTIVE',
+        endTime: null,
+      } as never);
+      tripRepository.update.mockResolvedValue({
+        id: 7,
+        driverId: 5,
+        status: 'FINISHED',
+        endTime: new Date(),
+      } as never);
 
       // act
       await service.finishTrip(7, {});
@@ -147,10 +200,15 @@ describe('TripService', () => {
 
     it('throws for non-active trip', async () => {
       // arrange
-      tripRepository.findById.mockResolvedValue({ id: 7, status: 'FINISHED' } as never);
+      tripRepository.findById.mockResolvedValue({
+        id: 7,
+        status: 'FINISHED',
+      } as never);
 
       // act + assert
-      await expect(service.finishTrip(7, {})).rejects.toThrow('Only active trip can be finished');
+      await expect(service.finishTrip(7, {})).rejects.toThrow(
+        'Only active trip can be finished',
+      );
       expect(eventEmitter.emit).not.toHaveBeenCalled();
     });
   });
@@ -158,22 +216,35 @@ describe('TripService', () => {
   describe('cancelTrip', () => {
     it('cancels active trip', async () => {
       // arrange
-      tripRepository.findById.mockResolvedValue({ id: 9, status: 'ACTIVE' } as never);
-      tripRepository.update.mockResolvedValue({ id: 9, status: 'CANCELLED' } as never);
+      tripRepository.findById.mockResolvedValue({
+        id: 9,
+        status: 'ACTIVE',
+      } as never);
+      tripRepository.update.mockResolvedValue({
+        id: 9,
+        status: 'CANCELLED',
+      } as never);
 
       // act
       await service.cancelTrip(9, {});
 
       // assert
-      expect(tripRepository.update).toHaveBeenCalledWith(9, { status: 'CANCELLED' });
+      expect(tripRepository.update).toHaveBeenCalledWith(9, {
+        status: 'CANCELLED',
+      });
     });
 
     it('throws when trip already finished', async () => {
       // arrange
-      tripRepository.findById.mockResolvedValue({ id: 9, status: 'FINISHED' } as never);
+      tripRepository.findById.mockResolvedValue({
+        id: 9,
+        status: 'FINISHED',
+      } as never);
 
       // act + assert
-      await expect(service.cancelTrip(9, {})).rejects.toThrow('Only active trip can be cancelled');
+      await expect(service.cancelTrip(9, {})).rejects.toThrow(
+        'Only active trip can be cancelled',
+      );
     });
   });
 });

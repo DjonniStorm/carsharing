@@ -1,4 +1,7 @@
-import { CreateViolationInput, ViolationEntity } from '../../../shared/types/repository.types';
+import {
+  CreateViolationInput,
+  ViolationEntity,
+} from '../../../shared/types/repository.types';
 
 export interface ViolationRepository {
   findAll(): Promise<ViolationEntity[]>;

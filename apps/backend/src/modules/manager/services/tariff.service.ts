@@ -1,7 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { TariffRepository } from '../repositories/tariff.repository';
 import { REPOSITORY_TOKENS } from '../../../shared/tokens/repository.tokens';
-import { CreateTariffInput, UpdateTariffInput } from '../../../shared/types/repository.types';
+import {
+  CreateTariffInput,
+  UpdateTariffInput,
+} from '../../../shared/types/repository.types';
 
 @Injectable()
 export class TariffService {

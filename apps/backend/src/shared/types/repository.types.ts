@@ -31,7 +31,10 @@ export type CreateVehicleInput = Omit<VehicleEntity, 'id' | 'deletedAt'> & {
 };
 export type UpdateVehicleInput = Partial<Omit<VehicleEntity, 'id'>>;
 
-export type CreateTripInput = Omit<TripEntity, 'id' | 'endTime' | 'endLocation'> & {
+export type CreateTripInput = Omit<
+  TripEntity,
+  'id' | 'endTime' | 'endLocation'
+> & {
   endTime?: Date | null;
   endLocation?: TripEntity['endLocation'];
 };

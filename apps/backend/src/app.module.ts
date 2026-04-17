@@ -27,7 +27,13 @@ import { repositoryProviders } from './shared/providers/repository.providers';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: ['.env', '.env.local'] }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath:
+        process.env.NODE_ENV === 'test'
+          ? ['.env.test', '.env']
+          : ['.env', '.env.local'],
+    }),
     EventEmitterModule.forRoot(),
     PrismaModule,
   ],

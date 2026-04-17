@@ -8,7 +8,10 @@ import {
   TripFinishedEvent,
   TripStartedEvent,
 } from '../../../shared/events/domain.events';
-import { CreateTripInput, UpdateTripInput } from '../../../shared/types/repository.types';
+import {
+  CreateTripInput,
+  UpdateTripInput,
+} from '../../../shared/types/repository.types';
 
 @Injectable()
 export class TripService {
@@ -97,7 +100,10 @@ export class TripService {
     }
     this.assertPositiveId(data.driverId, 'driverId');
     this.assertPositiveId(data.vehicleId, 'vehicleId');
-    if (!(data.startTime instanceof Date) || Number.isNaN(data.startTime.getTime())) {
+    if (
+      !(data.startTime instanceof Date) ||
+      Number.isNaN(data.startTime.getTime())
+    ) {
       throw new Error('Invalid startTime');
     }
     if (!['ACTIVE', 'FINISHED', 'CANCELLED'].includes(data.status)) {

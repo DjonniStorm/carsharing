@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   CreateTariffDto,
@@ -69,7 +77,9 @@ export class TariffController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get tariffs list (excludes soft deleted by default)' })
+  @ApiOperation({
+    summary: 'Get tariffs list (excludes soft deleted by default)',
+  })
   @ApiResponse({ status: 200, description: 'Tariff list (stub)' })
   list() {
     return { endpoint: 'manager/tariffs' };
@@ -117,7 +127,9 @@ export class ZoneController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get zone list (supports active + soft delete behavior)' })
+  @ApiOperation({
+    summary: 'Get zone list (supports active + soft delete behavior)',
+  })
   @ApiResponse({ status: 200, description: 'Zone list (stub)' })
   list() {
     return { endpoint: 'manager/zones' };
@@ -131,7 +143,9 @@ export class ZoneController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update zone fields and/or GeoJSON Polygon geometry' })
+  @ApiOperation({
+    summary: 'Update zone fields and/or GeoJSON Polygon geometry',
+  })
   @ApiBody({ type: UpdateZoneDto })
   @ApiResponse({ status: 200, description: 'Zone updated (stub)' })
   update(@Param('id') id: string, @Body() dto: UpdateZoneDto) {
@@ -139,7 +153,9 @@ export class ZoneController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Soft delete zone (sets deletedAt or disables availability)' })
+  @ApiOperation({
+    summary: 'Soft delete zone (sets deletedAt or disables availability)',
+  })
   @ApiResponse({ status: 200, description: 'Zone soft-deleted (stub)' })
   remove(@Param('id') id: string) {
     return { endpoint: `manager/zones/${id}` };
