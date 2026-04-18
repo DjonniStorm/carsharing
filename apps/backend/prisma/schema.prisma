@@ -11,30 +11,22 @@ datasource db {
   provider = "postgresql"
 }
 
-model Role {
-  id    Int    @id @default(autoincrement())
-  name  String @db.VarChar(255)
-  users User[]
-
-  @@map("role")
-}
-
 /// Auth profile; plain `password` column from spec omitted — store only hash (see db.md notes).
+/// `role` — same numeric values as `UserRole` in application code (0 = MANAGER, 1 = DRIVER, 2 = SYSTEM_ADMIN).
 model User {
-  id            Int            @id @default(autoincrement())
+  id            String         @id @default(uuid()) @db.Uuid()
   name          String         @db.Text()
-  email         String?        @db.Text()
+  email         String         @db.Text()
   phone         String         @db.Text()
-  isActive      Boolean        @map("is_active")
   passwordHash  String         @map("hash_password") @db.Text()
-  roleId        Int            @map("role_id")
-  isDeleted     Boolean        @map("is_deleted")
-  role          Role           @relation(fields: [roleId], references: [id])
+  role          Int
+  isActive      Boolean        @default(false) @map("is_active")
+  isDeleted     Boolean        @default(false) @map("is_deleted")
   trips         Trip[]
   notifications Notification[]
 
-  @@index([roleId])
-  @@index([email])
+  @@unique([email])
+  @@unique([phone])
   @@map("user")
 }
 
@@ -115,7 +107,7 @@ model Trip {
   distance    Float
   duration    Float
   status      String      @db.VarChar(255)
-  userId      Int         @map("user_id")
+  userId      String      @map("user_id") @db.Uuid()
   carId       Int         @map("car_id")
   tariffId    Int         @map("tariff_id")
   user        User        @relation(fields: [userId], references: [id])
@@ -150,6 +142,7 @@ model Violation {
   id            Int                     @id @default(autoincrement())
   type          Int
   description   String                  @db.Text()
+  createdAt     DateTime                @default(now()) @map("created_at")
   tripId        Int                     @map("trip_id")
   trip          Trip                    @relation(fields: [tripId], references: [id])
   notifications ViolationNotification[]
@@ -162,7 +155,7 @@ model Notification {
   id         Int                     @id @default(autoincrement())
   message    String                  @db.Text()
   status     String                  @db.VarChar(50)
-  userId     Int                     @map("user_id")
+  userId     String                  @map("user_id") @db.Uuid()
   user       User                    @relation(fields: [userId], references: [id])
   violations ViolationNotification[]
 
