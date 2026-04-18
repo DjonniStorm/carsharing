@@ -1,14 +1,8 @@
-/*
-  Warnings:
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
 
-  - You are about to drop the `User` table. If the table is not empty, all the data it contains will be lost.
-
-*/
--- PostGIS: тип `geometry(Polygon,4326)` в `geo_zone.polygon` существует только с этим расширением.
+-- PostGIS: required for `geo_zone.polygon` (geometry)
 CREATE EXTENSION IF NOT EXISTS postgis;
-
--- DropTable
-DROP TABLE "User";
 
 -- CreateTable
 CREATE TABLE "user" (
@@ -25,14 +19,6 @@ CREATE TABLE "user" (
 );
 
 -- CreateTable
-CREATE TABLE "car_status" (
-    "id" SERIAL NOT NULL,
-    "name" TEXT NOT NULL,
-
-    CONSTRAINT "car_status_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "car_session" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
@@ -42,12 +28,21 @@ CREATE TABLE "car_session" (
 
 -- CreateTable
 CREATE TABLE "car" (
-    "id" SERIAL NOT NULL,
+    "id" UUID NOT NULL,
+    "brand" TEXT NOT NULL,
+    "model" TEXT NOT NULL,
+    "license_plate" TEXT NOT NULL,
+    "color" TEXT NOT NULL,
     "mileage" DOUBLE PRECISION NOT NULL,
     "fuel_level" DOUBLE PRECISION NOT NULL,
     "is_available" BOOLEAN NOT NULL,
     "car_status_id" INTEGER NOT NULL,
     "is_deleted" BOOLEAN NOT NULL,
+    "created_at" TEXT NOT NULL,
+    "updated_at" TEXT,
+    "last_known_lat" DOUBLE PRECISION,
+    "last_known_lon" DOUBLE PRECISION,
+    "last_position_at" TEXT,
 
     CONSTRAINT "car_pkey" PRIMARY KEY ("id")
 );
@@ -55,13 +50,9 @@ CREATE TABLE "car" (
 -- CreateTable
 CREATE TABLE "car_session_info" (
     "id" SERIAL NOT NULL,
-    "brand" TEXT NOT NULL,
-    "model" TEXT NOT NULL,
-    "license_plate" TEXT NOT NULL,
-    "color" TEXT NOT NULL,
-    "car_id" INTEGER NOT NULL,
-    "current_lat" DECIMAL(9,6) NOT NULL,
-    "current_lon" DECIMAL(9,6) NOT NULL,
+    "trip_id" INTEGER NOT NULL,
+    "start_lat" DECIMAL(9,6),
+    "start_lon" DECIMAL(9,6),
 
     CONSTRAINT "car_session_info_pkey" PRIMARY KEY ("id")
 );
@@ -97,7 +88,7 @@ CREATE TABLE "trip" (
     "duration" DOUBLE PRECISION NOT NULL,
     "status" VARCHAR(255) NOT NULL,
     "user_id" UUID NOT NULL,
-    "car_id" INTEGER NOT NULL,
+    "car_id" UUID NOT NULL,
     "tariff_id" INTEGER NOT NULL,
 
     CONSTRAINT "trip_pkey" PRIMARY KEY ("id")
@@ -147,13 +138,13 @@ CREATE TABLE "violation_notification" (
 );
 
 -- CreateIndex
-CREATE INDEX "user_email_idx" ON "user"("email");
+CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
 
 -- CreateIndex
-CREATE INDEX "car_car_status_id_idx" ON "car"("car_status_id");
+CREATE UNIQUE INDEX "user_phone_key" ON "user"("phone");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "car_session_info_car_id_key" ON "car_session_info"("car_id");
+CREATE UNIQUE INDEX "car_session_info_trip_id_key" ON "car_session_info"("trip_id");
 
 -- CreateIndex
 CREATE INDEX "tariff_geo_zone_id_idx" ON "tariff"("geo_zone_id");
@@ -180,10 +171,7 @@ CREATE INDEX "violation_trip_id_idx" ON "violation"("trip_id");
 CREATE INDEX "notification_user_id_idx" ON "notification"("user_id");
 
 -- AddForeignKey
-ALTER TABLE "car" ADD CONSTRAINT "car_car_status_id_fkey" FOREIGN KEY ("car_status_id") REFERENCES "car_status"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "car_session_info" ADD CONSTRAINT "car_session_info_car_id_fkey" FOREIGN KEY ("car_id") REFERENCES "car"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "car_session_info" ADD CONSTRAINT "car_session_info_trip_id_fkey" FOREIGN KEY ("trip_id") REFERENCES "trip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "tariff" ADD CONSTRAINT "tariff_geo_zone_id_fkey" FOREIGN KEY ("geo_zone_id") REFERENCES "geo_zone"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

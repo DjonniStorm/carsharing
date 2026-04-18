@@ -30,6 +30,7 @@
     "prisma:pull": "prisma db pull",
     "prisma:format": "prisma format",
     "prisma:validate": "prisma validate",
+    "prisma:migrate:sql": "prisma migrate diff --from-empty --to-schema=prisma/schema.prisma --script -o prisma/migrations/20260419120000_init/migration.sql",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
