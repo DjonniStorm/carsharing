@@ -11,39 +11,23 @@ datasource db {
   provider = "postgresql"
 }
 
-model Role {
-  id    Int    @id @default(autoincrement())
-  name  String @db.VarChar(255)
-  users User[]
-
-  @@map("role")
-}
-
 /// Auth profile; plain `password` column from spec omitted — store only hash (see db.md notes).
+/// `role` — same numeric values as `UserRole` in application code (0 = MANAGER, 1 = DRIVER, 2 = SYSTEM_ADMIN).
 model User {
-  id            Int            @id @default(autoincrement())
+  id            String         @id @default(uuid()) @db.Uuid()
   name          String         @db.Text()
-  email         String?        @db.Text()
+  email         String         @db.Text()
   phone         String         @db.Text()
-  isActive      Boolean        @map("is_active")
   passwordHash  String         @map("hash_password") @db.Text()
-  roleId        Int            @map("role_id")
-  isDeleted     Boolean        @map("is_deleted")
-  role          Role           @relation(fields: [roleId], references: [id])
+  role          Int
+  isActive      Boolean        @default(false) @map("is_active")
+  isDeleted     Boolean        @default(false) @map("is_deleted")
   trips         Trip[]
   notifications Notification[]
 
-  @@index([roleId])
-  @@index([email])
+  @@unique([email])
+  @@unique([phone])
   @@map("user")
-}
-
-model CarStatus {
-  id   Int    @id @default(autoincrement())
-  name String @db.Text()
-  cars Car[]
-
-  @@map("car_status")
 }
 
 /// Lookup / session type (no FK in db.md); kept for reference or future links.
@@ -54,32 +38,40 @@ model CarSession {
   @@map("car_session")
 }
 
+/// Базовая сущность автомобиля: паспортные данные и текущее операционное состояние.
+/// `carStatus` — те же числовые значения, что и `CarStatus` в коде (1 = AVAILABLE, …).
+/// `lastKnownLat` / `lastKnownLon` / `lastPositionAt` — где машина стоит на карте между поездками.
+/// Заполняются (или обновляются) только при завершении поездки из последней точки `Telemetry` этой поездки.
+/// Во время поездки позицию бери из `Telemetry`, а не из `Car`.
 model Car {
-  id          Int             @id @default(autoincrement())
-  mileage     Float
-  fuelLevel   Float           @map("fuel_level")
-  isAvailable Boolean         @map("is_available")
-  carStatusId Int             @map("car_status_id")
-  isDeleted   Boolean         @map("is_deleted")
-  carStatus   CarStatus       @relation(fields: [carStatusId], references: [id])
-  sessionInfo CarSessionInfo?
-  trips       Trip[]
+  id             String    @id @default(uuid()) @db.Uuid()
+  brand          String    @db.Text()
+  model          String    @db.Text()
+  licensePlate   String    @map("license_plate") @db.Text()
+  color          String    @db.Text()
+  mileage        Float
+  fuelLevel      Float     @map("fuel_level")
+  isAvailable    Boolean   @map("is_available")
+  carStatus      Int       @map("car_status_id")
+  isDeleted      Boolean   @map("is_deleted")
+  createdAt      String    @map("created_at") @db.Text()
+  updatedAt      String?   @map("updated_at") @db.Text()
+  lastKnownLat   Float?    @map("last_known_lat")
+  lastKnownLon   Float?    @map("last_known_lon")
+  lastPositionAt String?   @map("last_position_at") @db.Text()
+  trips          Trip[]
 
-  @@index([carStatusId])
   @@map("car")
 }
 
-/// Vehicle identity/details; linked 1:1 to `Car` (db.md suggests this relation).
+/// Данные сессии по поездке (1:1 с `Trip`). Координаты конца поездки для карты парка — на `Car.lastKnown*`.
+/// Старт поездки при необходимости для отчётов — опционально здесь; трек — в `Telemetry`.
 model CarSessionInfo {
-  id           Int    @id @default(autoincrement())
-  brand        String @db.Text()
-  model        String @db.Text()
-  licensePlate String @map("license_plate") @db.Text()
-  color        String @db.Text()
-  carId        Int    @unique @map("car_id")
-  car          Car    @relation(fields: [carId], references: [id], onDelete: Cascade)
-  currentLat  Decimal         @map("current_lat") @db.Decimal(9, 6)
-  currentLon  Decimal         @map("current_lon") @db.Decimal(9, 6)
+  id       Int      @id @default(autoincrement())
+  tripId   Int      @unique @map("trip_id")
+  trip     Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  startLat Decimal? @map("start_lat") @db.Decimal(9, 6)
+  startLon Decimal? @map("start_lon") @db.Decimal(9, 6)
 
   @@map("car_session_info")
 }
@@ -109,20 +101,21 @@ model Tariff {
 }
 
 model Trip {
-  id          Int         @id @default(autoincrement())
-  startTime   DateTime    @map("start_time")
-  endTime     DateTime?   @map("end_time")
-  distance    Float
-  duration    Float
-  status      String      @db.VarChar(255)
-  userId      Int         @map("user_id")
-  carId       Int         @map("car_id")
-  tariffId    Int         @map("tariff_id")
-  user        User        @relation(fields: [userId], references: [id])
-  car         Car         @relation(fields: [carId], references: [id])
-  tariff      Tariff      @relation(fields: [tariffId], references: [id])
-  telemetries Telemetry[]
-  violations  Violation[]
+  id             Int             @id @default(autoincrement())
+  startTime      DateTime        @map("start_time")
+  endTime        DateTime?       @map("end_time")
+  distance       Float
+  duration       Float
+  status         String          @db.VarChar(255)
+  userId         String          @map("user_id") @db.Uuid()
+  carId          String          @map("car_id") @db.Uuid()
+  tariffId       Int             @map("tariff_id")
+  user           User            @relation(fields: [userId], references: [id])
+  car            Car             @relation(fields: [carId], references: [id])
+  tariff         Tariff          @relation(fields: [tariffId], references: [id])
+  carSessionInfo CarSessionInfo?
+  telemetries    Telemetry[]
+  violations     Violation[]
 
   @@index([userId])
   @@index([carId])
@@ -150,6 +143,7 @@ model Violation {
   id            Int                     @id @default(autoincrement())
   type          Int
   description   String                  @db.Text()
+  createdAt     DateTime                @default(now()) @map("created_at")
   tripId        Int                     @map("trip_id")
   trip          Trip                    @relation(fields: [tripId], references: [id])
   notifications ViolationNotification[]
@@ -162,7 +156,7 @@ model Notification {
   id         Int                     @id @default(autoincrement())
   message    String                  @db.Text()
   status     String                  @db.VarChar(50)
-  userId     Int                     @map("user_id")
+  userId     String                  @map("user_id") @db.Uuid()
   user       User                    @relation(fields: [userId], references: [id])
   violations ViolationNotification[]
 

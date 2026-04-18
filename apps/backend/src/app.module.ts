@@ -1,27 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { AuthController } from './modules/auth/auth.controller';
-import { AuthService } from './modules/auth/services/auth.service';
-import {
-  DriverController,
-  DriverTripController,
-  DriverVehicleController,
-} from './modules/driver/driver.controller';
-import { TripService } from './modules/driver/services/trip.service';
-import {
-  ManagerTripController,
-  ManagerVehicleController,
-  TariffController,
-  ViolationController,
-  ZoneController,
-} from './modules/manager/manager.controller';
-import { TariffService } from './modules/manager/services/tariff.service';
-import { VehicleService } from './modules/manager/services/vehicle.service';
-import { ViolationService } from './modules/manager/services/violation.service';
-import { ZoneService } from './modules/manager/services/zone.service';
 import { PrismaModule } from './prisma/prisma.module';
-import { repositoryProviders } from './shared/providers/repository.providers';
+import { LoggerModule } from 'nestjs-pino';
+import { UserController } from './modules/user/controllers/user.controller';
+import { UserService } from './modules/user/services/user.service';
+import { IUserRepositoryToken } from './modules/user/repositories/user.repository.interface';
+import { UserRepository } from './modules/user/repositories/user.repository';
 
 @Module({
   imports: [
@@ -34,26 +19,12 @@ import { repositoryProviders } from './shared/providers/repository.providers';
     }),
     EventEmitterModule.forRoot(),
     PrismaModule,
+    LoggerModule.forRoot(),
   ],
-  controllers: [
-    AuthController,
-    DriverVehicleController,
-    DriverTripController,
-    DriverController,
-    ManagerVehicleController,
-    TariffController,
-    ZoneController,
-    ManagerTripController,
-    ViolationController,
-  ],
+  controllers: [UserController],
   providers: [
-    AuthService,
-    VehicleService,
-    TripService,
-    TariffService,
-    ZoneService,
-    ViolationService,
-    ...repositoryProviders,
+    UserService,
+    { provide: IUserRepositoryToken, useClass: UserRepository },
   ],
 })
 export class AppModule {}
