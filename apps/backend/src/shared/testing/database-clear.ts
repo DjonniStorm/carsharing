@@ -8,6 +8,7 @@ export const APPLICATION_TABLES = [
   'telemetry',
   'trip',
   'tariff',
+  'geo_zone_version',
   'geo_zone',
   'car_session_info',
   'car',
