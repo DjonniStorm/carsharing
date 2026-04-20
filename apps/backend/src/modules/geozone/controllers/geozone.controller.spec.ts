@@ -198,6 +198,9 @@ describe('GeozoneController', () => {
       const ver = new GeozoneVersionCreate();
       ver.geometry = sampleMultiPolygonNearLon(99);
       ver.rules = { t: 1 };
+      ver.pricePerMinute = 1.5;
+      ver.pricePerKm = 10;
+      ver.pausePricePerMinute = 0.25;
       const after = await controller.publishVersion(zone.id, ver);
       expect(after.currentVersionId).not.toBe(prev);
     });
@@ -205,6 +208,9 @@ describe('GeozoneController', () => {
     it('NotFound для несуществующей зоны', async () => {
       const ver = new GeozoneVersionCreate();
       ver.geometry = sampleMultiPolygonNearLon(0);
+      ver.pricePerMinute = 1;
+      ver.pricePerKm = 1;
+      ver.pausePricePerMinute = 1;
       await expect(controller.publishVersion(uuidv4(), ver)).rejects.toThrow(
         NotFoundException,
       );
@@ -298,6 +304,9 @@ function buildGeozoneCreate(
   dto.color = '#00aa00';
   dto.geometry = sampleMultiPolygonNearLon(0);
   dto.rules = null;
+  dto.pricePerMinute = 1.5;
+  dto.pricePerKm = 10;
+  dto.pausePricePerMinute = 0.25;
   if (createdByUserId !== undefined) {
     dto.createdByUserId = createdByUserId;
   }

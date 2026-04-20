@@ -132,11 +132,13 @@ export class GeozoneService implements IGeozoneService {
     version: GeozoneVersionCreate,
   ): Promise<GeozoneRead> {
     try {
-      return await this.geozoneRepository.publishNewVersion(
-        geozoneId,
-        version.geometry,
-        version.rules ?? null,
-      );
+      return await this.geozoneRepository.publishNewVersion(geozoneId, {
+        geometry: version.geometry,
+        rules: version.rules ?? null,
+        pricePerMinute: version.pricePerMinute,
+        pricePerKm: version.pricePerKm,
+        pausePricePerMinute: version.pausePricePerMinute,
+      });
     } catch (error) {
       GeozoneDbErrors.mapError(error);
     }

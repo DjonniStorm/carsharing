@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsObject, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  Max,
+  Min,
+} from 'class-validator';
 
 import type { GeoJSONMultiPolygon } from '../geozone.geometry';
 
@@ -14,4 +21,22 @@ export class GeozoneVersionCreate {
   @IsOptional()
   @IsObject()
   rules?: Record<string, unknown> | null;
+
+  @IsNotEmpty()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(999999999999.99)
+  pricePerMinute: number;
+
+  @IsNotEmpty()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(999999999999.99)
+  pricePerKm: number;
+
+  @IsNotEmpty()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(999999999999.99)
+  pausePricePerMinute: number;
 }

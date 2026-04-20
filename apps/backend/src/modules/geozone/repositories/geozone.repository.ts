@@ -93,6 +93,9 @@ export class GeozoneRepository implements IGeozoneRepository {
     createdByUserId: string;
     geometry: GeoJSONMultiPolygon;
     rules: Record<string, unknown> | null | undefined;
+    pricePerMinute: number;
+    pricePerKm: number;
+    pausePricePerMinute: number;
   }): Promise<GeozoneRead> {
     const zoneId = randomUUID();
     const versionId = randomUUID();
@@ -115,12 +118,15 @@ export class GeozoneRepository implements IGeozoneRepository {
           },
         });
         await prismaTx.$executeRawUnsafe(
-          `INSERT INTO geo_zone_version (id, geozone_id, geometry, rules, created_at, disabled_at)
-           VALUES ($1::uuid, $2::uuid, ST_SetSRID(ST_GeomFromGeoJSON($3::json), 4326), $4::jsonb, NOW(), NULL)`,
+          `INSERT INTO geo_zone_version (id, geozone_id, geometry, rules, created_at, disabled_at, price_per_minute, price_per_km, pause_price_per_minute)
+           VALUES ($1::uuid, $2::uuid, ST_SetSRID(ST_GeomFromGeoJSON($3::json), 4326), $4::jsonb, NOW(), NULL, $5::numeric, $6::numeric, $7::numeric)`,
           versionId,
           zoneId,
           geometryJson,
           rulesJson,
+          input.pricePerMinute,
+          input.pricePerKm,
+          input.pausePricePerMinute,
         );
         await prismaTx.geoZone.update({
           where: { id: zoneId },
@@ -193,13 +199,20 @@ export class GeozoneRepository implements IGeozoneRepository {
    */
   async publishNewVersion(
     geozoneId: string,
-    geometry: GeoJSONMultiPolygon,
-    rules: Record<string, unknown> | null | undefined,
+    input: {
+      geometry: GeoJSONMultiPolygon;
+      rules: Record<string, unknown> | null | undefined;
+      pricePerMinute: number;
+      pricePerKm: number;
+      pausePricePerMinute: number;
+    },
   ): Promise<GeozoneRead> {
     const versionId = randomUUID();
     const rulesJson =
-      rules === undefined || rules === null ? null : JSON.stringify(rules);
-    const geometryJson = JSON.stringify(geometry);
+      input.rules === undefined || input.rules === null
+        ? null
+        : JSON.stringify(input.rules);
+    const geometryJson = JSON.stringify(input.geometry);
 
     try {
       await this.prisma.$transaction(async (prismaTx) => {
@@ -218,12 +231,15 @@ export class GeozoneRepository implements IGeozoneRepository {
           });
         }
         await prismaTx.$executeRawUnsafe(
-          `INSERT INTO geo_zone_version (id, geozone_id, geometry, rules, created_at, disabled_at)
-           VALUES ($1::uuid, $2::uuid, ST_SetSRID(ST_GeomFromGeoJSON($3::json), 4326), $4::jsonb, NOW(), NULL)`,
+          `INSERT INTO geo_zone_version (id, geozone_id, geometry, rules, created_at, disabled_at, price_per_minute, price_per_km, pause_price_per_minute)
+           VALUES ($1::uuid, $2::uuid, ST_SetSRID(ST_GeomFromGeoJSON($3::json), 4326), $4::jsonb, NOW(), NULL, $5::numeric, $6::numeric, $7::numeric)`,
           versionId,
           geozoneId,
           geometryJson,
           rulesJson,
+          input.pricePerMinute,
+          input.pricePerKm,
+          input.pausePricePerMinute,
         );
         await prismaTx.geoZone.update({
           where: { id: geozoneId },
@@ -263,6 +279,9 @@ export class GeozoneRepository implements IGeozoneRepository {
         id: true,
         geozoneId: true,
         rules: true,
+        pricePerMinute: true,
+        pricePerKm: true,
+        pausePricePerMinute: true,
         createdAt: true,
         disabledAt: true,
       },
@@ -289,6 +308,9 @@ export class GeozoneRepository implements IGeozoneRepository {
         id: true,
         geozoneId: true,
         rules: true,
+        pricePerMinute: true,
+        pricePerKm: true,
+        pausePricePerMinute: true,
         createdAt: true,
         disabledAt: true,
       },
@@ -437,6 +459,9 @@ export class GeozoneRepository implements IGeozoneRepository {
       id: string;
       geozoneId: string;
       rules: Prisma.JsonValue;
+      pricePerMinute: Prisma.Decimal | number;
+      pricePerKm: Prisma.Decimal | number;
+      pausePricePerMinute: Prisma.Decimal | number;
       createdAt: Date;
       disabledAt: Date | null;
     },
@@ -450,9 +475,18 @@ export class GeozoneRepository implements IGeozoneRepository {
         versionMeta.rules === null
           ? null
           : (versionMeta.rules as Record<string, unknown>),
+      pricePerMinute: GeozoneRepository.decimalToNumber(versionMeta.pricePerMinute),
+      pricePerKm: GeozoneRepository.decimalToNumber(versionMeta.pricePerKm),
+      pausePricePerMinute: GeozoneRepository.decimalToNumber(
+        versionMeta.pausePricePerMinute,
+      ),
       createdAt: versionMeta.createdAt,
       disabledAt: versionMeta.disabledAt,
     };
+  }
+
+  private static decimalToNumber(value: Prisma.Decimal | number): number {
+    return typeof value === 'number' ? value : value.toNumber();
   }
 
   /**
@@ -502,6 +536,9 @@ export class GeozoneRepository implements IGeozoneRepository {
           id: true,
           geozoneId: true,
           rules: true,
+          pricePerMinute: true,
+          pricePerKm: true,
+          pausePricePerMinute: true,
           createdAt: true,
           disabledAt: true,
         },

@@ -13,6 +13,9 @@ export class GeozoneVersionEntity {
     public readonly geozoneId: string,
     public readonly geometry: GeoJSONMultiPolygon,
     public readonly rules: GeozoneVersionRules | null,
+    public readonly pricePerMinute: number,
+    public readonly pricePerKm: number,
+    public readonly pausePricePerMinute: number,
     public readonly createdAt: Date,
     /** Версия снята с публикации; `null` — текущая активная для зоны (если она ещё current). */
     public readonly disabledAt: Date | null,

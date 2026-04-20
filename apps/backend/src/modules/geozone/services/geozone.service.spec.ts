@@ -382,6 +382,9 @@ describe('GeozoneService', () => {
       const versionDto = new GeozoneVersionCreate();
       versionDto.geometry = nextGeometry;
       versionDto.rules = { tariff: 'B' };
+      versionDto.pricePerMinute = 2;
+      versionDto.pricePerKm = 12;
+      versionDto.pausePricePerMinute = 0.5;
 
       const afterPublish = await service.publishVersion(zone.id, versionDto);
       expect(afterPublish.currentVersionId).not.toBe(firstVersionId);
@@ -401,6 +404,9 @@ describe('GeozoneService', () => {
     it('выбрасывает GeozoneNotFoundException для несуществующей зоны', async () => {
       const versionDto = new GeozoneVersionCreate();
       versionDto.geometry = sampleMultiPolygonNearLon(0);
+      versionDto.pricePerMinute = 1;
+      versionDto.pricePerKm = 1;
+      versionDto.pausePricePerMinute = 1;
       await expect(
         service.publishVersion(uuidv4(), versionDto),
       ).rejects.toThrow(GeozoneNotFoundException);
@@ -419,6 +425,9 @@ describe('GeozoneService', () => {
       const zone = await service.create(buildGeozoneCreate(createdByUserId));
       const versionDto = new GeozoneVersionCreate();
       versionDto.geometry = sampleMultiPolygonNearLon(30);
+      versionDto.pricePerMinute = 1.5;
+      versionDto.pricePerKm = 10;
+      versionDto.pausePricePerMinute = 0.25;
       await service.publishVersion(zone.id, versionDto);
       const all = await service.findVersions(zone.id, {
         includeDisabled: true,
@@ -603,6 +612,9 @@ const buildGeozoneCreate = (
     color: overrides.color ?? '#00aa00',
     geometry,
     rules: overrides.rules !== undefined ? overrides.rules : null,
+    pricePerMinute: 1.5,
+    pricePerKm: 10,
+    pausePricePerMinute: 0.25,
     createdByUserId: userId,
   } as GeozoneCreate;
 };

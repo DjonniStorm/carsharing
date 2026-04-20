@@ -6,6 +6,9 @@ export class GeozoneVersionRead {
   geozoneId: string;
   geometry: GeoJSONMultiPolygon;
   rules: GeozoneVersionRules | null;
+  pricePerMinute: number;
+  pricePerKm: number;
+  pausePricePerMinute: number;
   createdAt: Date;
   disabledAt: Date | null;
 }

@@ -13,6 +13,9 @@ export type GeozoneCreateRepositoryInput = {
   createdByUserId: string;
   geometry: GeoJSONMultiPolygon;
   rules: Record<string, unknown> | null | undefined;
+  pricePerMinute: number;
+  pricePerKm: number;
+  pausePricePerMinute: number;
 };
 
 export class GeozoneMapper {
@@ -27,6 +30,9 @@ export class GeozoneMapper {
       createdByUserId,
       geometry: dto.geometry,
       rules: dto.rules ?? null,
+      pricePerMinute: dto.pricePerMinute,
+      pricePerKm: dto.pricePerKm,
+      pausePricePerMinute: dto.pausePricePerMinute,
     };
   }
 
@@ -87,6 +93,9 @@ export class GeozoneMapper {
       dto.geozoneId,
       dto.geometry,
       dto.rules,
+      dto.pricePerMinute,
+      dto.pricePerKm,
+      dto.pausePricePerMinute,
       dto.createdAt,
       dto.disabledAt,
     );
@@ -100,6 +109,9 @@ export class GeozoneMapper {
     dto.geozoneId = entity.geozoneId;
     dto.geometry = entity.geometry;
     dto.rules = entity.rules;
+    dto.pricePerMinute = entity.pricePerMinute;
+    dto.pricePerKm = entity.pricePerKm;
+    dto.pausePricePerMinute = entity.pausePricePerMinute;
     dto.createdAt = entity.createdAt;
     dto.disabledAt = entity.disabledAt;
     return dto;
@@ -134,6 +146,9 @@ export class GeozoneMapper {
       version.rules === null
         ? null
         : (JSON.parse(JSON.stringify(version.rules)) as Record<string, unknown>);
+    copy.pricePerMinute = version.pricePerMinute;
+    copy.pricePerKm = version.pricePerKm;
+    copy.pausePricePerMinute = version.pausePricePerMinute;
     copy.createdAt = version.createdAt;
     copy.disabledAt = version.disabledAt;
     return copy;

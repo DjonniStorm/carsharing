@@ -34,6 +34,9 @@ export interface IGeozoneRepository {
     createdByUserId: string;
     geometry: GeoJSONMultiPolygon;
     rules: Record<string, unknown> | null | undefined;
+    pricePerMinute: number;
+    pricePerKm: number;
+    pausePricePerMinute: number;
   }): Promise<GeozoneRead>;
 
   /** Патч полей зоны; если зоны нет — `GeozoneNotFoundException`. */
@@ -48,8 +51,13 @@ export interface IGeozoneRepository {
   /** Закрыть текущую версию (`disabled_at`), вставить новую, обновить `current_version_id`. */
   publishNewVersion(
     geozoneId: string,
-    geometry: GeoJSONMultiPolygon,
-    rules: Record<string, unknown> | null | undefined,
+    input: {
+      geometry: GeoJSONMultiPolygon;
+      rules: Record<string, unknown> | null | undefined;
+      pricePerMinute: number;
+      pricePerKm: number;
+      pausePricePerMinute: number;
+    },
   ): Promise<GeozoneRead>;
 
   /** Версии одной зоны с учётом фильтра по `disabled_at`. */

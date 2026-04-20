@@ -257,8 +257,12 @@ describe('GeozoneRepository', () => {
       );
       const v1 = zone.currentVersionId;
       const next = sampleMultiPolygon(16);
-      const after = await repository.publishNewVersion(zone.id, next, {
-        v: 2,
+      const after = await repository.publishNewVersion(zone.id, {
+        geometry: next,
+        rules: { v: 2 },
+        pricePerMinute: 2,
+        pricePerKm: 11,
+        pausePricePerMinute: 0.5,
       });
       expect(after.currentVersionId).not.toBe(v1);
       const versions = await repository.findVersions(zone.id, {
@@ -269,7 +273,13 @@ describe('GeozoneRepository', () => {
 
     it('несуществующая зона — GeozoneNotFoundException', async () => {
       await expect(
-        repository.publishNewVersion(uuidv4(), sampleMultiPolygon(17), null),
+        repository.publishNewVersion(uuidv4(), {
+          geometry: sampleMultiPolygon(17),
+          rules: null,
+          pricePerMinute: 1,
+          pricePerKm: 1,
+          pausePricePerMinute: 1,
+        }),
       ).rejects.toThrow(GeozoneNotFoundException);
     });
   });
@@ -387,6 +397,9 @@ const buildCreateInput = (
     color: string;
     geometry: GeoJSONMultiPolygon;
     rules: Record<string, unknown> | null;
+    pricePerMinute: number;
+    pricePerKm: number;
+    pausePricePerMinute: number;
   }> = {},
 ) => {
   return {
@@ -396,5 +409,8 @@ const buildCreateInput = (
     createdByUserId: userId,
     geometry: overrides.geometry ?? sampleMultiPolygon(0),
     rules: overrides.rules !== undefined ? overrides.rules : null,
+    pricePerMinute: overrides.pricePerMinute ?? 1.5,
+    pricePerKm: overrides.pricePerKm ?? 10,
+    pausePricePerMinute: overrides.pausePricePerMinute ?? 0.25,
   };
 };
