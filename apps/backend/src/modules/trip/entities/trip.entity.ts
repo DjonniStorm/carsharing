@@ -6,6 +6,7 @@ export class TripEntity extends BaseEntity<string> {
     public readonly id: string,
     public readonly userId: string,
     public readonly carId: string,
+    /** Версия тарифа: FK на `geo_zone_version.id` (ставки на момент старта). */
     public readonly tariffVersionId: string,
 
     public readonly status: TripStatus,
@@ -22,6 +23,9 @@ export class TripEntity extends BaseEntity<string> {
     public readonly finishLat: number | null,
     public readonly finishLng: number | null,
 
+    /** Наследие схемы (единицы — как в домене старта поездки). */
+    public readonly distance: number,
+    public readonly duration: number,
     public readonly distanceMeters: number | null,
 
     public readonly chargedMinutes: number | null,

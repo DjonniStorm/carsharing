@@ -6,6 +6,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { CarModule } from './modules/car/car.module';
 import { GeozoneModule } from './modules/geozone/geozone.module';
 import { TariffModule } from './modules/tariff/tariff.module';
+import { TripModule } from './modules/trip/trip.module';
 import { UserModule } from './modules/user/user.module';
 
 @Module({
@@ -24,6 +25,7 @@ import { UserModule } from './modules/user/user.module';
     CarModule,
     UserModule,
     TariffModule,
+    TripModule,
   ],
 })
 export class AppModule {}

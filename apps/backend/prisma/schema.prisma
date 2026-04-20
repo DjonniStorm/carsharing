@@ -109,11 +109,13 @@ model GeoZoneVersion {
   createdAt            DateTime                                   @default(now()) @map("created_at")
   disabledAt           DateTime?                                  @map("disabled_at")
   currentForZone       GeoZone?                                   @relation("GeoZoneCurrentVersion")
+  tripsAsTariffVersion Trip[]                                     @relation("TripTariffVersion")
 
   @@index([geozoneId])
   @@map("geo_zone_version")
 }
 
+/// Логический «тариф» зоны; **поездка** привязана не к этой строке, а к версии зоны (`GeoZoneVersion` / `Trip.tariffVersionId`), где зафиксированы ставки на момент старта.
 model Tariff {
   id             String    @id @default(uuid()) @db.Uuid()
   name           String    @db.Text()
@@ -124,31 +126,60 @@ model Tariff {
   updatedAt      DateTime  @updatedAt @map("updated_at")
   deletedAt      DateTime? @map("deleted_at")
   geoZone        GeoZone   @relation(fields: [geoZoneId], references: [id])
-  trips          Trip[]
 
   @@map("tariff")
 }
 
+/// Поездка. `status` — числовые значения `TripStatus` в коде. `distance` / `duration` — совместимость со старым API (например км / ч); детализация — `distanceMeters`, биллинг — `charged*`, `price*`.
+/// Привязка к тарифу — только через **версию** (`tariffVersionId` → `geo_zone_version`), а не через строку `tariff`.
 model Trip {
-  id             Int             @id @default(autoincrement())
-  startTime      DateTime        @map("start_time")
-  endTime        DateTime?       @map("end_time")
-  distance       Float
-  duration       Float
-  status         String          @db.VarChar(255)
-  userId         String          @map("user_id") @db.Uuid()
-  carId          String          @map("car_id") @db.Uuid()
-  tariffId       String          @map("tariff_id") @db.Uuid()
+  id        Int       @id @default(autoincrement())
+  startedAt DateTime  @map("start_time")
+  finishedAt DateTime? @map("end_time")
+  distance  Float
+  duration  Float
+  status    Int
+
+  userId String @map("user_id") @db.Uuid()
+  carId  String @map("car_id") @db.Uuid()
+
+  /// Версия тарифа = версия геозоны со ставками на момент старта поездки (`geo_zone_version.id`).
+  tariffVersionId String         @map("tariff_version_id") @db.Uuid()
+  tariffVersion   GeoZoneVersion @relation("TripTariffVersion", fields: [tariffVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  pauseStartedAt DateTime? @map("pause_started_at")
+  totalPausedSec Int       @default(0) @map("total_paused_sec")
+
+  startLat  Decimal? @map("start_lat") @db.Decimal(9, 6)
+  startLng  Decimal? @map("start_lon") @db.Decimal(9, 6)
+  finishLat Decimal? @map("finish_lat") @db.Decimal(9, 6)
+  finishLng Decimal? @map("finish_lng") @db.Decimal(9, 6)
+
+  distanceMeters Float? @map("distance_meters")
+
+  chargedMinutes Float? @map("charged_minutes")
+  chargedKm      Float? @map("charged_km")
+
+  priceTime     Decimal? @map("price_time") @db.Decimal(19, 2)
+  priceDistance Decimal? @map("price_distance") @db.Decimal(19, 2)
+  pricePause    Decimal? @map("price_pause") @db.Decimal(19, 2)
+  priceTotal    Decimal? @map("price_total") @db.Decimal(19, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  carPlateSnapshot       String? @map("car_plate_snapshot") @db.Text()
+  carDisplayNameSnapshot String? @map("car_display_name_snapshot") @db.Text()
+
   user           User            @relation(fields: [userId], references: [id])
   car            Car             @relation(fields: [carId], references: [id])
-  tariff         Tariff          @relation(fields: [tariffId], references: [id])
   carSessionInfo CarSessionInfo?
   telemetries    Telemetry[]
   violations     Violation[]
 
   @@index([userId])
   @@index([carId])
-  @@index([tariffId])
+  @@index([tariffVersionId])
   @@map("trip")
 }
 
