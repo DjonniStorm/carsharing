@@ -94,7 +94,7 @@ export class UserController {
   @ApiOperation({ summary: 'Создать пользователя' })
   @ApiResponse({ status: 201, type: ReadUserEntity })
   async create(@Body() user: CreateUserEntity): Promise<ReadUserEntity> {
-    this.logger.debug('create', { user });
+    this.logger.debug('create user');
     try {
       return this.userService.create(user);
     } catch (error) {
@@ -118,7 +118,7 @@ export class UserController {
     @Param('id') id: string,
     @Body() user: UpdateUserEntity,
   ): Promise<ReadUserEntity> {
-    this.logger.debug('update', { id, user });
+    this.logger.debug('update user', { id });
     try {
       return this.userService.update(id, user);
     } catch (error) {

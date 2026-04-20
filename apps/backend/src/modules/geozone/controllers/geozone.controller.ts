@@ -52,7 +52,9 @@ export class GeozoneController implements IGeozoneController {
   constructor(private readonly geozoneService: GeozoneService) {}
 
   @Get('bounding-box')
-  @ApiOperation({ summary: 'Геозоны, текущая геометрия которых пересекает прямоугольник' })
+  @ApiOperation({
+    summary: 'Геозоны, текущая геометрия которых пересекает прямоугольник',
+  })
   @ApiQuery({ name: 'minLon', type: Number, required: true })
   @ApiQuery({ name: 'minLat', type: Number, required: true })
   @ApiQuery({ name: 'maxLon', type: Number, required: true })
@@ -194,7 +196,9 @@ export class GeozoneController implements IGeozoneController {
   }
 
   @Get(':id/versions/:versionId')
-  @ApiOperation({ summary: 'Получить версию геозоны по ID (проверяется принадлежность зоне)' })
+  @ApiOperation({
+    summary: 'Получить версию геозоны по ID (проверяется принадлежность зоне)',
+  })
   @ApiResponse({ status: 200, type: GeozoneVersionRead })
   async findVersionById(
     @Param('id') id: string,
@@ -286,7 +290,7 @@ export class GeozoneController implements IGeozoneController {
   @ApiResponse({ status: 200, type: GeozoneRead })
   async update(
     @Param('id') id: string,
-    @Body() geozone: GeozoneUpdate,
+    @Body() geozone: Partial<GeozoneUpdate>,
   ): Promise<GeozoneRead> {
     this.logger.debug('update', { id });
     try {

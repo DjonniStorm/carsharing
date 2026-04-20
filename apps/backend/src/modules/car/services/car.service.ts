@@ -81,7 +81,7 @@ export class CarService implements ICarService {
       }
       const patch = CarMapper.toPartialCarEntity({
         ...car,
-        updatedAt: new Date(existing.updatedAt ?? new Date()),
+        updatedAt: new Date(car.updatedAt ?? new Date()),
       });
       const updatedCar = await this.repository.update(id, patch);
       return CarMapper.toCarRead(updatedCar);

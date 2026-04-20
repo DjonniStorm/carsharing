@@ -112,16 +112,17 @@ model GeoZoneVersion {
 }
 
 model Tariff {
-  id             Int     @id @default(autoincrement())
-  name           String  @db.Text()
-  pricePerMinute Decimal @map("price_per_minute") @db.Decimal(10, 2)
-  pricePerKm     Decimal @map("price_per_km") @db.Decimal(10, 2)
-  geoZoneId      String  @map("geo_zone_id") @db.Uuid()
-  isDeleted      Boolean @map("is_deleted")
-  geoZone        GeoZone @relation(fields: [geoZoneId], references: [id])
+  id             String    @id @default(uuid()) @db.Uuid()
+  name           String    @db.Text()
+  pricePerMinute Decimal   @map("price_per_minute") @db.Decimal(19, 2)
+  pricePerKm     Decimal   @map("price_per_km") @db.Decimal(19, 2)
+  geoZoneId      String    @map("geo_zone_id") @db.Uuid()
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+  geoZone        GeoZone   @relation(fields: [geoZoneId], references: [id])
   trips          Trip[]
 
-  @@index([geoZoneId])
   @@map("tariff")
 }
 
@@ -134,7 +135,7 @@ model Trip {
   status         String          @db.VarChar(255)
   userId         String          @map("user_id") @db.Uuid()
   carId          String          @map("car_id") @db.Uuid()
-  tariffId       Int             @map("tariff_id")
+  tariffId       String          @map("tariff_id") @db.Uuid()
   user           User            @relation(fields: [userId], references: [id])
   car            Car             @relation(fields: [carId], references: [id])
   tariff         Tariff          @relation(fields: [tariffId], references: [id])

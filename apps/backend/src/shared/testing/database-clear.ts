@@ -13,7 +13,6 @@ export const APPLICATION_TABLES = [
   'car_session_info',
   'car',
   'car_session',
-  'car_status',
   'user',
 ] as const;
 

@@ -53,7 +53,10 @@ export class GeozoneService implements IGeozoneService {
   }
 
   /** Патч стабильных полей зоны. */
-  async update(id: string, geozone: GeozoneUpdate): Promise<GeozoneRead> {
+  async update(
+    id: string,
+    geozone: Partial<GeozoneUpdate>,
+  ): Promise<GeozoneRead> {
     try {
       return await this.geozoneRepository.updateZone(
         id,
@@ -72,9 +75,7 @@ export class GeozoneService implements IGeozoneService {
         throw new GeozoneNotFoundException(`Геозона не найдена: ${id}`);
       }
       if (zone.deletedAt != null) {
-        throw new GeozoneAlreadyDeletedException(
-          `Геозона уже удалена: ${id}`,
-        );
+        throw new GeozoneAlreadyDeletedException(`Геозона уже удалена: ${id}`);
       }
       return await this.geozoneRepository.setDeletedAt(id, new Date());
     } catch (error) {

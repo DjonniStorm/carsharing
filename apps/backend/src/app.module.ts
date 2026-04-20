@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { LoggerModule } from 'nestjs-pino';
 import { CarModule } from './modules/car/car.module';
 import { GeozoneModule } from './modules/geozone/geozone.module';
+import { TariffModule } from './modules/tariff/tariff.module';
 import { UserModule } from './modules/user/user.module';
 
 @Module({
@@ -22,6 +23,7 @@ import { UserModule } from './modules/user/user.module';
     GeozoneModule,
     CarModule,
     UserModule,
+    TariffModule,
   ],
 })
 export class AppModule {}
