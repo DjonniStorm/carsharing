@@ -14,16 +14,17 @@ datasource db {
 /// Auth profile; plain `password` column from spec omitted — store only hash (see db.md notes).
 /// `role` — same numeric values as `UserRole` in application code (0 = MANAGER, 1 = DRIVER, 2 = SYSTEM_ADMIN).
 model User {
-  id            String         @id @default(uuid()) @db.Uuid()
-  name          String         @db.Text()
-  email         String         @db.Text()
-  phone         String         @db.Text()
-  passwordHash  String         @map("hash_password") @db.Text()
-  role          Int
-  isActive      Boolean        @default(false) @map("is_active")
-  isDeleted     Boolean        @default(false) @map("is_deleted")
-  trips         Trip[]
-  notifications Notification[]
+  id              String         @id @default(uuid()) @db.Uuid()
+  name            String         @db.Text()
+  email           String         @db.Text()
+  phone           String         @db.Text()
+  passwordHash    String         @map("hash_password") @db.Text()
+  role            Int
+  isActive        Boolean        @default(false) @map("is_active")
+  isDeleted       Boolean        @default(false) @map("is_deleted")
+  trips           Trip[]
+  notifications   Notification[]
+  geoZonesCreated GeoZone[]      @relation("GeoZoneCreatedBy")
 
   @@unique([email])
   @@unique([phone])
@@ -44,23 +45,24 @@ model CarSession {
 /// Заполняются (или обновляются) только при завершении поездки из последней точки `Telemetry` этой поездки.
 /// Во время поездки позицию бери из `Telemetry`, а не из `Car`.
 model Car {
-  id             String    @id @default(uuid()) @db.Uuid()
-  brand          String    @db.Text()
-  model          String    @db.Text()
-  licensePlate   String    @map("license_plate") @db.Text()
-  color          String    @db.Text()
+  id             String  @id @default(uuid()) @db.Uuid()
+  brand          String  @db.Text()
+  model          String  @db.Text()
+  licensePlate   String  @map("license_plate") @db.Text()
+  color          String  @db.Text()
   mileage        Float
-  fuelLevel      Float     @map("fuel_level")
-  isAvailable    Boolean   @map("is_available")
-  carStatus      Int       @map("car_status_id")
-  isDeleted      Boolean   @map("is_deleted")
-  createdAt      String    @map("created_at") @db.Text()
-  updatedAt      String?   @map("updated_at") @db.Text()
-  lastKnownLat   Float?    @map("last_known_lat")
-  lastKnownLon   Float?    @map("last_known_lon")
-  lastPositionAt String?   @map("last_position_at") @db.Text()
+  fuelLevel      Float   @map("fuel_level")
+  isAvailable    Boolean @map("is_available")
+  carStatus      Int     @map("car_status_id")
+  isDeleted      Boolean @map("is_deleted")
+  createdAt      String  @map("created_at") @db.Text()
+  updatedAt      String? @map("updated_at") @db.Text()
+  lastKnownLat   Float?  @map("last_known_lat")
+  lastKnownLon   Float?  @map("last_known_lon")
+  lastPositionAt String? @map("last_position_at") @db.Text()
   trips          Trip[]
 
+  @@unique([licensePlate])
   @@map("car")
 }
 
@@ -68,7 +70,7 @@ model Car {
 /// Старт поездки при необходимости для отчётов — опционально здесь; трек — в `Telemetry`.
 model CarSessionInfo {
   id       Int      @id @default(autoincrement())
-  tripId   Int      @unique @map("trip_id")
+  tripId   String   @unique @map("trip_id") @db.Uuid()
   trip     Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
   startLat Decimal? @map("start_lat") @db.Decimal(9, 6)
   startLon Decimal? @map("start_lon") @db.Decimal(9, 6)
@@ -76,63 +78,121 @@ model CarSessionInfo {
   @@map("car_session_info")
 }
 
+/// Стабильная зона (имя, тип, цвет). Геометрия — в `GeoZoneVersion`; активная версия = `currentVersionId`.
 model GeoZone {
-  id      Int      @id @default(autoincrement())
-  name    String   @db.Text()
-  type    String   @db.VarChar(50)
-  polygon Unsupported("geometry(Polygon,4326)")
-  tariffs Tariff[]
+  id               String           @id @default(uuid()) @db.Uuid()
+  name             String           @db.Text()
+  type             String           @db.VarChar(50)
+  color            String           @db.VarChar(64)
+  currentVersionId String?          @unique @map("current_version_id") @db.Uuid()
+  createdAt        DateTime         @default(now()) @map("created_at")
+  deletedAt        DateTime?        @map("deleted_at")
+  createdByUserId  String           @map("created_by_user_id") @db.Uuid()
+  createdByUser    User             @relation("GeoZoneCreatedBy", fields: [createdByUserId], references: [id])
+  currentVersion   GeoZoneVersion?  @relation("GeoZoneCurrentVersion", fields: [currentVersionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  versions         GeoZoneVersion[] @relation("GeoZoneVersions")
+  tariffs          Tariff[]
 
   @@map("geo_zone")
 }
 
-model Tariff {
-  id             Int     @id @default(autoincrement())
-  name           String  @db.Text()
-  pricePerMinute Decimal @map("price_per_minute") @db.Decimal(10, 2)
-  pricePerKm     Decimal @map("price_per_km") @db.Decimal(10, 2)
-  geoZoneId      Int     @map("geo_zone_id")
-  isDeleted      Boolean @map("is_deleted")
-  geoZone        GeoZone @relation(fields: [geoZoneId], references: [id])
-  trips          Trip[]
+/// История геометрии и правил зоны (`rules` — JSON, напр. тарифные ограничения).
+model GeoZoneVersion {
+  id                   String                                     @id @default(uuid()) @db.Uuid()
+  geozoneId            String                                     @map("geozone_id") @db.Uuid()
+  geoZone              GeoZone                                    @relation("GeoZoneVersions", fields: [geozoneId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  geometry             Unsupported("geometry(MultiPolygon,4326)")
+  rules                Json?                                      @db.JsonB
+  pricePerMinute       Decimal                                    @default(0) @map("price_per_minute") @db.Decimal(19, 2)
+  pricePerKm           Decimal                                    @default(0) @map("price_per_km") @db.Decimal(19, 2)
+  pausePricePerMinute  Decimal                                    @default(0) @map("pause_price_per_minute") @db.Decimal(19, 2)
+  createdAt            DateTime                                   @default(now()) @map("created_at")
+  disabledAt           DateTime?                                  @map("disabled_at")
+  currentForZone       GeoZone?                                   @relation("GeoZoneCurrentVersion")
+  tripsAsTariffVersion Trip[]                                     @relation("TripTariffVersion")
 
-  @@index([geoZoneId])
+  @@index([geozoneId])
+  @@map("geo_zone_version")
+}
+
+/// Логический «тариф» зоны; **поездка** привязана не к этой строке, а к версии зоны (`GeoZoneVersion` / `Trip.tariffVersionId`), где зафиксированы ставки на момент старта.
+model Tariff {
+  id             String    @id @default(uuid()) @db.Uuid()
+  name           String    @db.Text()
+  pricePerMinute Decimal   @map("price_per_minute") @db.Decimal(19, 2)
+  pricePerKm     Decimal   @map("price_per_km") @db.Decimal(19, 2)
+  geoZoneId      String    @map("geo_zone_id") @db.Uuid()
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+  geoZone        GeoZone   @relation(fields: [geoZoneId], references: [id])
+
   @@map("tariff")
 }
 
+/// Поездка. `status` — числовые значения `TripStatus` в коде. `distance` / `duration` — совместимость со старым API (например км / ч); детализация — `distanceMeters`, биллинг — `charged*`, `price*`.
+/// Привязка к тарифу — только через **версию** (`tariffVersionId` → `geo_zone_version`), а не через строку `tariff`.
 model Trip {
-  id             Int             @id @default(autoincrement())
-  startTime      DateTime        @map("start_time")
-  endTime        DateTime?       @map("end_time")
-  distance       Float
-  duration       Float
-  status         String          @db.VarChar(255)
-  userId         String          @map("user_id") @db.Uuid()
-  carId          String          @map("car_id") @db.Uuid()
-  tariffId       Int             @map("tariff_id")
+  id        String    @id @default(uuid()) @db.Uuid()
+  startedAt DateTime  @map("start_time")
+  finishedAt DateTime? @map("end_time")
+  distance  Float
+  duration  Float
+  status    Int
+
+  userId String @map("user_id") @db.Uuid()
+  carId  String @map("car_id") @db.Uuid()
+
+  /// Версия тарифа = версия геозоны со ставками на момент старта поездки (`geo_zone_version.id`).
+  tariffVersionId String         @map("tariff_version_id") @db.Uuid()
+  tariffVersion   GeoZoneVersion @relation("TripTariffVersion", fields: [tariffVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  pauseStartedAt DateTime? @map("pause_started_at")
+  totalPausedSec Int       @default(0) @map("total_paused_sec")
+
+  startLat  Decimal? @map("start_lat") @db.Decimal(9, 6)
+  startLng  Decimal? @map("start_lon") @db.Decimal(9, 6)
+  finishLat Decimal? @map("finish_lat") @db.Decimal(9, 6)
+  finishLng Decimal? @map("finish_lng") @db.Decimal(9, 6)
+
+  distanceMeters Float? @map("distance_meters")
+
+  chargedMinutes Float? @map("charged_minutes")
+  chargedKm      Float? @map("charged_km")
+
+  priceTime     Decimal? @map("price_time") @db.Decimal(19, 2)
+  priceDistance Decimal? @map("price_distance") @db.Decimal(19, 2)
+  pricePause    Decimal? @map("price_pause") @db.Decimal(19, 2)
+  priceTotal    Decimal? @map("price_total") @db.Decimal(19, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  carPlateSnapshot       String? @map("car_plate_snapshot") @db.Text()
+  carDisplayNameSnapshot String? @map("car_display_name_snapshot") @db.Text()
+
   user           User            @relation(fields: [userId], references: [id])
   car            Car             @relation(fields: [carId], references: [id])
-  tariff         Tariff          @relation(fields: [tariffId], references: [id])
   carSessionInfo CarSessionInfo?
   telemetries    Telemetry[]
   violations     Violation[]
 
   @@index([userId])
   @@index([carId])
-  @@index([tariffId])
+  @@index([tariffVersionId])
   @@map("trip")
 }
 
 model Telemetry {
-  id           Int      @id @default(autoincrement())
+  id           String   @id @default(uuid()) @db.Uuid()
   timestamp    DateTime
   lat          Decimal  @db.Decimal(9, 6)
   lon          Decimal  @db.Decimal(9, 6)
-  speed        Decimal  @db.Decimal(5, 2)
+  speed        Float
   acceleration Float
   fuelLevel    Float    @map("fuel_level")
-  tripId       Int      @map("trip_id")
-  trip         Trip     @relation(fields: [tripId], references: [id])
+  tripId       String   @map("trip_id") @db.Uuid()
+  trip         Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([tripId])
   @@index([timestamp])
@@ -144,7 +204,7 @@ model Violation {
   type          Int
   description   String                  @db.Text()
   createdAt     DateTime                @default(now()) @map("created_at")
-  tripId        Int                     @map("trip_id")
+  tripId        String                  @map("trip_id") @db.Uuid()
   trip          Trip                    @relation(fields: [tripId], references: [id])
   notifications ViolationNotification[]
 
