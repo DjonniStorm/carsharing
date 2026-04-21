@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import {
   afterAll,
   afterEach,
@@ -11,7 +10,10 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 
 import { GeozoneRepository } from '../../geozone/repositories/geozone.repository';
-import type { GeoJSONMultiPolygon, GeoJSONPosition } from '../../geozone/entities/geozone.geometry';
+import type {
+  GeoJSONMultiPolygon,
+  GeoJSONPosition,
+} from '../../geozone/entities/geozone.geometry';
 import { GeozoneType } from '../../geozone/entities/geozone.type';
 import { CarStatus } from '../../car/entities/car-status';
 import { TripStatus } from '../entities/trip.status';
@@ -278,7 +280,7 @@ describe('TripRepository', () => {
         repository.create({
           userId,
           carId,
-          tariffVersionId: randomUUID(),
+          tariffVersionId: uuidv4(),
         }),
       ).rejects.toMatchObject({ code: 'P2003' });
     });
@@ -286,7 +288,7 @@ describe('TripRepository', () => {
     it('P2003 при несуществующем userId', async () => {
       await expect(
         repository.create({
-          userId: randomUUID(),
+          userId: uuidv4(),
           carId,
           tariffVersionId,
         }),

@@ -8,6 +8,7 @@ import { GeozoneModule } from './modules/geozone/geozone.module';
 import { TariffModule } from './modules/tariff/tariff.module';
 import { TripModule } from './modules/trip/trip.module';
 import { UserModule } from './modules/user/user.module';
+import { TelemetryModule } from './modules/telemetry/telemetry.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { UserModule } from './modules/user/user.module';
     UserModule,
     TariffModule,
     TripModule,
+    TelemetryModule,
   ],
 })
 export class AppModule {}
