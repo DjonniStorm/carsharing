@@ -11,7 +11,9 @@ export class CarRead {
   isAvailable: boolean;
   carStatus: CarStatus;
   isDeleted: boolean;
+  createdAt: Date;
+  updatedAt: Date | null;
   lastKnownLat: number | null;
   lastKnownLon: number | null;
-  lastPositionAt: string | null;
+  lastPositionAt: Date | null;
 }

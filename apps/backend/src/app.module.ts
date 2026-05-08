@@ -3,10 +3,14 @@ import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PrismaModule } from './prisma/prisma.module';
 import { LoggerModule } from 'nestjs-pino';
-import { UserController } from './modules/user/controllers/user.controller';
-import { UserService } from './modules/user/services/user.service';
-import { IUserRepositoryToken } from './modules/user/repositories/user.repository.interface';
-import { UserRepository } from './modules/user/repositories/user.repository';
+import { CarModule } from './modules/car/car.module';
+import { GeozoneModule } from './modules/geozone/geozone.module';
+import { TariffModule } from './modules/tariff/tariff.module';
+import { TripModule } from './modules/trip/trip.module';
+import { UserModule } from './modules/user/user.module';
+import { TelemetryModule } from './modules/telemetry/telemetry.module';
+import { ViolationModule } from './modules/violation/violation.module';
+import { BackgroundModule } from './shared/background/background.module';
 
 @Module({
   imports: [
@@ -19,12 +23,15 @@ import { UserRepository } from './modules/user/repositories/user.repository';
     }),
     EventEmitterModule.forRoot(),
     PrismaModule,
+    BackgroundModule,
     LoggerModule.forRoot(),
-  ],
-  controllers: [UserController],
-  providers: [
-    UserService,
-    { provide: IUserRepositoryToken, useClass: UserRepository },
+    GeozoneModule,
+    CarModule,
+    UserModule,
+    TariffModule,
+    TripModule,
+    TelemetryModule,
+    ViolationModule,
   ],
 })
 export class AppModule {}

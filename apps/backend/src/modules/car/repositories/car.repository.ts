@@ -17,6 +17,9 @@ export class CarRepository implements ICarRepository {
   findById(id: string): Promise<CarEntity | null> {
     return this.prisma.car.findUnique({ where: { id } });
   }
+  findByLicensePlate(licensePlate: string): Promise<CarEntity | null> {
+    return this.prisma.car.findUnique({ where: { licensePlate } });
+  }
   create(car: CarEntity): Promise<CarEntity> {
     return this.prisma.car.create({ data: car });
   }

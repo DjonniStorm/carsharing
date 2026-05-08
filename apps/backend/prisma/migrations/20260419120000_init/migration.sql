@@ -1,7 +1,7 @@
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 
--- PostGIS: required for `geo_zone.polygon` (geometry)
+-- PostGIS: тип geometry(MultiPolygon,4326) в `geo_zone_version`
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- CreateTable
@@ -59,22 +59,40 @@ CREATE TABLE "car_session_info" (
 
 -- CreateTable
 CREATE TABLE "geo_zone" (
-    "id" SERIAL NOT NULL,
+    "id" UUID NOT NULL,
     "name" TEXT NOT NULL,
     "type" VARCHAR(50) NOT NULL,
-    "polygon" geometry(Polygon,4326) NOT NULL,
+    "color" VARCHAR(64) NOT NULL,
+    "current_version_id" UUID,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(3),
+    "created_by_user_id" UUID NOT NULL,
 
     CONSTRAINT "geo_zone_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
+CREATE TABLE "geo_zone_version" (
+    "id" UUID NOT NULL,
+    "geozone_id" UUID NOT NULL,
+    "geometry" geometry(MultiPolygon,4326) NOT NULL,
+    "rules" JSONB,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "disabled_at" TIMESTAMP(3),
+
+    CONSTRAINT "geo_zone_version_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "tariff" (
-    "id" SERIAL NOT NULL,
+    "id" UUID NOT NULL,
     "name" TEXT NOT NULL,
-    "price_per_minute" DECIMAL(10,2) NOT NULL,
-    "price_per_km" DECIMAL(10,2) NOT NULL,
-    "geo_zone_id" INTEGER NOT NULL,
-    "is_deleted" BOOLEAN NOT NULL,
+    "price_per_minute" DECIMAL(19,2) NOT NULL,
+    "price_per_km" DECIMAL(19,2) NOT NULL,
+    "geo_zone_id" UUID NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
 
     CONSTRAINT "tariff_pkey" PRIMARY KEY ("id")
 );
@@ -89,7 +107,7 @@ CREATE TABLE "trip" (
     "status" VARCHAR(255) NOT NULL,
     "user_id" UUID NOT NULL,
     "car_id" UUID NOT NULL,
-    "tariff_id" INTEGER NOT NULL,
+    "tariff_id" UUID NOT NULL,
 
     CONSTRAINT "trip_pkey" PRIMARY KEY ("id")
 );
@@ -144,10 +162,16 @@ CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
 CREATE UNIQUE INDEX "user_phone_key" ON "user"("phone");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "car_license_plate_key" ON "car"("license_plate");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "car_session_info_trip_id_key" ON "car_session_info"("trip_id");
 
 -- CreateIndex
-CREATE INDEX "tariff_geo_zone_id_idx" ON "tariff"("geo_zone_id");
+CREATE UNIQUE INDEX "geo_zone_current_version_id_key" ON "geo_zone"("current_version_id");
+
+-- CreateIndex
+CREATE INDEX "geo_zone_version_geozone_id_idx" ON "geo_zone_version"("geozone_id");
 
 -- CreateIndex
 CREATE INDEX "trip_user_id_idx" ON "trip"("user_id");
@@ -172,6 +196,15 @@ CREATE INDEX "notification_user_id_idx" ON "notification"("user_id");
 
 -- AddForeignKey
 ALTER TABLE "car_session_info" ADD CONSTRAINT "car_session_info_trip_id_fkey" FOREIGN KEY ("trip_id") REFERENCES "trip"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "geo_zone" ADD CONSTRAINT "geo_zone_created_by_user_id_fkey" FOREIGN KEY ("created_by_user_id") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "geo_zone" ADD CONSTRAINT "geo_zone_current_version_id_fkey" FOREIGN KEY ("current_version_id") REFERENCES "geo_zone_version"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "geo_zone_version" ADD CONSTRAINT "geo_zone_version_geozone_id_fkey" FOREIGN KEY ("geozone_id") REFERENCES "geo_zone"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "tariff" ADD CONSTRAINT "tariff_geo_zone_id_fkey" FOREIGN KEY ("geo_zone_id") REFERENCES "geo_zone"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

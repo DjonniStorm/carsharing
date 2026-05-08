@@ -169,6 +169,45 @@ describe('CarRepository', () => {
     });
   });
 
+  describe('findByLicensePlate', () => {
+    it('should return car by license plate', async () => {
+      // arrange
+      const car = new CarEntity(
+        uuidv4(),
+        'mercedes-benz',
+        'c-class',
+        '1234567890',
+        'black',
+        100000,
+        50,
+        true,
+        CarStatus.AVAILABLE,
+        false,
+        new Date().toISOString(),
+        null,
+        null,
+        null,
+        null,
+      );
+      await repository.create(car);
+      // act
+      const found = await repository.findByLicensePlate(car.licensePlate);
+      // assert
+      expect(found).toBeDefined();
+      expect(found).not.toBeNull();
+      assertCar(car, found!);
+    });
+
+    it('should return null if car not found', async () => {
+      // arrange
+      const licensePlate = '1234567890';
+      // act
+      const found = await repository.findByLicensePlate(licensePlate);
+      // assert
+      expect(found).toBeNull();
+    });
+  });
+
   describe('create', () => {
     it('should create car', async () => {
       // arrange

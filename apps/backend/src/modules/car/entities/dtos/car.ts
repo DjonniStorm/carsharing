@@ -1,6 +1,7 @@
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
-  IsDateString,
+  IsDate,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -56,6 +57,16 @@ export class Car {
   isAvailable: boolean;
 
   @IsNotEmpty()
+  @Type(() => Date)
+  @IsDate()
+  createdAt: Date;
+
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  updatedAt?: Date | null;
+
+  @IsNotEmpty()
   @IsEnum(CarStatus)
   carStatus: CarStatus;
 
@@ -76,6 +87,7 @@ export class Car {
   lastKnownLon?: number | null;
 
   @IsOptional()
-  @IsDateString()
-  lastPositionAt?: string | null;
+  @Type(() => Date)
+  @IsDate()
+  lastPositionAt?: Date | null;
 }
