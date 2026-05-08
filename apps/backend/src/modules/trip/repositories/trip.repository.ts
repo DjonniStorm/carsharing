@@ -50,7 +50,7 @@ export class TripRepository implements ITripRepository {
   }
 
   async findById(
-    id: number,
+    id: string,
     options?: TripFindByIdOptions,
   ): Promise<TripEntity | null> {
     const include: Prisma.TripInclude = {
@@ -88,7 +88,7 @@ export class TripRepository implements ITripRepository {
   }
 
   async update(
-    id: number,
+    id: string,
     patch: TripRepositoryUpdatePatch,
   ): Promise<TripEntity> {
     const data: Prisma.TripUncheckedUpdateInput = {};

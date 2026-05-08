@@ -9,6 +9,8 @@ import { TariffModule } from './modules/tariff/tariff.module';
 import { TripModule } from './modules/trip/trip.module';
 import { UserModule } from './modules/user/user.module';
 import { TelemetryModule } from './modules/telemetry/telemetry.module';
+import { ViolationModule } from './modules/violation/violation.module';
+import { BackgroundModule } from './shared/background/background.module';
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { TelemetryModule } from './modules/telemetry/telemetry.module';
     }),
     EventEmitterModule.forRoot(),
     PrismaModule,
+    BackgroundModule,
     LoggerModule.forRoot(),
     GeozoneModule,
     CarModule,
@@ -28,6 +31,7 @@ import { TelemetryModule } from './modules/telemetry/telemetry.module';
     TariffModule,
     TripModule,
     TelemetryModule,
+    ViolationModule,
   ],
 })
 export class AppModule {}

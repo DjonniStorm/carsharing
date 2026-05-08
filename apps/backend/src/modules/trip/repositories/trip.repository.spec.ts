@@ -215,7 +215,7 @@ describe('TripRepository', () => {
 
   describe('findById', () => {
     it('возвращает null, если поездки с таким id нет', async () => {
-      const found = await repository.findById(9_999_999);
+      const found = await repository.findById(uuidv4());
       expect(found).toBeNull();
     });
 
@@ -230,7 +230,7 @@ describe('TripRepository', () => {
         carPlateSnapshot: 'A123BC77',
         carDisplayNameSnapshot: 'Test Car',
       });
-      const found = await repository.findById(Number(created.id));
+      const found = await repository.findById(created.id);
       expect(found).not.toBeNull();
       assertTripScalarsEqual(found!, created);
     });
@@ -241,7 +241,7 @@ describe('TripRepository', () => {
         carId,
         tariffVersionId,
       });
-      const id = Number(created.id);
+      const id = created.id;
       const withAll = await repository.findById(id, {
         withUser: true,
         withCar: true,
@@ -303,7 +303,7 @@ describe('TripRepository', () => {
         carId,
         tariffVersionId,
       });
-      const id = Number(t.id);
+      const id = t.id;
       const finishedAt = new Date('2024-08-01T15:30:00.000Z');
       const updated = await repository.update(id, {
         status: TripStatus.FINISHED,
@@ -324,7 +324,7 @@ describe('TripRepository', () => {
 
     it('P2025 если поездки с таким id нет', async () => {
       await expect(
-        repository.update(9_999_999, { status: TripStatus.FINISHED }),
+        repository.update(uuidv4(), { status: TripStatus.FINISHED }),
       ).rejects.toMatchObject({ code: 'P2025' });
     });
   });

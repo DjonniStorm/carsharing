@@ -156,7 +156,7 @@ export const TRIP_WS_EVENTS: readonly TripEventConfigItem[] = [
     audience: UserRole.MANAGER,
     channelScope: TripEventChannelScope.ManagerTrip,
     description:
-      'Зафиксировано нарушение. Событие зарезервировано, пока доменная логика не реализована.',
+      'Зафиксировано нарушение (в т.ч. из фонового воркера после телеметрии).',
     payloadShape: [
       'violationId',
       'tripId',
@@ -166,6 +166,13 @@ export const TRIP_WS_EVENTS: readonly TripEventConfigItem[] = [
       'description?',
       'ts',
     ],
+  },
+  {
+    event: TripWsEvent.ViolationUpdated,
+    audience: UserRole.MANAGER,
+    channelScope: TripEventChannelScope.ManagerTrip,
+    description: 'Обновлено нарушение (например resolve → type RESOLVED в БД).',
+    payloadShape: ['violationId', 'tripId', 'carId', 'type', 'description?', 'ts'],
   },
 ] as const;
 

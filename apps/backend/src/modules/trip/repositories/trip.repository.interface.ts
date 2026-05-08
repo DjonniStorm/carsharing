@@ -47,13 +47,13 @@ export interface ITripRepository {
   findMany(params?: TripListParams): Promise<TripEntity[]>;
 
   findById(
-    id: number,
+    id: string,
     options?: TripFindByIdOptions,
   ): Promise<TripEntity | null>;
 
   create(input: TripRepositoryCreateInput): Promise<TripEntity>;
 
-  update(id: number, patch: TripRepositoryUpdatePatch): Promise<TripEntity>;
+  update(id: string, patch: TripRepositoryUpdatePatch): Promise<TripEntity>;
 }
 
 export const ITripRepositoryToken = Symbol('ITripRepository');

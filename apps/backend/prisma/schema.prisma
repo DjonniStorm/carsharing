@@ -133,12 +133,12 @@ model Tariff {
 /// Поездка. `status` — числовые значения `TripStatus` в коде. `distance` / `duration` — совместимость со старым API (например км / ч); детализация — `distanceMeters`, биллинг — `charged*`, `price*`.
 /// Привязка к тарифу — только через **версию** (`tariffVersionId` → `geo_zone_version`), а не через строку `tariff`.
 model Trip {
-  id        String    @id @default(uuid()) @db.Uuid()
-  startedAt DateTime  @map("start_time")
+  id         String    @id @default(uuid()) @db.Uuid()
+  startedAt  DateTime  @map("start_time")
   finishedAt DateTime? @map("end_time")
-  distance  Float
-  duration  Float
-  status    Int
+  distance   Float
+  duration   Float
+  status     Int
 
   userId String @map("user_id") @db.Uuid()
   carId  String @map("car_id") @db.Uuid()
@@ -200,7 +200,7 @@ model Telemetry {
 }
 
 model Violation {
-  id            Int                     @id @default(autoincrement())
+  id            String                  @id @default(uuid()) @db.Uuid()
   type          Int
   description   String                  @db.Text()
   createdAt     DateTime                @default(now()) @map("created_at")
@@ -225,7 +225,7 @@ model Notification {
 }
 
 model ViolationNotification {
-  violationId    Int          @map("violation_id")
+  violationId    String       @map("violation_id") @db.Uuid()
   notificationId Int          @map("notification_id")
   violation      Violation    @relation(fields: [violationId], references: [id], onDelete: Cascade)
   notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)

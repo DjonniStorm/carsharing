@@ -52,7 +52,7 @@ export class SubscriptionErrorPayload {
 
 /** Изменение статуса поездки. */
 export class TripStateChangedPayload {
-  tripId: number;
+  tripId: string;
   carId: string;
   status: TripStatus;
   previousStatus?: TripStatus;
@@ -61,7 +61,7 @@ export class TripStateChangedPayload {
 
 /** Пересчитанные метрики и стоимость поездки. */
 export class TripMetricsUpdatedPayload {
-  tripId: number;
+  tripId: string;
   carId: string;
   distanceMeters: number | null;
   chargedMinutes: number | null;
@@ -75,7 +75,7 @@ export class TripMetricsUpdatedPayload {
 
 /** Новая точка маршрута активной поездки. */
 export class TripRoutePointPayload {
-  tripId: number;
+  tripId: string;
   carId: string;
   lat: number;
   lng: number;
@@ -85,7 +85,7 @@ export class TripRoutePointPayload {
 
 /** Финальный snapshot после завершения поездки. */
 export class TripFinishedPayload {
-  tripId: number;
+  tripId: string;
   carId: string;
   finishedAt: string;
   distanceMeters: number | null;
@@ -97,7 +97,7 @@ export class TripFinishedPayload {
 
 /** Некритичное предупреждение в поездке. */
 export class TripWarningPayload {
-  tripId: number;
+  tripId: string;
   carId: string;
   warningCode: string;
   message: string;
@@ -106,7 +106,7 @@ export class TripWarningPayload {
 
 /** Критическая ошибка поездки. */
 export class TripErrorPayload {
-  tripId: number;
+  tripId: string;
   carId: string;
   errorCode: string;
   message: string;
@@ -143,14 +143,14 @@ export class FleetSummaryUpdatedPayload {
 /** Входящий пакет телеметрии принят сервером. */
 export class TelemetryReceivedPayload {
   carId: string;
-  tripId?: number;
+  tripId?: string;
   receivedAt: string;
 }
 
 /** Превышен таймаут отсутствия телеметрии. */
 export class TelemetryTimeoutPayload {
   carId: string;
-  tripId?: number;
+  tripId?: string;
   lastTelemetryAt: string;
   timeoutSec: number;
   ts: string;
@@ -158,11 +158,21 @@ export class TelemetryTimeoutPayload {
 
 /** Событие нарушения (зарезервировано на будущую реализацию). */
 export class ViolationCreatedPayload {
-  violationId: number;
-  tripId: number;
+  violationId: string;
+  tripId: string;
   carId: string;
   type: number;
   severity: 'low' | 'medium' | 'high' | 'critical';
+  description?: string;
+  ts: string;
+}
+
+/** Изменение нарушения (статус/тип после resolve и т.п.). */
+export class ViolationUpdatedPayload {
+  violationId: string;
+  tripId: string;
+  carId: string;
+  type: number;
   description?: string;
   ts: string;
 }
@@ -183,4 +193,5 @@ export type TripWsEventPayloadMap = {
   [TripWsEvent.TelemetryReceived]: TelemetryReceivedPayload;
   [TripWsEvent.TelemetryTimeout]: TelemetryTimeoutPayload;
   [TripWsEvent.ViolationCreated]: ViolationCreatedPayload;
+  [TripWsEvent.ViolationUpdated]: ViolationUpdatedPayload;
 };

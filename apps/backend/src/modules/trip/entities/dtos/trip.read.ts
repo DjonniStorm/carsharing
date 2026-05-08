@@ -4,7 +4,7 @@ import { TripStatus } from '../trip.status';
  * Поездка в ответах API (чтение). Вложенные объекты (пользователь, авто, версия тарифа) — когда сервис/репозиторий их подгрузит; сейчас в репозитории только скаляры поездки.
  */
 export class TripRead {
-  id: number;
+  id: string;
   userId: string;
   carId: string;
   /** Версия тарифа (`geo_zone_version.id`). */

@@ -12,9 +12,9 @@ export interface ITripController {
     startedBefore?: string,
   ): Promise<TripRead[]>;
 
-  findById(id: number): Promise<TripRead>;
+  findById(id: string): Promise<TripRead>;
 
   create(input: TripCreate): Promise<TripRead>;
 
-  update(id: number, input: TripUpdate): Promise<TripRead>;
+  update(id: string, input: TripUpdate): Promise<TripRead>;
 }

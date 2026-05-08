@@ -48,7 +48,7 @@ export class TripMapper {
 
   static fromEntityToRead(entity: TripEntity): TripRead {
     const read = new TripRead();
-    read.id = Number(entity.id);
+    read.id = entity.id;
     read.userId = entity.userId;
     read.carId = entity.carId;
     read.tariffVersionId = entity.tariffVersionId;

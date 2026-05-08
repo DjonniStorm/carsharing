@@ -6,6 +6,7 @@ import { TripWsEvent } from '../entities/realtime/trip-event';
 import { createTripWsEvent } from '../realtime/trip-events.emitter';
 import { TripStatus } from '../entities/trip.status';
 import { TripGateway } from './trip.gateway';
+import { v4 as uuidv4 } from 'uuid';
 
 describe('TripGateway', () => {
   let moduleRef: TestingModule;
@@ -82,7 +83,7 @@ describe('TripGateway', () => {
       const event = createTripWsEvent(
         TripWsEvent.TripStateChanged,
         {
-          tripId: 17,
+          tripId: uuidv4(),
           carId: 'car-1',
           status: TripStatus.ACTIVE,
           ts: '2026-04-21T10:00:00.000Z',
@@ -95,7 +96,7 @@ describe('TripGateway', () => {
 
       gateway.publish(event);
 
-      expect(to).toHaveBeenCalledWith('trip:17');
+      expect(to).toHaveBeenCalledWith(`trip:${event.payload.tripId}`);
       expect(emit).toHaveBeenCalledWith(TripWsEvent.TripStateChanged, event);
     });
 
@@ -148,7 +149,7 @@ describe('TripGateway', () => {
         TripWsEvent.TelemetryReceived,
         {
           carId: 'car-30',
-          tripId: 3,
+          tripId: uuidv4(),
           receivedAt: '2026-04-21T10:03:00.000Z',
         },
         {
@@ -170,7 +171,11 @@ describe('TripGateway', () => {
         ts: '2026-04-21T10:04:00.000Z',
         audience: 1,
         channelScope: TripEventChannelScope.ManagerCar,
-        payload: { status: 1, isAvailable: true, ts: '2026-04-21T10:04:00.000Z' },
+        payload: {
+          status: 1,
+          isAvailable: true,
+          ts: '2026-04-21T10:04:00.000Z',
+        },
       } as unknown as Parameters<TripGateway['publish']>[0];
 
       gateway.publish(event);
@@ -189,4 +194,3 @@ describe('TripGateway', () => {
     it.todo('emit subscription.error с кодом причины');
   });
 });
-

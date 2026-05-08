@@ -1,5 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
+import {
+  IJobQueueToken,
+  type IJobQueue,
+} from 'src/shared/background/job-queue.interface';
+import { ViolationJobName } from 'src/modules/violation/background/violation-jobs';
 import { TripDbErrors } from '../common/db-errors';
 import {
   TripNotFoundException,
@@ -9,6 +14,7 @@ import { TripMapper } from '../common/mapper';
 import { TripCreate } from '../entities/dtos/trip.create';
 import { TripRead } from '../entities/dtos/trip.read';
 import { TripUpdate } from '../entities/dtos/trip.update';
+import { TripStatus } from '../entities/trip.status';
 import {
   TripFindByIdOptions,
   TripListParams,
@@ -32,6 +38,8 @@ export class TripService implements ITripService {
     private readonly repository: ITripRepository,
     @Inject(ITripRealtimePublisherToken)
     private readonly realtimePublisher: ITripRealtimePublisher,
+    @Inject(IJobQueueToken)
+    private readonly jobQueue: IJobQueue,
   ) {}
 
   async findMany(params?: TripListParams): Promise<TripRead[]> {
@@ -45,7 +53,7 @@ export class TripService implements ITripService {
     }
   }
 
-  async findById(id: number, options?: TripFindByIdOptions): Promise<TripRead> {
+  async findById(id: string, options?: TripFindByIdOptions): Promise<TripRead> {
     this.logger.log(`Finding trip by id: ${id}`);
     try {
       const trip = await this.repository.findById(id, options);
@@ -92,7 +100,7 @@ export class TripService implements ITripService {
     }
   }
 
-  async update(id: number, input: TripUpdate): Promise<TripRead> {
+  async update(id: string, input: TripUpdate): Promise<TripRead> {
     this.logger.log(`Updating trip: ${id}`);
     try {
       const existing = await this.repository.findById(id);
@@ -121,6 +129,35 @@ export class TripService implements ITripService {
         carPlateSnapshot: input.carPlateSnapshot,
         carDisplayNameSnapshot: input.carDisplayNameSnapshot,
       });
+
+      /**
+       * Финиш поездки → проверка PARKING-геозоны асинхронно в `ViolationBackgroundWorker`.
+       *
+       * Пример PATCH:
+       * `{ "status": 4, "finishLat": 55.75, "finishLng": 37.61, "finishedAt": "..." }`
+       */
+      const becameFinished =
+        updated.status === TripStatus.FINISHED &&
+        existing.status !== TripStatus.FINISHED;
+      if (
+        becameFinished &&
+        updated.finishLat != null &&
+        updated.finishLng != null
+      ) {
+        const recordedAt =
+          updated.finishedAt?.toISOString() ?? new Date().toISOString();
+        this.jobQueue.enqueue({
+          name: ViolationJobName.ParkingZoneCheck,
+          payload: {
+            tripId: id,
+            recordedAt,
+            lat: updated.finishLat,
+            lon: updated.finishLng,
+          },
+          createdAtMs: Date.now(),
+        });
+      }
+
       return TripMapper.fromEntityToRead(updated);
     } catch (error) {
       this.logger.error(`Failed to update trip: ${id}`, error);

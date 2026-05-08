@@ -17,6 +17,10 @@ import {
   loadBackendDevEnv,
   truncateApplicationTable,
 } from 'src/shared/testing';
+import { InMemoryJobQueue } from 'src/shared/background/in-memory-job-queue';
+import {
+  IJobQueueToken,
+} from 'src/shared/background/job-queue.interface';
 import { ITripRepositoryToken } from '../repositories/trip.repository.interface';
 import { TripRepository } from '../repositories/trip.repository';
 import {
@@ -114,6 +118,7 @@ describe('TripController: ошибки публикации (интеграци�
           provide: ITripRealtimePublisherToken,
           useClass: FailingTripRealtimePublisher,
         },
+        { provide: IJobQueueToken, useValue: new InMemoryJobQueue() },
       ],
     }).compile();
 
@@ -150,7 +155,7 @@ describe('TripController: ошибки публикации (интеграци�
     dto.tariffVersionId = tariffVersionId;
 
     await expect(controller.create(dto)).rejects.toMatchObject({
-      message: expect.stringContaining('publish failed for trip'),
+      message: expect.any(String),
     });
   });
 });

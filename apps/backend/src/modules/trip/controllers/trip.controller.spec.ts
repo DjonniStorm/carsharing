@@ -19,6 +19,7 @@ import {
 import { TripCreate } from '../entities/dtos/trip.create';
 import { TripUpdate } from '../entities/dtos/trip.update';
 import { TripStatus } from '../entities/trip.status';
+import { InMemoryJobQueue } from 'src/shared/background/in-memory-job-queue';
 import { TripGateway } from '../gateways/trip.gateway';
 import { LoggerTripRealtimeOutbox } from '../realtime/trip-realtime.outbox.logger';
 import { TripRepository } from '../repositories/trip.repository';
@@ -114,6 +115,7 @@ describe('TripController', () => {
           publish: () => undefined,
         } as Pick<TripGateway, 'publish'>),
       ),
+      new InMemoryJobQueue(),
     );
     controller = new TripController(service);
   });
@@ -142,7 +144,7 @@ describe('TripController', () => {
       const created = await controller.create(
         buildTripCreate({ userId, carId, tariffVersionId }),
       );
-      expect(created.id).toBeGreaterThan(0);
+      expect(created.id).toBeTruthy();
       expect(created.userId).toBe(userId);
       expect(created.carId).toBe(carId);
       expect(created.tariffVersionId).toBe(tariffVersionId);
@@ -237,7 +239,7 @@ describe('TripController', () => {
     });
 
     it('NotFound for missing id', async () => {
-      await expect(controller.findById(9_999_999)).rejects.toThrow(
+      await expect(controller.findById(uuidv4())).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -257,7 +259,7 @@ describe('TripController', () => {
     });
 
     it('NotFound for missing id', async () => {
-      await expect(controller.update(9_999_999, new TripUpdate())).rejects.toThrow(
+      await expect(controller.update(uuidv4(), new TripUpdate())).rejects.toThrow(
         NotFoundException,
       );
     });

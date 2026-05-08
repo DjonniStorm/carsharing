@@ -9,9 +9,9 @@ import {
 export interface ITripService {
   findMany(params?: TripListParams): Promise<TripRead[]>;
 
-  findById(id: number, options?: TripFindByIdOptions): Promise<TripRead>;
+  findById(id: string, options?: TripFindByIdOptions): Promise<TripRead>;
 
   create(input: TripCreate): Promise<TripRead>;
 
-  update(id: number, input: TripUpdate): Promise<TripRead>;
+  update(id: string, input: TripUpdate): Promise<TripRead>;
 }

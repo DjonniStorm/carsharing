@@ -18,7 +18,7 @@ import type {
 } from '../realtime/trip-events.payloads';
 import { ITripGateway } from './trip.gateway.interface';
 
-type TripSubscribePayload = { tripId: number };
+type TripSubscribePayload = { tripId: string };
 type CarSubscribePayload = { carId: string };
 
 @WebSocketGateway({
@@ -109,13 +109,13 @@ export class TripGateway implements ITripGateway {
       event.channelScope === TripEventChannelScope.DriverTrip ||
       event.channelScope === TripEventChannelScope.ManagerTrip
     ) {
-      const tripId = (event.payload as { tripId?: number }).tripId;
-      return typeof tripId === 'number' ? this.tripRoom(tripId) : null;
+      const tripId = (event.payload as { tripId?: string }).tripId;
+      return tripId ? this.tripRoom(tripId) : null;
     }
     return null;
   }
 
-  private tripRoom(tripId: number): string {
+  private tripRoom(tripId: string): string {
     return `trip:${tripId}`;
   }
 

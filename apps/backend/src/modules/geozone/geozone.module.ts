@@ -10,7 +10,7 @@ import { GeozoneController } from './controllers/geozone.controller';
     GeozoneService,
     { provide: IGeozoneRepositoryToken, useClass: GeozoneRepository },
   ],
-  exports: [GeozoneService],
+  exports: [GeozoneService, IGeozoneRepositoryToken],
   controllers: [GeozoneController],
 })
 export class GeozoneModule {}

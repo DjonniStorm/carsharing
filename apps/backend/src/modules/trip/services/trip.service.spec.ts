@@ -29,6 +29,7 @@ import {
 import { TripCreate } from '../entities/dtos/trip.create';
 import { TripUpdate } from '../entities/dtos/trip.update';
 import { TripStatus } from '../entities/trip.status';
+import { InMemoryJobQueue } from 'src/shared/background/in-memory-job-queue';
 import { TripGateway } from '../gateways/trip.gateway';
 import { LoggerTripRealtimeOutbox } from '../realtime/trip-realtime.outbox.logger';
 import { TripRepository } from '../repositories/trip.repository';
@@ -123,6 +124,7 @@ describe('TripService (integration)', () => {
           publish: () => undefined,
         } as Pick<TripGateway, 'publish'>),
       ),
+      new InMemoryJobQueue(),
     );
   });
 
@@ -157,7 +159,7 @@ describe('TripService (integration)', () => {
           startLng: 37.61,
         }),
       );
-      expect(created.id).toBeGreaterThan(0);
+      expect(created.id).toBeTruthy();
       expect(created.userId).toBe(userId);
       expect(created.carId).toBe(carId);
       expect(created.tariffVersionId).toBe(tariffVersionId);
@@ -230,7 +232,7 @@ describe('TripService (integration)', () => {
     });
 
     it('throws TripNotFoundException for unknown id', async () => {
-      await expect(service.findById(9_999_999)).rejects.toThrow(
+      await expect(service.findById(uuidv4())).rejects.toThrow(
         TripNotFoundException,
       );
     });
@@ -258,7 +260,7 @@ describe('TripService (integration)', () => {
     });
 
     it('throws TripNotFoundException for unknown id', async () => {
-      await expect(service.update(9_999_999, new TripUpdate())).rejects.toThrow(
+      await expect(service.update(uuidv4(), new TripUpdate())).rejects.toThrow(
         TripNotFoundException,
       );
     });

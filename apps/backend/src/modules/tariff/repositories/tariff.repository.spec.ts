@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -53,6 +52,9 @@ describe('TariffRepository', () => {
       createdByUserId,
       geometry: sampleMultiPolygon(0),
       rules: null,
+      pricePerMinute: 1,
+      pricePerKm: 2,
+      pausePricePerMinute: 0.5,
     });
     geoZoneId = zone.id;
 
@@ -63,6 +65,9 @@ describe('TariffRepository', () => {
       createdByUserId,
       geometry: sampleMultiPolygon(1),
       rules: null,
+      pricePerMinute: 3,
+      pricePerKm: 4,
+      pausePricePerMinute: 1,
     });
     geoZoneIdOther = zoneOther.id;
 
@@ -171,7 +176,7 @@ describe('TariffRepository', () => {
 
   describe('findById', () => {
     it('возвращает null, если тарифа с таким id нет', async () => {
-      const found = await repository.findById(randomUUID());
+      const found = await repository.findById(uuidv4());
       expect(found).toBeNull();
     });
 
@@ -221,7 +226,7 @@ describe('TariffRepository', () => {
           name: 'Битая зона',
           pricePerMinute: 1,
           pricePerKm: 1,
-          geoZoneId: randomUUID(),
+          geoZoneId: uuidv4(),
         }),
       ).rejects.toMatchObject({ code: 'P2003' });
     });
@@ -263,7 +268,7 @@ describe('TariffRepository', () => {
 
     it('P2025 если тарифа с таким id нет', async () => {
       await expect(
-        repository.update(randomUUID(), { name: 'никому' }),
+        repository.update(uuidv4(), { name: 'никому' }),
       ).rejects.toMatchObject({ code: 'P2025' });
     });
 
@@ -275,7 +280,7 @@ describe('TariffRepository', () => {
         geoZoneId,
       });
       await expect(
-        repository.update(t.id, { geoZoneId: randomUUID() }),
+        repository.update(t.id, { geoZoneId: uuidv4() }),
       ).rejects.toMatchObject({ code: 'P2003' });
     });
   });
@@ -298,7 +303,7 @@ describe('TariffRepository', () => {
 
     it('P2025 если тарифа с таким id нет', async () => {
       await expect(
-        repository.setDeletedAt(randomUUID(), new Date()),
+        repository.setDeletedAt(uuidv4(), new Date()),
       ).rejects.toMatchObject({ code: 'P2025' });
     });
   });

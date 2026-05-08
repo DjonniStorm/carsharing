@@ -18,4 +18,5 @@ export enum TripWsEvent {
   TelemetryReceived = 'telemetry.received',
   TelemetryTimeout = 'telemetry.timeout',
   ViolationCreated = 'violation.created',
+  ViolationUpdated = 'violation.updated',
 }

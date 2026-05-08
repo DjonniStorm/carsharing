@@ -73,6 +73,9 @@ describe('TariffService (integration)', () => {
       createdByUserId: userId,
       geometry: sampleMultiPolygon(0),
       rules: null,
+      pricePerMinute: 1,
+      pricePerKm: 2,
+      pausePricePerMinute: 0.5,
     });
     geoZoneId = zone.id;
 
@@ -83,6 +86,9 @@ describe('TariffService (integration)', () => {
       createdByUserId: userId,
       geometry: sampleMultiPolygon(1),
       rules: null,
+      pricePerMinute: 3,
+      pricePerKm: 4,
+      pausePricePerMinute: 1,
     });
     secondGeoZoneId = secondZone.id;
 

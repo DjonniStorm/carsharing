@@ -6,7 +6,6 @@ import {
   Logger,
   NotFoundException,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -125,7 +124,7 @@ export class TripController implements ITripController {
   @ApiQuery({ name: 'withTariffVersion', required: false, type: Boolean })
   @ApiResponse({ status: 200, type: TripRead })
   async findById(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Query('withUser') withUser?: string,
     @Query('withCar') withCar?: string,
     @Query('withTariffVersion') withTariffVersion?: string,
@@ -177,7 +176,7 @@ export class TripController implements ITripController {
   @ApiOperation({ summary: 'Обновить поездку' })
   @ApiResponse({ status: 200, type: TripRead })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() trip: TripUpdate,
   ): Promise<TripRead> {
     this.logger.debug('update', { id });
