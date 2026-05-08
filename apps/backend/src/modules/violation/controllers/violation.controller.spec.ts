@@ -31,8 +31,16 @@ import { ViolationUpdateStatus } from '../entities/dtos/violation.update-status'
 import { ViolationStatus } from '../entities/violation.status';
 import { ViolationRepository } from '../repositories/violation.repository';
 import { ViolationTripRealtimePublisher } from '../realtime/violation-realtime.publisher.trip-outbox';
+import type { AuthenticatedUser } from 'src/modules/auth/types/authenticated-user';
+import { UserRole } from 'src/modules/user/entities/user.role';
 import { ViolationService } from '../services/violation.service';
 import { ViolationController } from './violation.controller';
+import type { TripService } from 'src/modules/trip/services/trip.service';
+
+const adminActor = (): AuthenticatedUser => ({
+  id: '00000000-0000-0000-0000-000000000001',
+  role: UserRole.MANAGER,
+});
 
 describe('ViolationController', () => {
   let prisma: PrismaService;
@@ -70,7 +78,10 @@ describe('ViolationController', () => {
       new ViolationRepository(prisma),
       publisher,
     );
-    controller = new ViolationController(service);
+    const tripServiceStub = {
+      ensureTripAccessForUser: async (): Promise<void> => undefined,
+    } as unknown as TripService;
+    controller = new ViolationController(service, tripServiceStub);
   });
 
   afterEach(async () => {
@@ -131,7 +142,7 @@ describe('ViolationController', () => {
       );
 
       // Act
-      const found = await controller.findById(created.id);
+      const found = await controller.findById(adminActor(), created.id);
 
       // Assert
       expect(found.id).toBe(created.id);
@@ -143,7 +154,7 @@ describe('ViolationController', () => {
       const missingId = uuidv4();
 
       // Act + Assert
-      await expect(controller.findById(missingId)).rejects.toThrow(
+      await expect(controller.findById(adminActor(), missingId)).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -168,7 +179,7 @@ describe('ViolationController', () => {
       );
 
       // Act
-      const list = await controller.findAllByTripId(tripId);
+      const list = await controller.findAllByTripId(adminActor(), tripId);
 
       // Assert
       expect(list.length).toBe(2);
@@ -179,9 +190,9 @@ describe('ViolationController', () => {
       const invalidTripId = 'not-a-uuid';
 
       // Act + Assert
-      await expect(controller.findAllByTripId(invalidTripId)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.findAllByTripId(adminActor(), invalidTripId),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

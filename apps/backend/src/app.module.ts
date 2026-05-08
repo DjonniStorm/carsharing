@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from './modules/auth/guards/roles.guard';
+import { AuthModule } from './modules/auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { LoggerModule } from 'nestjs-pino';
 import { CarModule } from './modules/car/car.module';
@@ -22,6 +26,7 @@ import { BackgroundModule } from './shared/background/background.module';
           : ['.env', '.env.local'],
     }),
     EventEmitterModule.forRoot(),
+    AuthModule,
     PrismaModule,
     BackgroundModule,
     LoggerModule.forRoot(),
@@ -32,6 +37,10 @@ import { BackgroundModule } from './shared/background/background.module';
     TripModule,
     TelemetryModule,
     ViolationModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule {}

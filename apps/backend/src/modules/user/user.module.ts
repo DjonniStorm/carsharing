@@ -9,7 +9,7 @@ import { UserController } from './controllers/user.controller';
     UserService,
     { provide: IUserRepositoryToken, useClass: UserRepository },
   ],
-  exports: [UserService],
+  exports: [UserService, IUserRepositoryToken],
   controllers: [UserController],
 })
 export class UserModule {}

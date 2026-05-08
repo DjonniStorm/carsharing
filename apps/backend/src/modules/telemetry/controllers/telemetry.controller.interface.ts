@@ -1,10 +1,15 @@
+import type { AuthenticatedUser } from 'src/modules/auth/types/authenticated-user';
+
 import { TelemetryCreate } from '../entities/dto/telemetry.create';
 import { TelemetryRead } from '../entities/dto/telemetry.read';
 
 export interface ITelemetryController {
-  create(input: TelemetryCreate): Promise<TelemetryRead>;
-  findById(id: string): Promise<TelemetryRead>;
+  create(user: AuthenticatedUser, input: TelemetryCreate): Promise<TelemetryRead>;
+
+  findById(user: AuthenticatedUser, id: string): Promise<TelemetryRead>;
+
   findManyByTripId(
+    user: AuthenticatedUser,
     tripId: string,
     timeFrom?: string,
     timeTo?: string,
@@ -13,4 +18,3 @@ export interface ITelemetryController {
     sort?: 'asc' | 'desc',
   ): Promise<TelemetryRead[]>;
 }
-

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Logger,
   NotFoundException,
@@ -10,8 +11,19 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
+import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
+import { Roles } from 'src/modules/auth/decorators/roles.decorator';
+import { ALL_APP_ROLES } from 'src/modules/auth/roles.constants';
+import type { AuthenticatedUser } from 'src/modules/auth/types/authenticated-user';
+import { UserRole } from 'src/modules/user/entities/user.role';
 import {
   DatabaseTripErrorException,
   TripNotFoundException,
@@ -54,12 +66,14 @@ function parseDateQuery(
 
 @Controller('trips')
 @ApiTags('Trips')
+@ApiBearerAuth()
 export class TripController implements ITripController {
   private readonly logger = new Logger(TripController.name);
 
   constructor(private readonly tripService: TripService) {}
 
   @Get()
+  @Roles(...ALL_APP_ROLES)
   @ApiOperation({ summary: 'Список поездок' })
   @ApiQuery({ name: 'userId', required: false })
   @ApiQuery({ name: 'carId', required: false })
@@ -73,6 +87,7 @@ export class TripController implements ITripController {
   @ApiQuery({ name: 'startedBefore', required: false, type: String })
   @ApiResponse({ status: 200, type: [TripRead] })
   async findAll(
+    @CurrentUser() user: AuthenticatedUser,
     @Query('userId') userId?: string,
     @Query('carId') carId?: string,
     @Query('tariffVersionId') tariffVersionId?: string,
@@ -80,7 +95,19 @@ export class TripController implements ITripController {
     @Query('startedAfter') rawStartedAfter?: string,
     @Query('startedBefore') rawStartedBefore?: string,
   ): Promise<TripRead[]> {
-    this.logger.debug('findAll', { userId, carId, tariffVersionId });
+    let effectiveUserId = userId;
+    if (user.role === UserRole.DRIVER) {
+      if (userId != null && userId !== '' && userId !== user.id) {
+        throw new ForbiddenException('Cannot list trips for another user');
+      }
+      effectiveUserId = user.id;
+    }
+
+    this.logger.debug('findAll', {
+      userId: effectiveUserId,
+      carId,
+      tariffVersionId,
+    });
     const status = parseTripStatusQuery(rawStatus);
     const startedAfter = parseDateQuery(rawStartedAfter, 'startedAfter');
     const startedBefore = parseDateQuery(rawStartedBefore, 'startedBefore');
@@ -97,7 +124,7 @@ export class TripController implements ITripController {
 
     try {
       return await this.tripService.findMany({
-        userId,
+        userId: effectiveUserId,
         carId,
         tariffVersionId,
         status,
@@ -118,12 +145,14 @@ export class TripController implements ITripController {
   }
 
   @Get(':id')
+  @Roles(...ALL_APP_ROLES)
   @ApiOperation({ summary: 'Поездка по id' })
   @ApiQuery({ name: 'withUser', required: false, type: Boolean })
   @ApiQuery({ name: 'withCar', required: false, type: Boolean })
   @ApiQuery({ name: 'withTariffVersion', required: false, type: Boolean })
   @ApiResponse({ status: 200, type: TripRead })
   async findById(
+    @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
     @Query('withUser') withUser?: string,
     @Query('withCar') withCar?: string,
@@ -131,12 +160,16 @@ export class TripController implements ITripController {
   ): Promise<TripRead> {
     this.logger.debug('findById', { id, withUser, withCar, withTariffVersion });
     try {
+      await this.tripService.ensureTripAccessForUser(user.role, user.id, id);
       return await this.tripService.findById(id, {
         withUser: withUser === 'true',
         withCar: withCar === 'true',
         withTariffVersion: withTariffVersion === 'true',
       });
     } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
       if (error instanceof TripNotFoundException) {
         throw new NotFoundException(error.message);
       }
@@ -153,9 +186,19 @@ export class TripController implements ITripController {
   }
 
   @Post()
+  @Roles(...ALL_APP_ROLES)
   @ApiOperation({ summary: 'Создать поездку' })
   @ApiResponse({ status: 201, type: TripRead })
-  async create(@Body() trip: TripCreate): Promise<TripRead> {
+  async create(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() trip: TripCreate,
+  ): Promise<TripRead> {
+    if (user.role === UserRole.DRIVER) {
+      if (trip.userId != null && trip.userId !== '' && trip.userId !== user.id) {
+        throw new ForbiddenException('Cannot create trip for another user');
+      }
+      trip.userId = user.id;
+    }
     this.logger.debug('create', { userId: trip.userId, carId: trip.carId });
     try {
       return await this.tripService.create(trip);
@@ -173,16 +216,22 @@ export class TripController implements ITripController {
   }
 
   @Patch(':id')
+  @Roles(...ALL_APP_ROLES)
   @ApiOperation({ summary: 'Обновить поездку' })
   @ApiResponse({ status: 200, type: TripRead })
   async update(
+    @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
     @Body() trip: TripUpdate,
   ): Promise<TripRead> {
     this.logger.debug('update', { id });
     try {
+      await this.tripService.ensureTripAccessForUser(user.role, user.id, id);
       return await this.tripService.update(id, trip);
     } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
       if (error instanceof TripNotFoundException) {
         throw new NotFoundException(error.message);
       }

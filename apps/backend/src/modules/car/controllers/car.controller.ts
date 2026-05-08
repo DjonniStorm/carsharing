@@ -1,4 +1,6 @@
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Roles } from 'src/modules/auth/decorators/roles.decorator';
+import { ADMIN_ROLES } from 'src/modules/auth/roles.constants';
 import {
   CarAlreadyDeletedException,
   CarAlreadyExistsException,
@@ -28,6 +30,8 @@ import { UpdatePosition } from '../entities/dtos/update-position';
 
 @Controller('cars')
 @ApiTags('Cars')
+@ApiBearerAuth()
+@Roles(...ADMIN_ROLES)
 export class CarController implements ICarController {
   private readonly logger = new Logger(CarController.name);
   constructor(private readonly carService: CarService) {}

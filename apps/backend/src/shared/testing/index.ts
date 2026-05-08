@@ -17,3 +17,4 @@ export {
   createTestPrismaService,
   getTestDatabaseUrl,
 } from './prisma-test.service';
+export { signTestAccessToken } from './test-jwt';

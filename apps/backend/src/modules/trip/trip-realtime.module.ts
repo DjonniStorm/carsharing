@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AuthModule } from '../auth/auth.module';
 import { TripGateway } from './gateways/trip.gateway';
 import { ITripGatewayToken } from './gateways/trip.gateway.interface';
 import { LoggerTripRealtimeOutbox } from './realtime/trip-realtime.outbox.logger';
@@ -23,6 +24,7 @@ import { ITripRealtimeOutboxToken } from './realtime/trip-realtime.outbox.interf
  * ```
  */
 @Module({
+  imports: [AuthModule],
   providers: [
     TripGateway,
     {

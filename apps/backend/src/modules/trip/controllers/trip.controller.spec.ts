@@ -10,6 +10,8 @@ import type {
 } from '../../geozone/entities/geozone.geometry';
 import { GeozoneType } from '../../geozone/entities/geozone.type';
 import { CarStatus } from '../../car/entities/car-status';
+import type { AuthenticatedUser } from 'src/modules/auth/types/authenticated-user';
+import { UserRole } from 'src/modules/user/entities/user.role';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
   createTestPrismaService,
@@ -26,6 +28,11 @@ import { TripRepository } from '../repositories/trip.repository';
 import { TripService } from '../services/trip.service';
 import { TripController } from './trip.controller';
 import { TripRealtimePublisher } from '../services/trip-realtime.publisher';
+
+const adminActor = (): AuthenticatedUser => ({
+  id: '00000000-0000-0000-0000-000000000001',
+  role: UserRole.MANAGER,
+});
 
 describe('TripController', () => {
   let prisma: PrismaService;
@@ -142,6 +149,7 @@ describe('TripController', () => {
   describe('create', () => {
     it('creates trip', async () => {
       const created = await controller.create(
+        adminActor(),
         buildTripCreate({ userId, carId, tariffVersionId }),
       );
       expect(created.id).toBeTruthy();
@@ -153,6 +161,7 @@ describe('TripController', () => {
     it('maps invalid relation to BadRequest', async () => {
       await expect(
         controller.create(
+          adminActor(),
           buildTripCreate({
             userId,
             carId,
@@ -165,12 +174,13 @@ describe('TripController', () => {
 
   describe('findAll', () => {
     it('returns empty list when no rows', async () => {
-      const list = await controller.findAll();
+      const list = await controller.findAll(adminActor());
       expect(list).toEqual([]);
     });
 
     it('filters by tariffVersionId and status', async () => {
       await controller.create(
+        adminActor(),
         buildTripCreate({
           userId,
           carId,
@@ -179,6 +189,7 @@ describe('TripController', () => {
         }),
       );
       const active = await controller.create(
+        adminActor(),
         buildTripCreate({
           userId,
           carId,
@@ -188,6 +199,7 @@ describe('TripController', () => {
       );
 
       const filtered = await controller.findAll(
+        adminActor(),
         undefined,
         undefined,
         tariffVersionIdOther,
@@ -199,25 +211,33 @@ describe('TripController', () => {
 
     it('rejects non-integer status query', async () => {
       await expect(
-        controller.findAll(undefined, undefined, undefined, '1.2'),
+        controller.findAll(adminActor(), undefined, undefined, undefined, '1.2'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('rejects invalid status enum value', async () => {
       await expect(
-        controller.findAll(undefined, undefined, undefined, '99'),
+        controller.findAll(adminActor(), undefined, undefined, undefined, '99'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('rejects invalid startedAfter date', async () => {
       await expect(
-        controller.findAll(undefined, undefined, undefined, undefined, 'bad-date'),
+        controller.findAll(
+          adminActor(),
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          'bad-date',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('rejects startedAfter > startedBefore', async () => {
       await expect(
         controller.findAll(
+          adminActor(),
           undefined,
           undefined,
           undefined,
@@ -232,14 +252,15 @@ describe('TripController', () => {
   describe('findById', () => {
     it('returns trip by id', async () => {
       const created = await controller.create(
+        adminActor(),
         buildTripCreate({ userId, carId, tariffVersionId }),
       );
-      const found = await controller.findById(created.id);
+      const found = await controller.findById(adminActor(), created.id);
       expect(found.id).toBe(created.id);
     });
 
     it('NotFound for missing id', async () => {
-      await expect(controller.findById(uuidv4())).rejects.toThrow(
+      await expect(controller.findById(adminActor(), uuidv4())).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -248,20 +269,21 @@ describe('TripController', () => {
   describe('update', () => {
     it('updates status and tariffVersionId', async () => {
       const created = await controller.create(
+        adminActor(),
         buildTripCreate({ userId, carId, tariffVersionId }),
       );
       const patch = new TripUpdate();
       patch.status = TripStatus.FINISHED;
       patch.tariffVersionId = tariffVersionIdOther;
-      const updated = await controller.update(created.id, patch);
+      const updated = await controller.update(adminActor(), created.id, patch);
       expect(updated.status).toBe(TripStatus.FINISHED);
       expect(updated.tariffVersionId).toBe(tariffVersionIdOther);
     });
 
     it('NotFound for missing id', async () => {
-      await expect(controller.update(uuidv4(), new TripUpdate())).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.update(adminActor(), uuidv4(), new TripUpdate()),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

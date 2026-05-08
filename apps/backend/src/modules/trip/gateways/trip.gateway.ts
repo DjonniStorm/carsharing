@@ -1,12 +1,19 @@
 import { Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import {
   ConnectedSocket,
   MessageBody,
+  OnGatewayConnection,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
+
+import { PrismaService } from 'src/prisma/prisma.service';
+import type { JwtPayload } from 'src/modules/auth/types/jwt-payload';
+import type { AuthenticatedUser } from 'src/modules/auth/types/authenticated-user';
+import { UserRole } from 'src/modules/user/entities/user.role';
 
 import {
   TripEventChannelScope,
@@ -25,17 +32,64 @@ type CarSubscribePayload = { carId: string };
   namespace: '/trip',
   cors: { origin: '*' },
 })
-export class TripGateway implements ITripGateway {
+export class TripGateway implements ITripGateway, OnGatewayConnection {
   @WebSocketServer()
   server: Server;
 
   private readonly logger = new Logger(TripGateway.name);
+
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  handleConnection(client: Socket): void {
+    const raw =
+      client.handshake.auth?.['token'] ??
+      client.handshake.query?.['token'];
+    const token =
+      typeof raw === 'string'
+        ? raw
+        : Array.isArray(raw)
+          ? raw[0]
+          : undefined;
+    if (!token) {
+      client.disconnect();
+      return;
+    }
+    try {
+      const payload = this.jwtService.verify<JwtPayload>(token);
+      client.data.user = {
+        id: payload.sub,
+        role: payload.role,
+        email: payload.email,
+      } satisfies AuthenticatedUser;
+    } catch {
+      client.disconnect();
+    }
+  }
 
   @SubscribeMessage(TripWsCommand.SubscribeTrip)
   async subscribeTrip(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: TripSubscribePayload,
   ): Promise<void> {
+    const user = client.data.user as AuthenticatedUser | undefined;
+    if (!user) {
+      return;
+    }
+    if (user.role === UserRole.DRIVER) {
+      const trip = await this.prisma.trip.findUnique({
+        where: { id: payload.tripId },
+        select: { userId: true },
+      });
+      if (!trip || trip.userId !== user.id) {
+        this.logger.debug(
+          `subscribeTrip denied client=${client.id} tripId=${payload.tripId}`,
+        );
+        return;
+      }
+    }
     const room = this.tripRoom(payload.tripId);
     await client.join(room);
     this.logger.debug(`client=${client.id} joined ${room}`);
@@ -127,4 +181,3 @@ export class TripGateway implements ITripGateway {
     return 'fleet';
   }
 }
-
