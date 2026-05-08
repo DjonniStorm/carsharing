@@ -20,17 +20,26 @@ import { GeozoneType } from '../../geozone/entities/geozone.type';
 import { GeozoneRepository } from '../../geozone/repositories/geozone.repository';
 import { TripRepository } from '../../trip/repositories/trip.repository';
 import type { ITripRealtimeOutbox } from '../../trip/realtime/trip-realtime.outbox.interface';
+import type { AuthenticatedUser } from 'src/modules/auth/types/authenticated-user';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { InMemoryJobQueue } from 'src/shared/background/in-memory-job-queue';
+import { UserRole } from 'src/modules/user/entities/user.role';
+import type { TripService } from 'src/modules/trip/services/trip.service';
 import {
   createTestPrismaService,
   loadBackendDevEnv,
   truncateApplicationTable,
 } from 'src/shared/testing';
+import { getTelemetryConfig } from '../common/telemetry.config';
 import { TelemetryCreate } from '../entities/dto/telemetry.create';
 import { TelemetryRepository } from '../repositories/telemetry.repository';
 import { TelemetryService } from '../services/telemetry.service';
 import { TelemetryController } from './telemetry.controller';
+
+const adminActor = (): AuthenticatedUser => ({
+  id: '00000000-0000-0000-0000-000000000001',
+  role: UserRole.MANAGER,
+});
 
 describe('TelemetryController', () => {
   let prisma: PrismaService;
@@ -125,7 +134,10 @@ describe('TelemetryController', () => {
       tripOutbox,
       new TripRepository(prisma),
     );
-    controller = new TelemetryController(service);
+    const tripServiceStub = {
+      ensureTripAccessForUser: async (): Promise<void> => undefined,
+    } as unknown as TripService;
+    controller = new TelemetryController(service, tripServiceStub);
   });
 
   afterEach(async () => {
@@ -145,6 +157,7 @@ describe('TelemetryController', () => {
   describe('create', () => {
     it('создаёт запись телеметрии', async () => {
       const created = await controller.create(
+        adminActor(),
         buildTelemetryCreate(tripId, '2026-04-21T20:01:00.000Z'),
       );
       expect(created.id).toBeTruthy();
@@ -154,6 +167,7 @@ describe('TelemetryController', () => {
     it('мапит невалидную связь в BadRequest', async () => {
       await expect(
         controller.create(
+          adminActor(),
           buildTelemetryCreate(uuidv4(), '2026-04-21T20:02:00.000Z'),
         ),
       ).rejects.toThrow(BadRequestException);
@@ -163,14 +177,15 @@ describe('TelemetryController', () => {
   describe('findById', () => {
     it('возвращает запись по id', async () => {
       const created = await controller.create(
+        adminActor(),
         buildTelemetryCreate(tripId, '2026-04-21T20:03:00.000Z'),
       );
-      const found = await controller.findById(created.id);
+      const found = await controller.findById(adminActor(), created.id);
       expect(found.id).toBe(created.id);
     });
 
     it('мапит отсутствие записи в NotFound', async () => {
-      await expect(controller.findById(uuidv4())).rejects.toThrow(
+      await expect(controller.findById(adminActor(), uuidv4())).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -178,10 +193,28 @@ describe('TelemetryController', () => {
 
   describe('findManyByTripId', () => {
     it('фильтрует по tripId и параметрам выборки', async () => {
-      await controller.create(buildTelemetryCreate(tripId, '2026-04-21T20:00:00.000Z'));
-      await controller.create(buildTelemetryCreate(tripId, '2026-04-21T20:01:00.000Z'));
+      const prevPeriod = process.env.TELEMETRY_PERIOD_SEC;
+      process.env.TELEMETRY_PERIOD_SEC = '1';
+      await controller.create(
+        adminActor(),
+        buildTelemetryCreate(tripId, '2026-04-21T20:00:00.000Z'),
+      );
+      const { periodSec } = getTelemetryConfig();
+      await new Promise((resolve) =>
+        setTimeout(resolve, periodSec * 1000 + 50),
+      );
+      await controller.create(
+        adminActor(),
+        buildTelemetryCreate(tripId, '2026-04-21T20:01:00.000Z'),
+      );
+      if (prevPeriod === undefined) {
+        delete process.env.TELEMETRY_PERIOD_SEC;
+      } else {
+        process.env.TELEMETRY_PERIOD_SEC = prevPeriod;
+      }
 
       const list = await controller.findManyByTripId(
+        adminActor(),
         tripId,
         '2026-04-21T20:00:30.000Z',
         undefined,
@@ -195,7 +228,7 @@ describe('TelemetryController', () => {
 
     it('бросает BadRequest для невалидной даты фильтра', async () => {
       await expect(
-        controller.findManyByTripId(tripId, 'bad-date'),
+        controller.findManyByTripId(adminActor(), tripId, 'bad-date'),
       ).rejects.toThrow(BadRequestException);
     });
   });

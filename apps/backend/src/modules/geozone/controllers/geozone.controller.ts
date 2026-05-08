@@ -15,7 +15,19 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+
+import { Roles } from 'src/modules/auth/decorators/roles.decorator';
+import {
+  ADMIN_ROLES,
+  ALL_APP_ROLES,
+} from 'src/modules/auth/roles.constants';
 
 import {
   DatabaseGeozoneErrorException,
@@ -47,6 +59,8 @@ function parseGeozoneTypesQuery(raw: string | undefined): GeozoneType[] {
 
 @Controller('geozones')
 @ApiTags('Geozones')
+@ApiBearerAuth()
+@Roles(...ALL_APP_ROLES)
 export class GeozoneController implements IGeozoneController {
   private readonly logger = new Logger(GeozoneController.name);
   constructor(private readonly geozoneService: GeozoneService) {}
@@ -163,6 +177,7 @@ export class GeozoneController implements IGeozoneController {
   }
 
   @Post()
+  @Roles(...ADMIN_ROLES)
   @ApiOperation({ summary: 'Создать геозону' })
   @ApiQuery({
     name: 'createdByUserId',
@@ -244,6 +259,7 @@ export class GeozoneController implements IGeozoneController {
   }
 
   @Post(':id/restore')
+  @Roles(...ADMIN_ROLES)
   @ApiOperation({ summary: 'Восстановить геозону' })
   @ApiResponse({ status: 200, type: GeozoneRead })
   async restore(@Param('id') id: string): Promise<GeozoneRead> {
@@ -265,6 +281,7 @@ export class GeozoneController implements IGeozoneController {
   }
 
   @Post(':id/publish-version')
+  @Roles(...ADMIN_ROLES)
   @ApiOperation({ summary: 'Опубликовать новую версию геометрии' })
   @ApiResponse({ status: 200, type: GeozoneRead })
   async publishVersion(
@@ -286,6 +303,7 @@ export class GeozoneController implements IGeozoneController {
   }
 
   @Patch(':id')
+  @Roles(...ADMIN_ROLES)
   @ApiOperation({ summary: 'Обновить поля геозоны' })
   @ApiResponse({ status: 200, type: GeozoneRead })
   async update(
@@ -307,6 +325,7 @@ export class GeozoneController implements IGeozoneController {
   }
 
   @Delete(':id')
+  @Roles(...ADMIN_ROLES)
   @ApiOperation({ summary: 'Софт-удаление геозоны' })
   @ApiResponse({ status: 200, type: GeozoneRead })
   async softDelete(@Param('id') id: string): Promise<GeozoneRead> {

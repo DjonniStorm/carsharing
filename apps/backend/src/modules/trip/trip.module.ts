@@ -30,6 +30,6 @@ import { TripService } from './services/trip.service';
     },
     { provide: ITripRepositoryToken, useClass: TripRepository },
   ],
-  exports: [TripRealtimeModule, ITripRepositoryToken],
+  exports: [TripRealtimeModule, ITripRepositoryToken, TripService],
 })
 export class TripModule {}

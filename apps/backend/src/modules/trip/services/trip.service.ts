@@ -1,5 +1,6 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
 
+import { UserRole } from 'src/modules/user/entities/user.role';
 import {
   IJobQueueToken,
   type IJobQueue,
@@ -97,6 +98,23 @@ export class TripService implements ITripService {
     } catch (error) {
       this.logger.error('Failed to create trip', error);
       throw TripDbErrors.mapError(error);
+    }
+  }
+
+  async ensureTripAccessForUser(
+    role: UserRole,
+    userId: string,
+    tripId: string,
+  ): Promise<void> {
+    if (role !== UserRole.DRIVER) {
+      return;
+    }
+    const trip = await this.repository.findById(tripId);
+    if (!trip) {
+      throw new TripNotFoundException(`Trip with id ${tripId} was not found`);
+    }
+    if (trip.userId !== userId) {
+      throw new ForbiddenException('Forbidden');
     }
   }
 

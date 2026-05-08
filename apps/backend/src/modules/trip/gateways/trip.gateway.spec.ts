@@ -1,5 +1,9 @@
+import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { PrismaService } from 'src/prisma/prisma.service';
+import { UserRole } from 'src/modules/user/entities/user.role';
 
 import { TripEventChannelScope } from '../common/trip-realtime.contract';
 import { TripWsEvent } from '../entities/realtime/trip-event';
@@ -19,7 +23,18 @@ describe('TripGateway', () => {
 
   beforeEach(async () => {
     moduleRef = await Test.createTestingModule({
-      providers: [TripGateway],
+      providers: [
+        TripGateway,
+        { provide: JwtService, useValue: { verify: vi.fn() } },
+        {
+          provide: PrismaService,
+          useValue: {
+            trip: {
+              findUnique: vi.fn().mockResolvedValue({ userId: 'owner-id' }),
+            },
+          },
+        },
+      ],
     }).compile();
     gateway = moduleRef.get(TripGateway);
 
@@ -36,11 +51,16 @@ describe('TripGateway', () => {
 
   describe('Транспортный слой (routing rooms/emits)', () => {
     it('подписывает клиента на комнату поездки', async () => {
-      const client = { id: 'client-1', join, leave } as unknown as Parameters<
-        TripGateway['subscribeTrip']
-      >[0];
+      const client = {
+        id: 'client-1',
+        join,
+        leave,
+        data: {
+          user: { id: 'owner-id', role: UserRole.MANAGER },
+        },
+      } as unknown as Parameters<TripGateway['subscribeTrip']>[0];
 
-      await gateway.subscribeTrip(client, { tripId: 42 });
+      await gateway.subscribeTrip(client, { tripId: '42' });
 
       expect(join).toHaveBeenCalledWith('trip:42');
     });

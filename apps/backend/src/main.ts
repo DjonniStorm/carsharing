@@ -19,6 +19,12 @@ async function bootstrap() {
     .setTitle('Carsharing API')
     .setDescription('Документация API для backend-модулей каршеринга')
     .setVersion('1.0')
+    .addBearerAuth({
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+      description: 'Access token из POST /auth/login',
+    })
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);

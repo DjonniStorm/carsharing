@@ -13,7 +13,9 @@ import {
   Query,
 } from '@nestjs/common';
 import { UserService } from '../services/user.service';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Roles } from 'src/modules/auth/decorators/roles.decorator';
+import { ADMIN_ROLES } from 'src/modules/auth/roles.constants';
 import { ReadUserEntity } from '../entities/dtos/user.read';
 import {
   EmailAlreadyExistsException,
@@ -26,6 +28,8 @@ import { UpdateUserEntity } from '../entities/dtos/user.update';
 
 @Controller('users')
 @ApiTags('Users')
+@ApiBearerAuth()
+@Roles(...ADMIN_ROLES)
 export class UserController {
   private readonly logger = new Logger(UserController.name);
   constructor(private readonly userService: UserService) {}

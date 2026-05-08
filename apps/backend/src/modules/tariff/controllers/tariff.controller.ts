@@ -12,7 +12,13 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+
+import { Roles } from 'src/modules/auth/decorators/roles.decorator';
+import {
+  ADMIN_ROLES,
+  ALL_APP_ROLES,
+} from 'src/modules/auth/roles.constants';
 
 import {
   DatabaseTariffErrorException,
@@ -28,12 +34,14 @@ import { ITariffController } from './tariff.controller.interface';
 
 @Controller('tariffs')
 @ApiTags('Tariffs')
+@ApiBearerAuth()
 export class TariffController implements ITariffController {
   private readonly logger = new Logger(TariffController.name);
 
   constructor(private readonly tariffService: TariffService) {}
 
   @Get()
+  @Roles(...ALL_APP_ROLES)
   @ApiOperation({ summary: 'Список тарифов' })
   @ApiResponse({ status: 200, description: 'Список тарифов' })
   async findAll(
@@ -54,6 +62,7 @@ export class TariffController implements ITariffController {
   }
 
   @Get(':id')
+  @Roles(...ALL_APP_ROLES)
   @ApiOperation({ summary: 'Тариф по id' })
   @ApiResponse({ status: 200, description: 'Тариф' })
   async findById(@Param('id') id: string): Promise<TariffRead> {
@@ -74,6 +83,7 @@ export class TariffController implements ITariffController {
   }
 
   @Post()
+  @Roles(...ADMIN_ROLES)
   @ApiOperation({ summary: 'Создать тариф' })
   @ApiResponse({ status: 201, description: 'Созданный тариф' })
   async create(@Body() tariff: TariffCreate): Promise<TariffRead> {
@@ -94,6 +104,7 @@ export class TariffController implements ITariffController {
   }
 
   @Patch(':id')
+  @Roles(...ADMIN_ROLES)
   @ApiOperation({ summary: 'Обновить тариф' })
   @ApiResponse({ status: 200, description: 'Обновлённый тариф' })
   async update(
@@ -120,6 +131,7 @@ export class TariffController implements ITariffController {
   }
 
   @Delete(':id')
+  @Roles(...ADMIN_ROLES)
   @ApiOperation({ summary: 'Удалить тариф (soft delete)' })
   @ApiResponse({ status: 200, description: 'Тариф помечен удалённым' })
   async delete(@Param('id') id: string): Promise<TariffRead> {
