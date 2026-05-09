@@ -5,13 +5,14 @@ import {
   type IUserRepository,
 } from '../repositories/user.repository.interface';
 import { CreateUserEntity } from '../entities/dtos/user.create';
-import { IUserService } from './user.service.interface';
+import { IUserService, type RegisterUserInput } from './user.service.interface';
 import { ReadUserEntity } from '../entities/dtos/user.read';
 import { UserMapper } from '../common/mapper';
 import * as bcrypt from 'bcryptjs';
 import { UpdateUserEntity } from '../entities/dtos/user.update';
 import { DbErrors } from '../common/db-errors';
 import { UserNotFoundException } from '../common/errors';
+import { UserRole } from '../entities/user.role';
 
 @Injectable()
 export class UserService implements IUserService {
@@ -75,6 +76,31 @@ export class UserService implements IUserService {
       return UserMapper.toReadUserEntity(createdUser);
     } catch (error) {
       this.logger.error(`Failed to create user: ${user.name}`, error);
+      throw DbErrors.mapError(error);
+    }
+  }
+
+  async registerPublic(
+    input: RegisterUserInput,
+    role: UserRole,
+  ): Promise<ReadUserEntity> {
+    try {
+      this.logger.log(`Public register: ${input.email} role=${role}`);
+      const dto: CreateUserEntity = {
+        name: input.name,
+        email: input.email,
+        phone: input.phone,
+        password: input.password,
+        role,
+      };
+      const userEntity = UserMapper.toUserEntity(dto);
+      userEntity.passwordHash = await bcrypt.hash(input.password, 10);
+      userEntity.isActive = true;
+      UserEntity.validate(userEntity);
+      const createdUser = await this.repository.create(userEntity);
+      return UserMapper.toReadUserEntity(createdUser);
+    } catch (error) {
+      this.logger.error(`Failed to register user: ${input.email}`, error);
       throw DbErrors.mapError(error);
     }
   }
