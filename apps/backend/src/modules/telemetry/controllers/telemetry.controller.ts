@@ -4,6 +4,7 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  Headers,
   Inject,
   Logger,
   NotFoundException,
@@ -20,10 +21,14 @@ import {
 } from '@nestjs/swagger';
 
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
+import { Public } from 'src/modules/auth/decorators/public.decorator';
 import { Roles } from 'src/modules/auth/decorators/roles.decorator';
 import { ALL_APP_ROLES } from 'src/modules/auth/roles.constants';
 import type { AuthenticatedUser } from 'src/modules/auth/types/authenticated-user';
+import { CarNotFoundException } from 'src/modules/car/common/errors';
+import { CarService } from 'src/modules/car/services/car.service';
 import { TripNotFoundException } from 'src/modules/trip/common/errors';
+import { TripStatus } from 'src/modules/trip/entities/trip.status';
 import { TripService } from 'src/modules/trip/services/trip.service';
 import { parseDateQuery, parseIntQuery } from 'src/modules/tariff/common/utils';
 
@@ -33,6 +38,10 @@ import {
   TelemetryRelationNotFoundException,
 } from '../common/errors';
 import { TelemetryCreate } from '../entities/dto/telemetry.create';
+import {
+  TelemetryDevicePoint,
+  TelemetryDevicePosition,
+} from '../entities/dto/telemetry-device';
 import { TelemetryRead } from '../entities/dto/telemetry.read';
 import {
   type ITelemetryService,
@@ -50,7 +59,124 @@ export class TelemetryController implements ITelemetryController {
     @Inject(ITelemetryServiceToken)
     private readonly telemetryService: ITelemetryService,
     private readonly tripService: TripService,
+    private readonly carService: CarService,
   ) {}
+
+  private ensureDeviceKey(rawKey: string | undefined): void {
+    const expected = process.env.TELEMETRY_DEVICE_KEY;
+    if (!expected) {
+      throw new ForbiddenException('Telemetry device ingest is disabled');
+    }
+    if (rawKey !== expected) {
+      throw new ForbiddenException('Invalid telemetry device key');
+    }
+  }
+
+  private async findActiveTripForCar(carId: string) {
+    const [active] = await this.tripService.findMany({
+      carId,
+      status: TripStatus.ACTIVE,
+    });
+    if (active) {
+      return active;
+    }
+
+    const [started] = await this.tripService.findMany({
+      carId,
+      status: TripStatus.STARTED,
+    });
+    return started ?? null;
+  }
+
+  @Get('cars/:carId/active-trip')
+  @Public()
+  @ApiOperation({ summary: 'Find active trip for telemetry device car id' })
+  async findActiveTripByCarForDevice(
+    @Headers('x-telemetry-key') key: string | undefined,
+    @Param('carId') carId: string,
+  ) {
+    this.ensureDeviceKey(key);
+    await this.carService.findById(carId);
+    return this.findActiveTripForCar(carId);
+  }
+
+  @Get('cars/:carId/car')
+  @Public()
+  @ApiOperation({ summary: 'Find car for telemetry device car id' })
+  async findCarForDevice(
+    @Headers('x-telemetry-key') key: string | undefined,
+    @Param('carId') carId: string,
+  ) {
+    this.ensureDeviceKey(key);
+    return this.carService.findById(carId);
+  }
+
+  @Post('cars/:carId/position')
+  @Public()
+  @ApiOperation({ summary: 'Update idle car position from telemetry device' })
+  async updateCarPositionFromDevice(
+    @Headers('x-telemetry-key') key: string | undefined,
+    @Param('carId') carId: string,
+    @Body() input: TelemetryDevicePosition,
+  ) {
+    this.ensureDeviceKey(key);
+    try {
+      return await this.carService.updatePosition(
+        carId,
+        input.lat,
+        input.lon,
+        new Date(input.positionAt),
+      );
+    } catch (error) {
+      if (error instanceof CarNotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+      throw new BadRequestException(
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
+  @Post('cars/:carId')
+  @Public()
+  @ApiOperation({ summary: 'Create telemetry point from device car id' })
+  async createFromDeviceCar(
+    @Headers('x-telemetry-key') key: string | undefined,
+    @Param('carId') carId: string,
+    @Body() input: TelemetryDevicePoint,
+  ): Promise<TelemetryRead> {
+    this.ensureDeviceKey(key);
+    try {
+      await this.carService.findById(carId);
+      const trip = await this.findActiveTripForCar(carId);
+      if (!trip) {
+        throw new NotFoundException(`Active trip for car ${carId} not found`);
+      }
+      return await this.telemetryService.create({
+        ...input,
+        tripId: trip.id,
+      });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
+        throw error;
+      }
+      if (error instanceof CarNotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+      if (error instanceof TelemetryRelationNotFoundException) {
+        throw new BadRequestException(error.message);
+      }
+      if (error instanceof DatabaseTelemetryErrorException) {
+        throw new BadRequestException(error.message);
+      }
+      throw new BadRequestException(
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
 
   @Post()
   @Roles(...ALL_APP_ROLES)

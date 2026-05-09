@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CarStatus } from '../entities/car-status';
 import { CarEntity } from '../entities/car.entity';
 import { ICarRepository } from './car.repository.interface';
 
@@ -26,15 +27,27 @@ export class CarRepository implements ICarRepository {
   update(id: string, car: Partial<CarEntity>): Promise<CarEntity> {
     return this.prisma.car.update({ where: { id }, data: car });
   }
-  updatePosition(
+  async updatePosition(
     id: string,
     lastKnownLat: number,
     lastKnownLon: number,
     lastPositionAt: string,
   ): Promise<CarEntity> {
+    const existing = await this.prisma.car.findUnique({
+      where: { id },
+      select: { carStatus: true },
+    });
+
     return this.prisma.car.update({
       where: { id },
-      data: { lastKnownLat, lastKnownLon, lastPositionAt },
+      data: {
+        lastKnownLat,
+        lastKnownLon,
+        lastPositionAt,
+        ...(existing?.carStatus === CarStatus.CREATED
+          ? { carStatus: CarStatus.AVAILABLE, isAvailable: true }
+          : {}),
+      },
     });
   }
   delete(id: string): Promise<CarEntity> {
