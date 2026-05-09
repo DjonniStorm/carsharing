@@ -12,6 +12,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 
 import { CarStatus } from '../../car/entities/car-status';
+import type { CarService } from '../../car/services/car.service';
 import type {
   GeoJSONMultiPolygon,
   GeoJSONPosition,
@@ -126,7 +127,7 @@ describe('TelemetryController', () => {
     ).id;
 
     const tripOutbox: ITripRealtimeOutbox = {
-      publish: async () => undefined,
+      publish: () => Promise.resolve(),
     };
     const service = new TelemetryService(
       new TelemetryRepository(prisma),
@@ -135,9 +136,18 @@ describe('TelemetryController', () => {
       new TripRepository(prisma),
     );
     const tripServiceStub = {
-      ensureTripAccessForUser: async (): Promise<void> => undefined,
+      ensureTripAccessForUser: (): Promise<void> => Promise.resolve(),
     } as unknown as TripService;
-    controller = new TelemetryController(service, tripServiceStub);
+    const carServiceStub = {
+      findById: () => Promise.reject(new Error('not implemented in this spec')),
+      updatePosition: () =>
+        Promise.reject(new Error('not implemented in this spec')),
+    } as unknown as CarService;
+    controller = new TelemetryController(
+      service,
+      tripServiceStub,
+      carServiceStub,
+    );
   });
 
   afterEach(async () => {
@@ -235,7 +245,10 @@ describe('TelemetryController', () => {
 
   describe('dto validation', () => {
     it('TelemetryCreate: требует UUID tripId и валидные координаты', async () => {
-      const dto = buildTelemetryCreate('bad-trip-id', '2026-04-21T20:04:00.000Z');
+      const dto = buildTelemetryCreate(
+        'bad-trip-id',
+        '2026-04-21T20:04:00.000Z',
+      );
       dto.lat = 100;
       dto.lon = 200;
       const errors = await validate(dto);
@@ -247,7 +260,10 @@ describe('TelemetryController', () => {
   });
 });
 
-function buildTelemetryCreate(tripId: string, timestamp: string): TelemetryCreate {
+function buildTelemetryCreate(
+  tripId: string,
+  timestamp: string,
+): TelemetryCreate {
   const dto = new TelemetryCreate();
   dto.timestamp = timestamp;
   dto.lat = 55.75;
@@ -273,4 +289,3 @@ const sampleMultiPolygon = (seed: number): GeoJSONMultiPolygon => {
     coordinates: [[ring]] as unknown as GeoJSONMultiPolygon['coordinates'],
   };
 };
-
