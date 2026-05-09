@@ -11,6 +11,10 @@ export const ROUTES = {
   dashboard: {
     cars: "/dashboard/cars",
     geozones: "/dashboard/geozones",
+    geozonesNew: "/dashboard/geozones/new",
+    /** Путь редактирования: подставьте id геозоны. */
+    geozonesEdit: (geozoneId: string) =>
+      `/dashboard/geozones/${encodeURIComponent(geozoneId)}/edit` as const,
     violations: "/dashboard/violations",
   },
 } as const;

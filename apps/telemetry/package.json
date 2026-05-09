@@ -14,6 +14,7 @@
     "start:car:win:auto": "powershell -ExecutionPolicy Bypass -File scripts/start-car-auto.ps1",
     "start:car:sh": "sh scripts/start-car.sh",
     "start:car:sh:auto": "sh scripts/start-car-auto.sh",
+    "start:car:js": "node scripts/start-car.mjs",
     "test": "bun test"
   },
   "keywords": [],

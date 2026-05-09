@@ -13,7 +13,8 @@
  *   `localStorage` любой заход сюда редиректит на `/login?redirect=<текущий путь+query>`.
  *
  * - `/` — главная дашборда (внутри shell).
- * - `/dashboard/cars`, `/dashboard/geozones`, `/dashboard/violations` — разделы дашборда.
+ * - `/dashboard/cars`, `/dashboard/geozones`, `/dashboard/geozones/new`,
+ *   `/dashboard/geozones/:geozoneId/edit`, `/dashboard/violations` — разделы дашборда.
  *
  * Защита и навигация:
  * - Токен: `ACCESS_TOKEN_STORAGE_KEY`, см. `features/auth/config/token-storage.ts`.
@@ -32,7 +33,11 @@ import { DashboardRouteLayout } from "@/app/layouts/dashboard-route-layout";
 import { ACCESS_TOKEN_STORAGE_KEY } from "@/features/auth/config/token-storage";
 import { CarsPage } from "@/pages/cars";
 import { DashboardPage } from "@/pages/dashboard";
-import { GeozonesPage } from "@/pages/geozones";
+import {
+  GeozoneCreatePage,
+  GeozoneEditPage,
+  GeozonesPage,
+} from "@/pages/geozones";
 import { LoginPage } from "@/pages/login";
 import { RegisterPage } from "@/pages/register";
 import { ViolationsPage } from "@/pages/violations";
@@ -163,6 +168,22 @@ const dashboardGeozonesRoute = createRoute({
   component: GeozonesPage,
 });
 
+const dashboardGeozonesNewRoute = createRoute({
+  getParentRoute: () => {
+    return dashboardShellRoute;
+  },
+  path: "/dashboard/geozones/new",
+  component: GeozoneCreatePage,
+});
+
+const dashboardGeozonesEditRoute = createRoute({
+  getParentRoute: () => {
+    return dashboardShellRoute;
+  },
+  path: "/dashboard/geozones/$geozoneId/edit",
+  component: GeozoneEditPage,
+});
+
 const dashboardViolationsRoute = createRoute({
   getParentRoute: () => {
     return dashboardShellRoute;
@@ -175,6 +196,9 @@ const routeTree = rootRoute.addChildren([
   dashboardShellRoute.addChildren([
     dashboardHomeRoute,
     dashboardCarsRoute,
+    /** Статические пути глубже `/dashboard/geozones` — до индекса списка. */
+    dashboardGeozonesNewRoute,
+    dashboardGeozonesEditRoute,
     dashboardGeozonesRoute,
     dashboardViolationsRoute,
   ]),

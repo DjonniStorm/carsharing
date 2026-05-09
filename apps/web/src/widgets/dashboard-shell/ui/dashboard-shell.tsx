@@ -51,13 +51,19 @@ const DashboardShell = ({ navItems }: Props) => {
   };
 
   const navLinkNodes = navItems.map((item) => {
+    const active =
+      pathname === item.to ||
+      (item.to === ROUTES.dashboard.geozones &&
+        pathname !== ROUTES.dashboard.geozones &&
+        pathname.startsWith(`${ROUTES.dashboard.geozones}/`));
+
     return (
       <NavLink
         key={item.to}
         component={Link}
         to={item.to}
         label={t(item.labelKey)}
-        active={pathname === item.to}
+        active={active}
         onClick={() => {
           close();
         }}
@@ -66,7 +72,7 @@ const DashboardShell = ({ navItems }: Props) => {
             borderRadius: "var(--mantine-radius-md)",
           },
           label: {
-            fontWeight: pathname === item.to ? 600 : 500,
+            fontWeight: active ? 600 : 500,
           },
         }}
       />

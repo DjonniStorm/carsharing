@@ -209,4 +209,5 @@ telemetry-car-1:
     IDLE_TELEMETRY_INTERVAL_SEC: 60
     ACTIVE_TELEMETRY_INTERVAL_SEC: 10
 ```
+
 ### симуляция телеметрии для каршеринга

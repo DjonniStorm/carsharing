@@ -81,6 +81,20 @@ function destroyUnknown(entity: unknown): void {
   }
 }
 
+/** Слой объектов для полигонов/линий (JS API 3.0). Без него {@link YMapFeature} может не отображаться. */
+export function attachDefaultFeaturesLayer(map: YMaps3MapInstance): () => void {
+  const ymaps3 = window.ymaps3;
+  const Features = ymaps3?.YMapDefaultFeaturesLayer;
+  if (!Features) {
+    return () => {};
+  }
+  const layer = new Features({});
+  map.addChild(layer);
+  return () => {
+    destroyUnknown(layer);
+  };
+}
+
 /**
  * Добавляет слой объектов и маркеры. Возвращает функцию отключения (без уничтожения карты).
  */

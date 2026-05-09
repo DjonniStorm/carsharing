@@ -1,16 +1,36 @@
-import { Alert, Box, Group, Paper, Stack, Text } from "@mantine/core";
+import {
+  Alert,
+  Box,
+  Center,
+  Group,
+  Loader,
+  MultiSelect,
+  Paper,
+  ScrollArea,
+  Stack,
+  Text,
+  TextInput,
+} from "@mantine/core";
+import { useDebouncedValue } from "@mantine/hooks";
 import { useAction, useAtom } from "@reatom/react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { carToMapMarker } from "@/entities/car";
+import { GeozoneType } from "@/entities/geozone";
 import {
   carsListAtom,
   carsListErrorAtom,
   loadCarsList,
 } from "@/features/cars/model/cars-list";
 import {
+  GEOZONE_TYPES_ORDERED,
+  geozoneTypeLangKey,
+} from "@/features/geozones/lib/geozone-type-present";
+import {
+  dashboardGeozonesAtom,
   dashboardGeozonesErrorAtom,
+  dashboardGeozonesStatusAtom,
   loadDashboardGeozonesForBBox,
 } from "@/features/geozones/model/geozones-state";
 import { getYandexMapsApiKey } from "@/shared/config/env";
@@ -50,15 +70,27 @@ const DashboardPage = () => {
   const { t } = useTranslation();
   const [cars] = useAtom(carsListAtom);
   const [carsError] = useAtom(carsListErrorAtom);
+  const [geozones] = useAtom(dashboardGeozonesAtom);
   const [geozonesError] = useAtom(dashboardGeozonesErrorAtom);
+  const [geozonesLoadStatus] = useAtom(dashboardGeozonesStatusAtom);
+
+  const [nameQuery, setNameQuery] = useState("");
+  const [debouncedName] = useDebouncedValue(nameQuery, 220);
+  const [typeFilter, setTypeFilter] = useState<GeozoneType[]>([]);
 
   const loadCars = useAction(loadCarsList);
   const loadGeozonesBBox = useAction(loadDashboardGeozonesForBBox);
 
   useEffect(() => {
     void loadCars(false);
-    void loadGeozonesBBox({ ...DEFAULT_MAP_GEOZONE_BOUNDS });
-  }, [loadCars, loadGeozonesBBox]);
+  }, [loadCars]);
+
+  useEffect(() => {
+    void loadGeozonesBBox({
+      ...DEFAULT_MAP_GEOZONE_BOUNDS,
+      types: typeFilter.length ? typeFilter : undefined,
+    });
+  }, [loadGeozonesBBox, typeFilter]);
 
   const overlayMarkers = useMemo(() => {
     if (!cars?.length) {
@@ -68,6 +100,22 @@ const DashboardPage = () => {
       .map(carToMapMarker)
       .filter((m): m is NonNullable<typeof m> => m !== null);
   }, [cars]);
+
+  const typeSelectData = useMemo(() => {
+    return GEOZONE_TYPES_ORDERED.map((gt) => ({
+      value: gt,
+      label: t(geozoneTypeLangKey(gt)),
+    }));
+  }, [t]);
+
+  const geozonesFilteredByName = useMemo(() => {
+    const list = geozones ?? [];
+    const q = debouncedName.trim().toLowerCase();
+    if (!q) {
+      return list;
+    }
+    return list.filter((g) => g.name.toLowerCase().includes(q));
+  }, [geozones, debouncedName]);
 
   return (
     <Box
@@ -110,6 +158,94 @@ const DashboardPage = () => {
               height="100%"
               overlayMarkers={overlayMarkers}
             />
+
+            <Paper
+              shadow="md"
+              p="sm"
+              radius="md"
+              withBorder
+              style={{
+                position: "absolute",
+                top: 16,
+                right: 16,
+                width: "min(320px, calc(100% - 32px))",
+                maxHeight: "min(360px, 42vh)",
+                zIndex: 2,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                pointerEvents: "auto",
+              }}
+            >
+              <Text size="xs" fw={700} tt="uppercase" c="dimmed">
+                {t(LANG_KEYS.pages.dashboardGeozonesPanelTitle)}
+              </Text>
+              <TextInput
+                size="xs"
+                placeholder={t(
+                  LANG_KEYS.pages.dashboardGeozonesSearchPlaceholder,
+                )}
+                value={nameQuery}
+                onChange={(e) => {
+                  setNameQuery(e.currentTarget.value);
+                }}
+              />
+              <MultiSelect
+                size="xs"
+                label={t(LANG_KEYS.pages.dashboardGeozonesTypesLabel)}
+                placeholder={t(
+                  LANG_KEYS.pages.dashboardGeozonesTypesPlaceholder,
+                )}
+                clearable
+                data={typeSelectData}
+                value={typeFilter}
+                onChange={(v) => {
+                  setTypeFilter(v as GeozoneType[]);
+                }}
+              />
+              {geozonesLoadStatus === "loading" ? (
+                <Center py="xs">
+                  <Group gap={8}>
+                    <Loader size="xs" />
+                    <Text size="xs" c="dimmed">
+                      {t(LANG_KEYS.pages.dashboardGeozonesLoadingShort)}
+                    </Text>
+                  </Group>
+                </Center>
+              ) : geozonesFilteredByName.length === 0 ? (
+                <Text size="xs" c="dimmed">
+                  {t(LANG_KEYS.pages.dashboardGeozonesEmptyList)}
+                </Text>
+              ) : (
+                <ScrollArea.Autosize mah={200} type="auto">
+                  <Stack gap={6}>
+                    {geozonesFilteredByName.map((g) => (
+                      <Group key={g.id} gap={8} wrap="nowrap" align="flex-start">
+                        <Box
+                          style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: 4,
+                            background: g.color || "var(--mantine-color-gray-5)",
+                            flexShrink: 0,
+                            marginTop: 3,
+                          }}
+                        />
+                        <Stack gap={2} style={{ minWidth: 0 }}>
+                          <Text size="xs" fw={600} truncate="end">
+                            {g.name}
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            {t(geozoneTypeLangKey(g.type))}
+                          </Text>
+                        </Stack>
+                      </Group>
+                    ))}
+                  </Stack>
+                </ScrollArea.Autosize>
+              )}
+            </Paper>
+
             <Paper
               shadow="md"
               p="sm"
