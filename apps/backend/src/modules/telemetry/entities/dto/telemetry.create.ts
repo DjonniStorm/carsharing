@@ -45,4 +45,3 @@ export class TelemetryCreate {
   @IsOptional()
   source?: string;
 }
-

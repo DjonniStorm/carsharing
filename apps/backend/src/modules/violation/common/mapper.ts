@@ -25,4 +25,3 @@ export class ViolationMapper {
     return read;
   }
 }
-

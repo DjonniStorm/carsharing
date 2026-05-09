@@ -475,7 +475,9 @@ export class GeozoneRepository implements IGeozoneRepository {
         versionMeta.rules === null
           ? null
           : (versionMeta.rules as Record<string, unknown>),
-      pricePerMinute: GeozoneRepository.decimalToNumber(versionMeta.pricePerMinute),
+      pricePerMinute: GeozoneRepository.decimalToNumber(
+        versionMeta.pricePerMinute,
+      ),
       pricePerKm: GeozoneRepository.decimalToNumber(versionMeta.pricePerKm),
       pausePricePerMinute: GeozoneRepository.decimalToNumber(
         versionMeta.pausePricePerMinute,

@@ -14,4 +14,3 @@ import { InMemoryJobQueue } from './in-memory-job-queue';
   exports: [IJobQueueToken],
 })
 export class BackgroundModule {}
-

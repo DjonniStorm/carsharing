@@ -12,13 +12,15 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { Roles } from 'src/modules/auth/decorators/roles.decorator';
-import {
-  ADMIN_ROLES,
-  ALL_APP_ROLES,
-} from 'src/modules/auth/roles.constants';
+import { ADMIN_ROLES, ALL_APP_ROLES } from 'src/modules/auth/roles.constants';
 
 import {
   DatabaseTariffErrorException,

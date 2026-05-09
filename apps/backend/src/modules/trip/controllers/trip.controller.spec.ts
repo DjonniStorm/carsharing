@@ -1,6 +1,14 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { validate } from 'class-validator';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from 'vitest';
 import { v4 as uuidv4 } from 'uuid';
 
 import { GeozoneRepository } from '../../geozone/repositories/geozone.repository';
@@ -211,7 +219,13 @@ describe('TripController', () => {
 
     it('rejects non-integer status query', async () => {
       await expect(
-        controller.findAll(adminActor(), undefined, undefined, undefined, '1.2'),
+        controller.findAll(
+          adminActor(),
+          undefined,
+          undefined,
+          undefined,
+          '1.2',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 

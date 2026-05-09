@@ -16,4 +16,3 @@ export interface IViolationService {
 }
 
 export const IViolationServiceToken = Symbol('IViolationService');
-

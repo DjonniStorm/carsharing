@@ -18,4 +18,3 @@ export class DatabaseTelemetryErrorException extends Error {
     this.name = 'DatabaseTelemetryErrorException';
   }
 }
-

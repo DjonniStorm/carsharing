@@ -193,7 +193,10 @@ describe('ViolationService (integration)', () => {
   });
 });
 
-function buildViolationCreate(tripId: string, type: ViolationStatus): ViolationCreate {
+function buildViolationCreate(
+  tripId: string,
+  type: ViolationStatus,
+): ViolationCreate {
   const dto = new ViolationCreate();
   dto.tripId = tripId;
   dto.type = type;
@@ -275,4 +278,3 @@ const sampleMultiPolygon = (seed: number): GeoJSONMultiPolygon => {
     coordinates: [[ring]] as unknown as GeoJSONMultiPolygon['coordinates'],
   };
 };
-

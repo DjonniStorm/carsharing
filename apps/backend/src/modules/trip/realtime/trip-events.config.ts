@@ -172,7 +172,14 @@ export const TRIP_WS_EVENTS: readonly TripEventConfigItem[] = [
     audience: UserRole.MANAGER,
     channelScope: TripEventChannelScope.ManagerTrip,
     description: 'Обновлено нарушение (например resolve → type RESOLVED в БД).',
-    payloadShape: ['violationId', 'tripId', 'carId', 'type', 'description?', 'ts'],
+    payloadShape: [
+      'violationId',
+      'tripId',
+      'carId',
+      'type',
+      'description?',
+      'ts',
+    ],
   },
 ] as const;
 

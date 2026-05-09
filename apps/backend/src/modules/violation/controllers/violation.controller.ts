@@ -43,7 +43,9 @@ import {
 } from '../services/violation.service.interface';
 import { IViolationController } from './violation.controller.interface';
 
-function parseViolationStatusQuery(raw: string | undefined): ViolationStatus | undefined {
+function parseViolationStatusQuery(
+  raw: string | undefined,
+): ViolationStatus | undefined {
   if (raw == null || raw.trim() === '') {
     return undefined;
   }
@@ -74,7 +76,10 @@ export class ViolationController implements IViolationController {
   @ApiOperation({ summary: 'Создать нарушение' })
   @ApiResponse({ status: 201, type: ViolationRead })
   async create(@Body() input: ViolationCreate): Promise<ViolationRead> {
-    this.logger.debug('create violation', { tripId: input.tripId, type: input.type });
+    this.logger.debug('create violation', {
+      tripId: input.tripId,
+      type: input.type,
+    });
     try {
       const created = await this.violationService.create(input);
       return ViolationMapper.fromEntityToRead(created);
@@ -85,14 +90,20 @@ export class ViolationController implements IViolationController {
       if (error instanceof DatabaseViolationErrorException) {
         throw new BadRequestException(error.message);
       }
-      throw new BadRequestException(error instanceof Error ? error.message : String(error));
+      throw new BadRequestException(
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
   @Get()
   @Roles(...ADMIN_ROLES)
   @ApiOperation({ summary: 'Список нарушений' })
-  @ApiQuery({ name: 'status', required: false, description: 'Числовое значение ViolationStatus' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Числовое значение ViolationStatus',
+  })
   @ApiQuery({ name: 'includeResolved', required: false, type: Boolean })
   @ApiResponse({ status: 200, type: [ViolationRead] })
   async findAllByStatus(
@@ -113,7 +124,9 @@ export class ViolationController implements IViolationController {
       if (error instanceof DatabaseViolationErrorException) {
         throw new BadRequestException(error.message);
       }
-      throw new BadRequestException(error instanceof Error ? error.message : String(error));
+      throw new BadRequestException(
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -127,7 +140,11 @@ export class ViolationController implements IViolationController {
   ): Promise<ViolationRead[]> {
     this.logger.debug('findAllByTripId violation', { tripId });
     try {
-      await this.tripService.ensureTripAccessForUser(user.role, user.id, tripId);
+      await this.tripService.ensureTripAccessForUser(
+        user.role,
+        user.id,
+        tripId,
+      );
       const list = await this.violationService.findAllByTripId(tripId);
       return list.map(ViolationMapper.fromEntityToRead);
     } catch (error) {
@@ -140,7 +157,9 @@ export class ViolationController implements IViolationController {
       if (error instanceof DatabaseViolationErrorException) {
         throw new BadRequestException(error.message);
       }
-      throw new BadRequestException(error instanceof Error ? error.message : String(error));
+      throw new BadRequestException(
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -177,7 +196,9 @@ export class ViolationController implements IViolationController {
       if (error instanceof DatabaseViolationErrorException) {
         throw new BadRequestException(error.message);
       }
-      throw new BadRequestException(error instanceof Error ? error.message : String(error));
+      throw new BadRequestException(
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -191,7 +212,10 @@ export class ViolationController implements IViolationController {
   ): Promise<ViolationRead> {
     this.logger.debug('updateStatus violation', { id, status: input.status });
     try {
-      const updated = await this.violationService.updateStatus(id, input.status);
+      const updated = await this.violationService.updateStatus(
+        id,
+        input.status,
+      );
       return ViolationMapper.fromEntityToRead(updated);
     } catch (error) {
       if (error instanceof ViolationNotFoundException) {
@@ -200,7 +224,9 @@ export class ViolationController implements IViolationController {
       if (error instanceof DatabaseViolationErrorException) {
         throw new BadRequestException(error.message);
       }
-      throw new BadRequestException(error instanceof Error ? error.message : String(error));
+      throw new BadRequestException(
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -220,7 +246,9 @@ export class ViolationController implements IViolationController {
       if (error instanceof DatabaseViolationErrorException) {
         throw new BadRequestException(error.message);
       }
-      throw new BadRequestException(error instanceof Error ? error.message : String(error));
+      throw new BadRequestException(
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 

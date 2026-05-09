@@ -18,4 +18,3 @@ export type ParkingZoneCheckJob = {
   lat: number;
   lon: number;
 };
-

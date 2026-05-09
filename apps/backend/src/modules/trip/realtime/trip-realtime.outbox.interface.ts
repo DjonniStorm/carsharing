@@ -14,4 +14,3 @@ export interface ITripRealtimeOutbox {
 }
 
 export const ITripRealtimeOutboxToken = Symbol('ITripRealtimeOutbox');
-

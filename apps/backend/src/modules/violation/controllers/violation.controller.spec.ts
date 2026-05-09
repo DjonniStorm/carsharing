@@ -154,9 +154,9 @@ describe('ViolationController', () => {
       const missingId = uuidv4();
 
       // Act + Assert
-      await expect(controller.findById(adminActor(), missingId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.findById(adminActor(), missingId),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -229,9 +229,9 @@ describe('ViolationController', () => {
       const rawStatus = 'abc';
 
       // Act + Assert
-      await expect(controller.findAllByStatus(rawStatus, 'false')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.findAllByStatus(rawStatus, 'false'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -372,4 +372,3 @@ const sampleMultiPolygon = (seed: number): GeoJSONMultiPolygon => {
     coordinates: [[ring]] as unknown as GeoJSONMultiPolygon['coordinates'],
   };
 };
-
