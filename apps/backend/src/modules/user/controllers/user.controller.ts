@@ -13,7 +13,12 @@ import {
   Query,
 } from '@nestjs/common';
 import { UserService } from '../services/user.service';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Roles } from 'src/modules/auth/decorators/roles.decorator';
 import { ADMIN_ROLES } from 'src/modules/auth/roles.constants';
 import { ReadUserEntity } from '../entities/dtos/user.read';

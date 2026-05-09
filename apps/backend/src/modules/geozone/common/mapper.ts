@@ -145,7 +145,10 @@ export class GeozoneMapper {
     copy.rules =
       version.rules === null
         ? null
-        : (JSON.parse(JSON.stringify(version.rules)) as Record<string, unknown>);
+        : (JSON.parse(JSON.stringify(version.rules)) as Record<
+            string,
+            unknown
+          >);
     copy.pricePerMinute = version.pricePerMinute;
     copy.pricePerKm = version.pricePerKm;
     copy.pausePricePerMinute = version.pausePricePerMinute;

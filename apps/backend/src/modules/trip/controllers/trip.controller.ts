@@ -194,7 +194,11 @@ export class TripController implements ITripController {
     @Body() trip: TripCreate,
   ): Promise<TripRead> {
     if (user.role === UserRole.DRIVER) {
-      if (trip.userId != null && trip.userId !== '' && trip.userId !== user.id) {
+      if (
+        trip.userId != null &&
+        trip.userId !== '' &&
+        trip.userId !== user.id
+      ) {
         throw new ForbiddenException('Cannot create trip for another user');
       }
       trip.userId = user.id;

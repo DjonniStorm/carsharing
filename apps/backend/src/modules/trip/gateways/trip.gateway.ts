@@ -45,14 +45,9 @@ export class TripGateway implements ITripGateway, OnGatewayConnection {
 
   handleConnection(client: Socket): void {
     const raw =
-      client.handshake.auth?.['token'] ??
-      client.handshake.query?.['token'];
+      client.handshake.auth?.['token'] ?? client.handshake.query?.['token'];
     const token =
-      typeof raw === 'string'
-        ? raw
-        : Array.isArray(raw)
-          ? raw[0]
-          : undefined;
+      typeof raw === 'string' ? raw : Array.isArray(raw) ? raw[0] : undefined;
     if (!token) {
       client.disconnect();
       return;
@@ -142,11 +137,15 @@ export class TripGateway implements ITripGateway, OnGatewayConnection {
   ): void {
     const room = this.resolveRoom(event);
     if (!room) {
-      this.logger.debug(`skip internal event=${event.event} id=${event.eventId}`);
+      this.logger.debug(
+        `skip internal event=${event.event} id=${event.eventId}`,
+      );
       return;
     }
     this.server.to(room).emit(event.event, event);
-    this.logger.debug(`emit event=${event.event} room=${room} id=${event.eventId}`);
+    this.logger.debug(
+      `emit event=${event.event} room=${room} id=${event.eventId}`,
+    );
   }
 
   private resolveRoom<E extends keyof TripWsEventPayloadMap>(

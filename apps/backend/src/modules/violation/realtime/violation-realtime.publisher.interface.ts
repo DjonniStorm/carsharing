@@ -12,4 +12,3 @@ export interface IViolationRealtimePublisher {
 export const IViolationRealtimePublisherToken = Symbol(
   'IViolationRealtimePublisher',
 );
-

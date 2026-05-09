@@ -9,4 +9,3 @@ export interface ITripRealtimePublisher {
 }
 
 export const ITripRealtimePublisherToken = Symbol('ITripRealtimePublisher');
-

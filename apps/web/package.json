@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@carsharing/types": "workspace:*",
+    "@mantine/charts": "^9.0.0",
     "@mantine/core": "^9.0.0",
     "@mantine/dates": "^9.0.0",
     "@mantine/form": "^9.0.0",
@@ -19,9 +20,14 @@
     "@mantine/notifications": "^9.0.0",
     "@reatom/core": "^1000.15.2",
     "@reatom/react": "^1000.2.2",
+    "@tanstack/react-router": "^1.169.2",
     "dayjs": "^1.11.20",
+    "i18next": "^26.0.10",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "react-i18next": "^17.0.7",
+    "recharts": "^3.8.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
@@ -29,6 +35,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "@yandex/ymaps3-types": "^1.0.19487230",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",

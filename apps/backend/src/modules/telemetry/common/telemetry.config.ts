@@ -12,4 +12,3 @@ export function getTelemetryConfig(): TelemetryConfig {
   const periodSec = Number.isFinite(parsed) && parsed > 0 ? parsed : 5;
   return { periodSec };
 }
-

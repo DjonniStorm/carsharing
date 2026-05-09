@@ -43,7 +43,10 @@ export class ViolationService implements IViolationService {
     try {
       return await this.repository.findAllByTripId(tripId);
     } catch (error) {
-      this.logger.error(`Ошибка при поиске нарушений по tripId: ${tripId}`, error);
+      this.logger.error(
+        `Ошибка при поиске нарушений по tripId: ${tripId}`,
+        error,
+      );
       throw ViolationDbErrors.mapError(error);
     }
   }
@@ -76,7 +79,10 @@ export class ViolationService implements IViolationService {
     try {
       return await this.repository.findAllByStatus(status, includeResolved);
     } catch (error) {
-      this.logger.error(`Ошибка при поиске нарушений по статусу: ${status}`, error);
+      this.logger.error(
+        `Ошибка при поиске нарушений по статусу: ${status}`,
+        error,
+      );
       throw ViolationDbErrors.mapError(error);
     }
   }
@@ -119,4 +125,3 @@ export class ViolationService implements IViolationService {
     }
   }
 }
-

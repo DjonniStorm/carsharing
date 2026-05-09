@@ -40,4 +40,3 @@ export class TelemetryDbErrors {
     throw error;
   }
 }
-

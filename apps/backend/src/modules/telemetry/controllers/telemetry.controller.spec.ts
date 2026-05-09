@@ -235,7 +235,10 @@ describe('TelemetryController', () => {
 
   describe('dto validation', () => {
     it('TelemetryCreate: требует UUID tripId и валидные координаты', async () => {
-      const dto = buildTelemetryCreate('bad-trip-id', '2026-04-21T20:04:00.000Z');
+      const dto = buildTelemetryCreate(
+        'bad-trip-id',
+        '2026-04-21T20:04:00.000Z',
+      );
       dto.lat = 100;
       dto.lon = 200;
       const errors = await validate(dto);
@@ -247,7 +250,10 @@ describe('TelemetryController', () => {
   });
 });
 
-function buildTelemetryCreate(tripId: string, timestamp: string): TelemetryCreate {
+function buildTelemetryCreate(
+  tripId: string,
+  timestamp: string,
+): TelemetryCreate {
   const dto = new TelemetryCreate();
   dto.timestamp = timestamp;
   dto.lat = 55.75;
@@ -273,4 +279,3 @@ const sampleMultiPolygon = (seed: number): GeoJSONMultiPolygon => {
     coordinates: [[ring]] as unknown as GeoJSONMultiPolygon['coordinates'],
   };
 };
-

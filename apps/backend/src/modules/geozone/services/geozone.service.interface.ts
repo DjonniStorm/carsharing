@@ -35,10 +35,7 @@ export interface IGeozoneService {
   restore(id: string): Promise<GeozoneRead>;
 
   /** Чтение зоны по id; записи нет — исключение. */
-  findById(
-    id: string,
-    options?: GeozoneFindByIdOptions,
-  ): Promise<GeozoneRead>;
+  findById(id: string, options?: GeozoneFindByIdOptions): Promise<GeozoneRead>;
 
   /** Список зон с фильтрами и пагинацией. */
   findAll(params?: GeozoneListParams): Promise<GeozoneRead[]>;

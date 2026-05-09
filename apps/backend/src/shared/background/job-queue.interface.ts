@@ -19,4 +19,3 @@ export interface IJobQueue {
 }
 
 export const IJobQueueToken = Symbol('IJobQueue');
-

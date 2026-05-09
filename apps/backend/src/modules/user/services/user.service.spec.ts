@@ -341,9 +341,9 @@ describe('UserService', () => {
       });
 
       it('findByEmail: нет пользователя', async () => {
-        await expect(service.findByEmail('missing@example.com')).rejects.toThrow(
-          UserNotFoundException,
-        );
+        await expect(
+          service.findByEmail('missing@example.com'),
+        ).rejects.toThrow(UserNotFoundException);
       });
 
       it('findByPhone: нет пользователя', async () => {
@@ -411,10 +411,7 @@ describe('UserService', () => {
 
     it('create: P2002 по id → UserAlreadyExistsException', async () => {
       vi.mocked(mockRepo.create).mockRejectedValue(
-        prismaKnown(
-          'P2002',
-          'Unique constraint failed on the fields: (`id`)',
-        ),
+        prismaKnown('P2002', 'Unique constraint failed on the fields: (`id`)'),
       );
 
       await expect(service.create(createCreateUserEntity())).rejects.toThrow(
@@ -424,7 +421,10 @@ describe('UserService', () => {
 
     it('create: P2002 без распознаваемого поля → DatabaseUserErrorException', async () => {
       vi.mocked(mockRepo.create).mockRejectedValue(
-        prismaKnown('P2002', 'Unique constraint failed on the fields: (`unknown`)'),
+        prismaKnown(
+          'P2002',
+          'Unique constraint failed on the fields: (`unknown`)',
+        ),
       );
 
       await expect(service.create(createCreateUserEntity())).rejects.toThrow(

@@ -28,14 +28,14 @@ export class TariffDbErrors {
       switch (error.code) {
         case 'P2003':
           throw new TariffGeoZoneNotFoundException(
-            'Геозона для тарифа не найдена',
+            'пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ',
           );
 
         case 'P2025':
-          throw new TariffNotFoundException('Тариф не найден');
+          throw new TariffNotFoundException('пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ');
 
         default:
-          throw new DatabaseTariffErrorException('Ошибка базы данных тарифа');
+          throw new DatabaseTariffErrorException('пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ');
       }
     }
 

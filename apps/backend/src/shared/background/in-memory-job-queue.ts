@@ -13,4 +13,3 @@ export class InMemoryJobQueue implements IJobQueue {
     return this.items.shift() ?? null;
   }
 }
-
