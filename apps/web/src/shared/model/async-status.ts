@@ -1,1 +1,1 @@
-export type AsyncStatus = 'idle' | 'loading' | 'error'
+export type AsyncStatus = "idle" | "loading" | "error";

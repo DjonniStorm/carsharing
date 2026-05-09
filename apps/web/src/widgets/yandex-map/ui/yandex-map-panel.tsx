@@ -1,19 +1,23 @@
-import { Paper, Stack, Text } from '@mantine/core'
+import { Paper, Stack, Text } from "@mantine/core";
 
-import type { YandexMapCanvasProps } from '@/widgets/yandex-map/ui/yandex-map-canvas'
-import { YandexMapCanvas } from '@/widgets/yandex-map/ui/yandex-map-canvas'
+import type { YandexMapCanvasProps } from "@/widgets/yandex-map/ui/yandex-map-canvas";
+import { YandexMapCanvas } from "@/widgets/yandex-map/ui/yandex-map-canvas";
 
 export type YandexMapPanelProps = YandexMapCanvasProps & {
   /** Заголовок над картой (опционально). */
-  title?: string
+  title?: string;
   /** Подпись под заголовком. */
-  description?: string
-}
+  description?: string;
+};
 
 /**
  * Карта в карточке Mantine — удобно для дашборда и встроенных превью.
  */
-const YandexMapPanel = ({ title, description, ...canvasProps }: YandexMapPanelProps) => {
+const YandexMapPanel = ({
+  title,
+  description,
+  ...canvasProps
+}: YandexMapPanelProps) => {
   return (
     <Paper shadow="sm" p="md" radius="md" withBorder>
       <Stack gap="sm">
@@ -30,8 +34,8 @@ const YandexMapPanel = ({ title, description, ...canvasProps }: YandexMapPanelPr
         <YandexMapCanvas {...canvasProps} />
       </Stack>
     </Paper>
-  )
-}
-YandexMapPanel.displayName = 'YandexMapPanel'
+  );
+};
+YandexMapPanel.displayName = "YandexMapPanel";
 
-export { YandexMapPanel }
+export { YandexMapPanel };

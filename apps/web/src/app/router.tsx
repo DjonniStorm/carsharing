@@ -26,148 +26,150 @@ import {
   createRouter,
   Outlet,
   redirect,
-} from '@tanstack/react-router'
+} from "@tanstack/react-router";
 
-import { DashboardRouteLayout } from '@/app/layouts/dashboard-route-layout'
-import { ACCESS_TOKEN_STORAGE_KEY } from '@/features/auth/config/token-storage'
-import { CarsPage } from '@/pages/cars'
-import { DashboardPage } from '@/pages/dashboard'
-import { GeozonesPage } from '@/pages/geozones'
-import { LoginPage } from '@/pages/login'
-import { RegisterPage } from '@/pages/register'
-import { ViolationsPage } from '@/pages/violations'
-import { ROUTES } from '@/shared/config/routes-paths'
+import { DashboardRouteLayout } from "@/app/layouts/dashboard-route-layout";
+import { ACCESS_TOKEN_STORAGE_KEY } from "@/features/auth/config/token-storage";
+import { CarsPage } from "@/pages/cars";
+import { DashboardPage } from "@/pages/dashboard";
+import { GeozonesPage } from "@/pages/geozones";
+import { LoginPage } from "@/pages/login";
+import { RegisterPage } from "@/pages/register";
+import { ViolationsPage } from "@/pages/violations";
+import { ROUTES } from "@/shared/config/routes-paths";
 
 const readAccessToken = (): string | null => {
-  return localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)
-}
+  return localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+};
 
 /** В `beforeLoad` у TanStack Router `location.search` — объект, не строка query. */
 const redirectPathFromLocation = (location: {
-  pathname: string
-  search: Record<string, unknown>
+  pathname: string;
+  search: Record<string, unknown>;
 }): string => {
-  const raw = location.search
-  const params = new URLSearchParams()
-  if (raw && typeof raw === 'object') {
+  const raw = location.search;
+  const params = new URLSearchParams();
+  if (raw && typeof raw === "object") {
     for (const key of Object.keys(raw)) {
-      const val = raw[key]
+      const val = raw[key];
       if (val === undefined || val === null) {
-        continue
+        continue;
       }
       if (Array.isArray(val)) {
         for (const item of val) {
-          params.append(key, String(item))
+          params.append(key, String(item));
         }
       } else {
-        params.set(key, String(val))
+        params.set(key, String(val));
       }
     }
   }
-  const q = params.toString()
+  const q = params.toString();
   if (!q) {
-    return location.pathname
+    return location.pathname;
   }
-  return `${location.pathname}?${q}`
-}
+  return `${location.pathname}?${q}`;
+};
 
 const RootOutlet = () => {
-  return <Outlet />
-}
-RootOutlet.displayName = 'RootOutlet'
+  return <Outlet />;
+};
+RootOutlet.displayName = "RootOutlet";
 
 const rootRoute = createRootRoute({
   component: RootOutlet,
-})
+});
 
 /* --- Публичные страницы (без shell) --- */
 
 const loginRoute = createRoute({
   getParentRoute: () => {
-    return rootRoute
+    return rootRoute;
   },
-  path: '/login',
+  path: "/login",
   validateSearch: (search: Record<string, unknown>) => {
     return {
-      redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
-    }
+      redirect:
+        typeof search.redirect === "string" ? search.redirect : undefined,
+    };
   },
   beforeLoad: () => {
     if (readAccessToken()) {
-      throw redirect({ to: ROUTES.home })
+      throw redirect({ to: ROUTES.home });
     }
   },
   component: LoginPage,
-})
+});
 
 const registerRoute = createRoute({
   getParentRoute: () => {
-    return rootRoute
+    return rootRoute;
   },
-  path: '/register',
+  path: "/register",
   validateSearch: (search: Record<string, unknown>) => {
     return {
-      redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
-    }
+      redirect:
+        typeof search.redirect === "string" ? search.redirect : undefined,
+    };
   },
   beforeLoad: () => {
     if (readAccessToken()) {
-      throw redirect({ to: ROUTES.home })
+      throw redirect({ to: ROUTES.home });
     }
   },
   component: RegisterPage,
-})
+});
 
 /* --- Дашборд: layout + дочерние страницы --- */
 
 const dashboardShellRoute = createRoute({
   getParentRoute: () => {
-    return rootRoute
+    return rootRoute;
   },
-  id: 'dashboard-shell',
+  id: "dashboard-shell",
   beforeLoad: ({ location }) => {
     if (!readAccessToken()) {
-      const redirectPath = redirectPathFromLocation(location)
+      const redirectPath = redirectPathFromLocation(location);
       throw redirect({
-        to: '/login',
+        to: "/login",
         search: { redirect: redirectPath },
-      })
+      });
     }
   },
   component: DashboardRouteLayout,
-})
+});
 
 const dashboardHomeRoute = createRoute({
   getParentRoute: () => {
-    return dashboardShellRoute
+    return dashboardShellRoute;
   },
-  path: '/',
+  path: "/",
   component: DashboardPage,
-})
+});
 
 const dashboardCarsRoute = createRoute({
   getParentRoute: () => {
-    return dashboardShellRoute
+    return dashboardShellRoute;
   },
-  path: '/dashboard/cars',
+  path: "/dashboard/cars",
   component: CarsPage,
-})
+});
 
 const dashboardGeozonesRoute = createRoute({
   getParentRoute: () => {
-    return dashboardShellRoute
+    return dashboardShellRoute;
   },
-  path: '/dashboard/geozones',
+  path: "/dashboard/geozones",
   component: GeozonesPage,
-})
+});
 
 const dashboardViolationsRoute = createRoute({
   getParentRoute: () => {
-    return dashboardShellRoute
+    return dashboardShellRoute;
   },
-  path: '/dashboard/violations',
+  path: "/dashboard/violations",
   component: ViolationsPage,
-})
+});
 
 const routeTree = rootRoute.addChildren([
   dashboardShellRoute.addChildren([
@@ -178,12 +180,12 @@ const routeTree = rootRoute.addChildren([
   ]),
   loginRoute,
   registerRoute,
-])
+]);
 
-export const router = createRouter({ routeTree })
+export const router = createRouter({ routeTree });
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface Register {
-    router: typeof router
+    router: typeof router;
   }
 }

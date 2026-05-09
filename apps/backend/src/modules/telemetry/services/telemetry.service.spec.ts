@@ -169,8 +169,12 @@ describe('TelemetryService (integration)', () => {
 
   describe('findManyByTripId', () => {
     it('возвращает список записей по tripId', async () => {
-      await service.create(buildTelemetryCreate(tripId, '2026-04-21T12:00:00.000Z'));
-      await service.create(buildTelemetryCreate(tripId, '2026-04-21T12:01:00.000Z'));
+      await service.create(
+        buildTelemetryCreate(tripId, '2026-04-21T12:00:00.000Z'),
+      );
+      await service.create(
+        buildTelemetryCreate(tripId, '2026-04-21T12:01:00.000Z'),
+      );
 
       const list = await service.findManyByTripId(tripId);
       expect(list).toHaveLength(2);
@@ -178,7 +182,10 @@ describe('TelemetryService (integration)', () => {
   });
 });
 
-function buildTelemetryCreate(tripId: string, timestamp: string): TelemetryCreate {
+function buildTelemetryCreate(
+  tripId: string,
+  timestamp: string,
+): TelemetryCreate {
   const dto = new TelemetryCreate();
   dto.timestamp = timestamp;
   dto.lat = 55.75;
@@ -204,4 +211,3 @@ const sampleMultiPolygon = (seed: number): GeoJSONMultiPolygon => {
     coordinates: [[ring]] as unknown as GeoJSONMultiPolygon['coordinates'],
   };
 };
-

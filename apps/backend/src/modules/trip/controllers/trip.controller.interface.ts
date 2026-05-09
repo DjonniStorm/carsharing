@@ -25,5 +25,9 @@ export interface ITripController {
 
   create(user: AuthenticatedUser, input: TripCreate): Promise<TripRead>;
 
-  update(user: AuthenticatedUser, id: string, input: TripUpdate): Promise<TripRead>;
+  update(
+    user: AuthenticatedUser,
+    id: string,
+    input: TripUpdate,
+  ): Promise<TripRead>;
 }

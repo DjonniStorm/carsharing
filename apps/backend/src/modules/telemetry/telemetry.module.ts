@@ -23,4 +23,3 @@ import { ITelemetryServiceToken } from './services/telemetry.service.interface';
   exports: [ITelemetryRepositoryToken, ITelemetryServiceToken],
 })
 export class TelemetryModule {}
-

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@carsharing/types": "workspace:*",
+    "@mantine/charts": "^9.0.0",
     "@mantine/core": "^9.0.0",
     "@mantine/dates": "^9.0.0",
     "@mantine/form": "^9.0.0",
@@ -25,6 +26,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-i18next": "^17.0.7",
+    "recharts": "^3.8.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

@@ -4,7 +4,10 @@ import { TelemetryCreate } from '../entities/dto/telemetry.create';
 import { TelemetryRead } from '../entities/dto/telemetry.read';
 
 export interface ITelemetryController {
-  create(user: AuthenticatedUser, input: TelemetryCreate): Promise<TelemetryRead>;
+  create(
+    user: AuthenticatedUser,
+    input: TelemetryCreate,
+  ): Promise<TelemetryRead>;
 
   findById(user: AuthenticatedUser, id: string): Promise<TelemetryRead>;
 

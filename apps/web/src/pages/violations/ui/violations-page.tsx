@@ -1,27 +1,34 @@
-import { Alert, Container, ScrollArea, Table, Text, Title } from '@mantine/core'
-import { useAction, useAtom } from '@reatom/react'
-import { useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
+import {
+  Alert,
+  Container,
+  ScrollArea,
+  Table,
+  Text,
+  Title,
+} from "@mantine/core";
+import { useAction, useAtom } from "@reatom/react";
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
-import { ViolationStatus } from '@/entities/violation'
+import { ViolationStatus } from "@/entities/violation";
 import {
   loadViolationsAdminList,
   violationsAdminListAtom,
   violationsAdminListErrorAtom,
   violationsAdminListStatusAtom,
-} from '@/features/violations/model/violations-state'
-import { LANG_KEYS } from '@/shared/i18n/keys'
+} from "@/features/violations/model/violations-state";
+import { LANG_KEYS } from "@/shared/i18n/keys";
 
 const ViolationsPage = () => {
-  const { t } = useTranslation()
-  const [rows] = useAtom(violationsAdminListAtom)
-  const [status] = useAtom(violationsAdminListStatusAtom)
-  const [error] = useAtom(violationsAdminListErrorAtom)
-  const load = useAction(loadViolationsAdminList)
+  const { t } = useTranslation();
+  const [rows] = useAtom(violationsAdminListAtom);
+  const [status] = useAtom(violationsAdminListStatusAtom);
+  const [error] = useAtom(violationsAdminListErrorAtom);
+  const load = useAction(loadViolationsAdminList);
 
   useEffect(() => {
-    void load({ includeResolved: true })
-  }, [load])
+    void load({ includeResolved: true });
+  }, [load]);
 
   return (
     <Container size="lg" py="md" px="md">
@@ -30,7 +37,7 @@ const ViolationsPage = () => {
         {t(LANG_KEYS.pages.violationsStub)}
       </Text>
 
-      {status === 'loading' ? (
+      {status === "loading" ? (
         <Text c="dimmed" mt="md">
           {t(LANG_KEYS.pages.violationsLoading)}
         </Text>
@@ -63,8 +70,8 @@ const ViolationsPage = () => {
         </ScrollArea>
       )}
     </Container>
-  )
-}
-ViolationsPage.displayName = 'ViolationsPage'
+  );
+};
+ViolationsPage.displayName = "ViolationsPage";
 
-export { ViolationsPage }
+export { ViolationsPage };

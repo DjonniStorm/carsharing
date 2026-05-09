@@ -1,1 +1,1 @@
-export { GeozonesPage } from './ui/geozones-page'
+export { GeozonesPage } from "./ui/geozones-page";

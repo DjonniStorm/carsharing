@@ -29,4 +29,3 @@ export function getViolationConfig(): ViolationConfig {
         : 60_000,
   };
 }
-

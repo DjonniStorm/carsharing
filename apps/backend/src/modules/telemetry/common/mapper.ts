@@ -34,4 +34,3 @@ export class TelemetryMapper {
     return read;
   }
 }
-

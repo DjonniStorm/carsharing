@@ -18,4 +18,3 @@ export class DatabaseViolationErrorException extends Error {
     this.name = 'DatabaseViolationErrorException';
   }
 }
-

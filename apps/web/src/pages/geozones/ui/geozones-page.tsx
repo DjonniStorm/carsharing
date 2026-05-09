@@ -7,29 +7,29 @@ import {
   Table,
   Text,
   Title,
-} from '@mantine/core'
-import { useAction, useAtom } from '@reatom/react'
-import { useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
+} from "@mantine/core";
+import { useAction, useAtom } from "@reatom/react";
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   geozonesCatalogAtom,
   geozonesCatalogErrorAtom,
   geozonesCatalogStatusAtom,
   loadGeozonesCatalog,
-} from '@/features/geozones/model/geozones-state'
-import { LANG_KEYS } from '@/shared/i18n/keys'
+} from "@/features/geozones/model/geozones-state";
+import { LANG_KEYS } from "@/shared/i18n/keys";
 
 const GeozonesPage = () => {
-  const { t } = useTranslation()
-  const [rows] = useAtom(geozonesCatalogAtom)
-  const [status] = useAtom(geozonesCatalogStatusAtom)
-  const [error] = useAtom(geozonesCatalogErrorAtom)
-  const load = useAction(loadGeozonesCatalog)
+  const { t } = useTranslation();
+  const [rows] = useAtom(geozonesCatalogAtom);
+  const [status] = useAtom(geozonesCatalogStatusAtom);
+  const [error] = useAtom(geozonesCatalogErrorAtom);
+  const load = useAction(loadGeozonesCatalog);
 
   useEffect(() => {
-    void load(false)
-  }, [load])
+    void load(false);
+  }, [load]);
 
   return (
     <Container size="lg" py="md" px="md">
@@ -37,7 +37,7 @@ const GeozonesPage = () => {
       <Text c="dimmed" mt="xs" size="sm">
         {t(LANG_KEYS.pages.geozonesStub)}
       </Text>
-      {status === 'loading' ? (
+      {status === "loading" ? (
         <Text c="dimmed" mt="md">
           {t(LANG_KEYS.pages.geozonesLoading)}
         </Text>
@@ -73,8 +73,8 @@ const GeozonesPage = () => {
         </ScrollArea>
       )}
     </Container>
-  )
-}
-GeozonesPage.displayName = 'GeozonesPage'
+  );
+};
+GeozonesPage.displayName = "GeozonesPage";
 
-export { GeozonesPage }
+export { GeozonesPage };

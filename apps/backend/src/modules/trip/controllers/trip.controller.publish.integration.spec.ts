@@ -1,6 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from 'vitest';
 import { v4 as uuidv4 } from 'uuid';
 
 import type { TripRead } from '../entities/dtos/trip.read';
@@ -18,9 +26,7 @@ import {
   truncateApplicationTable,
 } from 'src/shared/testing';
 import { InMemoryJobQueue } from 'src/shared/background/in-memory-job-queue';
-import {
-  IJobQueueToken,
-} from 'src/shared/background/job-queue.interface';
+import { IJobQueueToken } from 'src/shared/background/job-queue.interface';
 import { ITripRepositoryToken } from '../repositories/trip.repository.interface';
 import { TripRepository } from '../repositories/trip.repository';
 import {
@@ -174,4 +180,3 @@ const sampleMultiPolygon = (seed: number): GeoJSONMultiPolygon => {
     coordinates: [[ring]] as unknown as GeoJSONMultiPolygon['coordinates'],
   };
 };
-

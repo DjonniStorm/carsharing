@@ -5,16 +5,16 @@ export type {
   LoginRequestBody,
   LoginResponseBody,
   PublicRegisterBody,
-} from './model/contracts'
+} from "./model/contracts";
 export type {
   CreateUserFormOutput,
   LoginFormOutput,
   PublicRegisterFormOutput,
   RegisterFormOutput,
-} from './model/schemas'
+} from "./model/schemas";
 export {
   createUserSchema,
   loginSchema,
   publicRegisterFormSchema,
   publicRegisterSchema,
-} from './model/schemas'
+} from "./model/schemas";

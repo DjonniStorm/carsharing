@@ -15,4 +15,3 @@ export interface ITelemetryService {
 }
 
 export const ITelemetryServiceToken = Symbol('ITelemetryService');
-

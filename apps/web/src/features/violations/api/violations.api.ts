@@ -3,29 +3,29 @@ import type {
   ViolationRead,
   ViolationUpdateStatusBody,
   ViolationStatus,
-} from '@/entities/violation'
-import { BaseApiClient } from '@/shared/api'
-import type { AccessTokenGetter } from '@/shared/api/base-api-client'
+} from "@/entities/violation";
+import { BaseApiClient } from "@/shared/api";
+import type { AccessTokenGetter } from "@/shared/api/base-api-client";
 
 function optionalQuery(params: Record<string, string | undefined>): string {
-  const sp = new URLSearchParams()
+  const sp = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== '') {
-      sp.set(k, v)
+    if (v !== undefined && v !== "") {
+      sp.set(k, v);
     }
   }
-  const q = sp.toString()
-  return q ? `?${q}` : ''
+  const q = sp.toString();
+  return q ? `?${q}` : "";
 }
 
 export type ViolationListQuery = {
-  status?: ViolationStatus
-  includeResolved?: boolean
-}
+  status?: ViolationStatus;
+  includeResolved?: boolean;
+};
 
 export class ViolationsApi extends BaseApiClient {
   constructor(baseUrl: string, getAccessToken: AccessTokenGetter) {
-    super(baseUrl, getAccessToken)
+    super(baseUrl, getAccessToken);
   }
 
   findAll(query: ViolationListQuery = {}): Promise<ViolationRead[]> {
@@ -37,34 +37,37 @@ export class ViolationsApi extends BaseApiClient {
             ? undefined
             : String(query.includeResolved),
       })}`,
-    )
+    );
   }
 
   findByTripId(tripId: string): Promise<ViolationRead[]> {
     return this.getJson<ViolationRead[]>(
       `/violations/trip/${encodeURIComponent(tripId)}`,
-    )
+    );
   }
 
   findById(id: string): Promise<ViolationRead> {
-    return this.getJson<ViolationRead>(`/violations/${encodeURIComponent(id)}`)
+    return this.getJson<ViolationRead>(`/violations/${encodeURIComponent(id)}`);
   }
 
   create(body: ViolationCreateBody): Promise<ViolationRead> {
-    return this.postJson<ViolationRead>('/violations', body)
+    return this.postJson<ViolationRead>("/violations", body);
   }
 
-  updateStatus(id: string, body: ViolationUpdateStatusBody): Promise<ViolationRead> {
+  updateStatus(
+    id: string,
+    body: ViolationUpdateStatusBody,
+  ): Promise<ViolationRead> {
     return this.patchJson<ViolationRead>(
       `/violations/${encodeURIComponent(id)}/status`,
       body,
-    )
+    );
   }
 
   resolve(id: string): Promise<ViolationRead> {
     return this.postJson<ViolationRead>(
       `/violations/${encodeURIComponent(id)}/resolve`,
       {},
-    )
+    );
   }
 }

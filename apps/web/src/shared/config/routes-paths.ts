@@ -5,12 +5,12 @@
  * роутера, и этот объект (и при необходимости `DASHBOARD_NAV` в `app/config/routes.config.ts`).
  */
 export const ROUTES = {
-  home: '/',
-  login: '/login',
-  register: '/register',
+  home: "/",
+  login: "/login",
+  register: "/register",
   dashboard: {
-    cars: '/dashboard/cars',
-    geozones: '/dashboard/geozones',
-    violations: '/dashboard/violations',
+    cars: "/dashboard/cars",
+    geozones: "/dashboard/geozones",
+    violations: "/dashboard/violations",
   },
-} as const
+} as const;

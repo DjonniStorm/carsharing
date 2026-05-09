@@ -52,8 +52,12 @@ describe('TariffController', () => {
 
     it('возвращает тарифы и учитывает includeDeleted', async () => {
       const { geoZoneId } = await seedUserAndGeoZone(prisma);
-      const a = await controller.create(buildTariffCreate(geoZoneId, { name: 'A' }));
-      const b = await controller.create(buildTariffCreate(geoZoneId, { name: 'B' }));
+      const a = await controller.create(
+        buildTariffCreate(geoZoneId, { name: 'A' }),
+      );
+      const b = await controller.create(
+        buildTariffCreate(geoZoneId, { name: 'B' }),
+      );
 
       const active = await controller.findAll(false);
       expect(active.length).toBe(2);

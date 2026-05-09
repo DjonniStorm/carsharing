@@ -38,4 +38,3 @@ import { ViolationBackgroundWorker } from './background/violation-background.wor
   exports: [IViolationRepositoryToken, IViolationServiceToken],
 })
 export class ViolationModule {}
-

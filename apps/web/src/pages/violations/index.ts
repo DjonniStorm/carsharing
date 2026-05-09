@@ -1,1 +1,1 @@
-export { ViolationsPage } from './ui/violations-page'
+export { ViolationsPage } from "./ui/violations-page";

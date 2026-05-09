@@ -76,10 +76,14 @@ export class AuthService {
       return { access_token };
     } catch (error) {
       if (error instanceof EmailAlreadyExistsException) {
-        throw new ConflictException('Пользователь с таким email уже зарегистрирован');
+        throw new ConflictException(
+          'Пользователь с таким email уже зарегистрирован',
+        );
       }
       if (error instanceof PhoneAlreadyExistsException) {
-        throw new ConflictException('Пользователь с таким телефоном уже зарегистрирован');
+        throw new ConflictException(
+          'Пользователь с таким телефоном уже зарегистрирован',
+        );
       }
       throw error;
     }
