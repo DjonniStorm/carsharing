@@ -15,7 +15,7 @@
  *   очистку сессии и редирект на `/error?reason=session`. Роль водитель — очистка сессии и
  *   редирект на `/login?reason=manager_only` (веб-панель только для менеджеров).
  *
- * - `/dashboard` — обзор с картой; остальные разделы `/dashboard/...`.
+ * - `/dashboard/users` — список пользователей; карточка: `/dashboard/users/:userId`.
  *
  * Защита и навигация:
  * - Токен: `ACCESS_TOKEN_STORAGE_KEY`, см. `features/auth/config/token-storage.ts`.
@@ -35,6 +35,7 @@ import { UserRole } from "@/entities/user";
 import { ACCESS_TOKEN_STORAGE_KEY } from "@/features/auth/config/token-storage";
 import { authApi } from "@/features/auth/api";
 import { forceLogoutClient } from "@/features/auth/lib/force-logout-client";
+import { setSessionProfile } from "@/features/auth/model/session";
 import { CarsPage } from "@/pages/cars";
 import { DashboardPage } from "@/pages/dashboard";
 import { ErrorPage } from "@/pages/error";
@@ -47,13 +48,15 @@ import { PublicHomePage } from "@/pages/home";
 import { LoginPage } from "@/pages/login";
 import { RegisterPage } from "@/pages/register";
 import { TariffCreatePage, TariffEditPage, TariffsPage } from "@/pages/tariffs";
+import { ProfilePage } from "@/pages/profile";
 import { TripViewPage } from "@/pages/trip";
 import {
   ViolationCreatePage,
   ViolationEditPage,
   ViolationsPage,
 } from "@/pages/violations";
-import { UserViewPage } from "@/pages/users";
+import { UserViewPage, UsersListPage } from "@/pages/users";
+import { rootFrame } from "@/app/store";
 import { HttpApiError } from "@/shared/api/http-api-error";
 import { ROUTES } from "@/shared/config/routes-paths";
 import { isUuidString } from "@/shared/lib/is-uuid-string";
@@ -187,6 +190,7 @@ const dashboardShellRoute = createRoute({
     }
     try {
       const me = await authApi.getMe();
+      rootFrame.run(() => setSessionProfile(me));
       if (me.role === UserRole.DRIVER) {
         forceLogoutClient();
         throw redirect({
@@ -223,6 +227,14 @@ const dashboardHomeRoute = createRoute({
   component: DashboardPage,
 });
 
+const dashboardProfileRoute = createRoute({
+  getParentRoute: () => {
+    return dashboardShellRoute;
+  },
+  path: "/dashboard/profile",
+  component: ProfilePage,
+});
+
 const dashboardCarsRoute = createRoute({
   getParentRoute: () => {
     return dashboardShellRoute;
@@ -245,6 +257,14 @@ const dashboardTripViewRoute = createRoute({
     }
   },
   component: TripViewPage,
+});
+
+const dashboardUsersListRoute = createRoute({
+  getParentRoute: () => {
+    return dashboardShellRoute;
+  },
+  path: "/dashboard/users",
+  component: UsersListPage,
 });
 
 const dashboardUserViewRoute = createRoute({
@@ -330,8 +350,10 @@ const dashboardViolationsRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   dashboardShellRoute.addChildren([
     dashboardHomeRoute,
+    dashboardProfileRoute,
     dashboardCarsRoute,
     dashboardTripViewRoute,
+    dashboardUsersListRoute,
     dashboardUserViewRoute,
     /** Статические пути глубже `/dashboard/geozones` — до индекса списка. */
     dashboardGeozonesNewRoute,

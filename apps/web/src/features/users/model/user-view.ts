@@ -1,12 +1,12 @@
 import { action, atom, wrap } from "@reatom/core";
 
 import type { ReadUser } from "@/entities/user";
-import { UserRole } from "@/entities/user";
 import type { ViolationRead } from "@/entities/violation";
 import { usersApi } from "@/features/auth/api";
 import { tripHistoryApi } from "@/features/trips/api";
 import { violationsFromTripHistoryRows } from "@/features/trips/lib/violations-from-trip-history";
 import type { AsyncStatus } from "@/shared/model/async-status";
+import { notification } from "@/shared/lib/notification";
 
 const DRIVER_HISTORY_LIMIT = 500;
 
@@ -49,7 +49,7 @@ export const resetUserView = action(() => {
   userViewViolationsErrorAtom.set(null);
 }, "resetUserView");
 
-/** Карточка пользователя и при необходимости нарушения водителя (из истории поездок). */
+/** Карточка пользователя и нарушения из истории поездок этого пользователя (`GET /trip-history`). */
 export const loadUserViewPage = action(async (userId: string) => {
   userViewProfileStatusAtom.set("loading");
   userViewProfileErrorAtom.set(null);
@@ -62,17 +62,11 @@ export const loadUserViewPage = action(async (userId: string) => {
     userViewProfileAtom.set(user);
     userViewProfileStatusAtom.set("idle");
 
-    if (user.role !== UserRole.DRIVER) {
-      userViewViolationsAtom.set([]);
-      userViewViolationsStatusAtom.set("idle");
-      return;
-    }
-
     userViewViolationsStatusAtom.set("loading");
     try {
       const rows = await wrap(
         tripHistoryApi.listShort({
-          userId: user.id,
+          userId,
           limit: DRIVER_HISTORY_LIMIT,
         }),
       );
@@ -84,13 +78,13 @@ export const loadUserViewPage = action(async (userId: string) => {
       userViewViolationsErrorAtom.set(
         e instanceof Error ? e.message : String(e),
       );
+
+      notification.error("error", e instanceof Error ? e.message : String(e));
     }
   } catch (e) {
     userViewProfileAtom.set(null);
     userViewProfileStatusAtom.set("error");
-    userViewProfileErrorAtom.set(
-      e instanceof Error ? e.message : String(e),
-    );
+    userViewProfileErrorAtom.set(e instanceof Error ? e.message : String(e));
     userViewViolationsAtom.set([]);
     userViewViolationsStatusAtom.set("idle");
   }

@@ -7,6 +7,7 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
+import { validate as isUuid } from 'uuid';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -58,7 +59,10 @@ export class TripHistoryController {
     @Query('limit') rawLimit?: string,
     @Query('offset') rawOffset?: string,
   ): Promise<TripHistoryShortInfoRead[]> {
-    const effectiveUserId = resolveHistoryUserId(user, userId);
+    const effectiveUserId = resolveHistoryUserId(
+      user,
+      normalizeOptionalQueryUuid(userId, 'userId'),
+    );
     const limit = parseOptionalNonNegativeInt(rawLimit, 'limit');
     const offset = parseOptionalNonNegativeInt(rawOffset, 'offset');
     return this.tripService.getTripHistoryShortInfoList(effectiveUserId, {
@@ -143,6 +147,24 @@ function resolveHistoryUserId(
     return user.id;
   }
   return queryUserId != null && queryUserId !== '' ? queryUserId : user.id;
+}
+
+/** Пустая строка / пробелы → undefined; иначе проверка UUID до SQL (`::uuid`). */
+function normalizeOptionalQueryUuid(
+  raw: string | undefined,
+  field: string,
+): string | undefined {
+  if (raw == null) {
+    return undefined;
+  }
+  const trimmed = raw.trim();
+  if (trimmed === '') {
+    return undefined;
+  }
+  if (!isUuid(trimmed)) {
+    throw new BadRequestException(`${field} must be a valid UUID`);
+  }
+  return trimmed;
 }
 
 function parseOptionalNonNegativeInt(

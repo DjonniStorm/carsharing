@@ -6,6 +6,10 @@ export { ru } from "@/shared/i18n/locales/ru";
 export type { SupportedLanguage } from "@/shared/i18n/language";
 export {
   getInitialLanguage,
+  getStoredLanguage,
+  getStoredLanguageOrFallback,
+  LANGUAGE_STORAGE_KEY,
+  persistLanguage,
   SUPPORTED_LANGUAGES,
 } from "@/shared/i18n/language";
 export { translate } from "@/shared/i18n/translate";

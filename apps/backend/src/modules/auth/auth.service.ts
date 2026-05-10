@@ -23,6 +23,7 @@ import type { UserEntity } from 'src/modules/user/entities/user.entity';
 import { isOpenManagerSelfRegisterEnabled } from './open-manager-register.config';
 import type { JwtPayload } from './types/jwt-payload';
 import type { LoginDto } from './dto/login.dto';
+import type { PatchMeDto } from './dto/patch-me.dto';
 import type { RegisterDto } from './dto/register.dto';
 
 @Injectable()
@@ -129,6 +130,15 @@ export class AuthService {
       return this.users.findByEmail(login);
     }
     return this.users.findByPhone(login);
+  }
+
+  async patchProfile(userId: string, dto: PatchMeDto): Promise<ReadUserEntity> {
+    const name = dto.name.trim();
+    if (!name) {
+      throw new BadRequestException('Имя не может быть пустым');
+    }
+    await this.getCurrentUser(userId);
+    return this.userService.update(userId, { name });
   }
 
   /** Проверка, что пользователь из JWT всё ещё существует и может пользоваться API. */

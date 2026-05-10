@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
 } from '@nestjs/common';
 import {
@@ -21,6 +22,7 @@ import { Public } from './decorators/public.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
+import { PatchMeDto } from './dto/patch-me.dto';
 import { RegisterDto } from './dto/register.dto';
 import type { AuthenticatedUser } from './types/authenticated-user';
 
@@ -42,6 +44,20 @@ export class AuthController {
   })
   async me(@CurrentUser() user: AuthenticatedUser): Promise<ReadUserEntity> {
     return this.authService.getCurrentUser(user.id);
+  }
+
+  @Patch('me')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Обновить свой профиль',
+    description: 'Сейчас поддерживается только смена отображаемого имени.',
+  })
+  @ApiResponse({ status: 200, type: ReadUserEntity })
+  async patchMe(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: PatchMeDto,
+  ): Promise<ReadUserEntity> {
+    return this.authService.patchProfile(user.id, dto);
   }
 
   @Post('login')

@@ -1,4 +1,7 @@
 import "@/shared/i18n/i18n";
+import i18n from "@/shared/i18n/i18n";
+
+document.documentElement.lang = i18n.language.startsWith("en") ? "en" : "ru";
 
 import "@mantine/charts/styles.css";
 import "@mantine/core/styles.css";

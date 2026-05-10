@@ -28,6 +28,8 @@ export const ROUTES = {
 
     overview: "/dashboard",
 
+    profile: "/dashboard/profile",
+
     cars: "/dashboard/cars",
 
     geozones: "/dashboard/geozones",
@@ -55,6 +57,9 @@ export const ROUTES = {
 
     tripView: (tripId: string) =>
       `/dashboard/trips/${encodeURIComponent(tripId)}` as const,
+
+    /** Список пользователей (статический сегмент до `/dashboard/users/:userId`). */
+    users: "/dashboard/users",
 
     userView: (userId: string) =>
       `/dashboard/users/${encodeURIComponent(userId)}` as const,

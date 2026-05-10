@@ -56,16 +56,16 @@ function num(value: unknown): number | null {
 export class TripHistoryMapper {
   static shortInfoFromSqlRow(row: TripHistorySqlRow): TripHistoryShortInfoRead {
     const dto = new TripHistoryShortInfoRead();
-    dto.trip = this.tripReadFromJson(row.trip_json);
-    dto.car = this.carReadFromJson(row.car_json);
-    dto.violations = this.violationsReadFromJson(row.violations_json);
+    dto.trip = TripHistoryMapper.tripReadFromJson(row.trip_json);
+    dto.car = TripHistoryMapper.carReadFromJson(row.car_json);
+    dto.violations = TripHistoryMapper.violationsReadFromJson(row.violations_json);
     return dto;
   }
 
   static fullInfoFromSqlRow(row: TripHistoryFullSqlRow): TripHistoryRead {
-    const short = this.shortInfoFromSqlRow(row);
-    const points = this.telemetryReadsFromJson(row.telemetry_json);
-    return this.toTripHistoryRead(short, points);
+    const short = TripHistoryMapper.shortInfoFromSqlRow(row);
+    const points = TripHistoryMapper.telemetryReadsFromJson(row.telemetry_json);
+    return TripHistoryMapper.toTripHistoryRead(short, points);
   }
 
   static tripReadFromJson(raw: unknown): TripRead {

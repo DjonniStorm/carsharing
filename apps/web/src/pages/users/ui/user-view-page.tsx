@@ -32,7 +32,8 @@ import { ROUTES } from "@/shared/config/routes-paths";
 import { LANG_KEYS, type LangKey } from "@/shared/i18n/keys";
 
 function roleLangKey(role: UserRole): LangKey {
-  switch (role) {
+  const r = Number(role);
+  switch (r) {
     case UserRole.MANAGER:
       return LANG_KEYS.auth.roleManager;
     case UserRole.DRIVER:

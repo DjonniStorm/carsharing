@@ -171,8 +171,26 @@ export class TripRepository implements ITripRepository {
     const offset = options?.offset ?? 0;
     return this.queryTripHistoryRows(
       Prisma.sql`t.user_id = ${userId}::uuid`,
-      Prisma.sql`LIMIT ${limit} OFFSET ${offset}`,
+      this.paginationSql(limit, offset),
     );
+  }
+
+  /**
+   * Числа для LIMIT/OFFSET подставляем как литералы: иначе Prisma может передавать
+   * параметры как numeric и Postgres отвечает «LIMIT must be integer» → 500.
+   */
+  private paginationSql(limit: number, offset: number): Prisma.Sql {
+    if (
+      !Number.isInteger(limit) ||
+      limit < 0 ||
+      !Number.isInteger(offset) ||
+      offset < 0
+    ) {
+      throw new Error(
+        `Invalid pagination: limit=${String(limit)}, offset=${String(offset)}`,
+      );
+    }
+    return Prisma.raw(`LIMIT ${limit} OFFSET ${offset}`);
   }
 
   async findHistoryShortByTripId(

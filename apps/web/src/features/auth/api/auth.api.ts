@@ -31,6 +31,11 @@ export class AuthApi extends BaseApiClient {
     return this.getJson<AuthSessionUser>("/auth/me");
   }
 
+  /** Смена отображаемого имени (`PATCH /auth/me`). */
+  patchMe(body: { name: string }): Promise<AuthSessionUser> {
+    return this.patchJson<AuthSessionUser>("/auth/me", body);
+  }
+
   login(body: LoginRequestBody): Promise<LoginResponseBody> {
     return this.postJson<LoginResponseBody>("/auth/login", body, {
       bearer: false,
