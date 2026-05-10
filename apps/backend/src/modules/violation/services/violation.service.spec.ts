@@ -50,7 +50,7 @@ describe('ViolationService (integration)', () => {
     await truncateApplicationTable(prisma, 'violation');
     await truncateApplicationTable(prisma, 'telemetry');
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -74,7 +74,7 @@ describe('ViolationService (integration)', () => {
     await truncateApplicationTable(prisma, 'violation');
     await truncateApplicationTable(prisma, 'telemetry');
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -253,7 +253,7 @@ async function seedTrip(prisma: PrismaService): Promise<string> {
     data: {
       userId: user.id,
       carId: car.id,
-      tariffVersionId: zone.currentVersionId,
+      geoZoneVersionId: zone.currentVersionId,
       startedAt: new Date('2026-05-08T10:00:00.000Z'),
       distance: 0,
       duration: 0,

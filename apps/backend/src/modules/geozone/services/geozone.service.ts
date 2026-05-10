@@ -1,9 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { TariffNotFoundException } from 'src/modules/tariff/common/errors';
+import { ITariffRepositoryToken } from 'src/modules/tariff/repositories/tariff.repository.interface';
+import type { ITariffRepository } from 'src/modules/tariff/repositories/tariff.repository.interface';
+
 import { GeozoneDbErrors } from '../common/db-errors';
 import {
   GeozoneAlreadyDeletedException,
   GeozoneCreatedByUserIdRequiredException,
+  GeozoneInvalidPublishPricingException,
   GeozoneNotDeletedException,
   GeozoneNotFoundException,
   GeozoneVersionNotFoundException,
@@ -21,6 +26,7 @@ import type {
   GeozoneListParams,
   GeozoneVersionListFilters,
 } from '../entities/geozone-query.types';
+import type { GeozoneCreateRepositoryInput } from '../common/mapper';
 import type { IGeozoneRepository } from '../repositories/geozone.repository.interface';
 import { IGeozoneRepositoryToken } from '../repositories/geozone.repository.interface';
 import { IGeozoneService } from './geozone.service.interface';
@@ -30,6 +36,8 @@ export class GeozoneService implements IGeozoneService {
   constructor(
     @Inject(IGeozoneRepositoryToken)
     private readonly geozoneRepository: IGeozoneRepository,
+    @Inject(ITariffRepositoryToken)
+    private readonly tariffRepository: ITariffRepository,
   ) {}
 
   /**
@@ -44,9 +52,32 @@ export class GeozoneService implements IGeozoneService {
       );
     }
     try {
-      return await this.geozoneRepository.createWithInitialVersion(
-        GeozoneMapper.toCreateRepositoryInput(geozone, createdByUserId),
-      );
+      let input: GeozoneCreateRepositoryInput;
+      if (geozone.tariffPresetId) {
+        const preset = await this.tariffRepository.findActiveById(
+          geozone.tariffPresetId,
+        );
+        if (!preset) {
+          throw new TariffNotFoundException(
+            `Шаблон тарифа не найден или удалён: ${geozone.tariffPresetId}`,
+          );
+        }
+        input = {
+          name: geozone.name,
+          type: geozone.type,
+          color: geozone.color,
+          createdByUserId,
+          geometry: geozone.geometry,
+          rules: geozone.rules ?? null,
+          pricePerMinute: preset.pricePerMinute,
+          pricePerKm: preset.pricePerKm,
+          pausePricePerMinute: preset.pausePricePerMinute,
+          tariffPresetId: preset.id,
+        };
+      } else {
+        input = GeozoneMapper.toCreateRepositoryInput(geozone, createdByUserId);
+      }
+      return await this.geozoneRepository.createWithInitialVersion(input);
     } catch (error) {
       GeozoneDbErrors.mapError(error);
     }
@@ -132,12 +163,69 @@ export class GeozoneService implements IGeozoneService {
     version: GeozoneVersionCreate,
   ): Promise<GeozoneRead> {
     try {
+      let pricePerMinute: number;
+      let pricePerKm: number;
+      let pausePricePerMinute: number;
+      let tariffPresetId: string | null;
+
+      if (version.tariffPresetId) {
+        const preset = await this.tariffRepository.findActiveById(
+          version.tariffPresetId,
+        );
+        if (!preset) {
+          throw new TariffNotFoundException(
+            `Шаблон тарифа не найден или удалён: ${version.tariffPresetId}`,
+          );
+        }
+        pricePerMinute = preset.pricePerMinute;
+        pricePerKm = preset.pricePerKm;
+        pausePricePerMinute = preset.pausePricePerMinute;
+        tariffPresetId = preset.id;
+      } else if (
+        version.pricePerMinute !== undefined &&
+        version.pricePerKm !== undefined &&
+        version.pausePricePerMinute !== undefined
+      ) {
+        pricePerMinute = version.pricePerMinute;
+        pricePerKm = version.pricePerKm;
+        pausePricePerMinute = version.pausePricePerMinute;
+        const zone = await this.geozoneRepository.findById(geozoneId);
+        if (zone?.currentVersionId) {
+          const snap = await this.geozoneRepository.findVersionPricingSnapshot(
+            zone.currentVersionId,
+          );
+          tariffPresetId = snap?.tariffPresetId ?? null;
+        } else {
+          tariffPresetId = null;
+        }
+      } else {
+        const zone = await this.geozoneRepository.findById(geozoneId);
+        if (!zone?.currentVersionId) {
+          throw new GeozoneInvalidPublishPricingException(
+            'Укажите tariffPresetId, все три ставки в теле, либо опирайтесь на текущую версию (должна существовать)',
+          );
+        }
+        const snap = await this.geozoneRepository.findVersionPricingSnapshot(
+          zone.currentVersionId,
+        );
+        if (!snap) {
+          throw new GeozoneInvalidPublishPricingException(
+            'Не удалось прочитать ставки текущей версии',
+          );
+        }
+        pricePerMinute = snap.pricePerMinute;
+        pricePerKm = snap.pricePerKm;
+        pausePricePerMinute = snap.pausePricePerMinute;
+        tariffPresetId = snap.tariffPresetId;
+      }
+
       return await this.geozoneRepository.publishNewVersion(geozoneId, {
         geometry: version.geometry,
         rules: version.rules ?? null,
-        pricePerMinute: version.pricePerMinute,
-        pricePerKm: version.pricePerKm,
-        pausePricePerMinute: version.pausePricePerMinute,
+        pricePerMinute,
+        pricePerKm,
+        pausePricePerMinute,
+        tariffPresetId,
       });
     } catch (error) {
       GeozoneDbErrors.mapError(error);

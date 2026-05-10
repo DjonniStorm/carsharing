@@ -1,15 +1,15 @@
 import {
+  IsBoolean,
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   Min,
   MinLength,
 } from 'class-validator';
 
 /**
- * Патч полей тарифа (без смены id).
+ * Патч полей шаблона тарифа.
  */
 export class TariffUpdate {
   @IsOptional()
@@ -29,6 +29,11 @@ export class TariffUpdate {
   pricePerKm?: number;
 
   @IsOptional()
-  @IsUUID()
-  geoZoneId?: string;
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  pausePricePerMinute?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isDefault?: boolean;
 }

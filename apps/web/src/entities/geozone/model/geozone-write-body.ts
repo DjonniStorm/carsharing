@@ -7,9 +7,11 @@ export type GeozoneCreateBody = {
   color: string;
   geometry: GeoJSONMultiPolygon;
   rules?: Record<string, unknown> | null;
-  pricePerMinute: number;
-  pricePerKm: number;
-  pausePricePerMinute: number;
+  /** Если задан — ставки копируются из шаблона; иначе нужны явные `price*`. */
+  tariffPresetId?: string;
+  pricePerMinute?: number;
+  pricePerKm?: number;
+  pausePricePerMinute?: number;
   createdByUserId?: string;
 };
 
@@ -22,7 +24,8 @@ export type GeozoneUpdateBody = Partial<{
 export type GeozoneVersionCreateBody = {
   geometry: GeoJSONMultiPolygon;
   rules?: Record<string, unknown> | null;
-  pricePerMinute: number;
-  pricePerKm: number;
-  pausePricePerMinute: number;
+  tariffPresetId?: string;
+  pricePerMinute?: number;
+  pricePerKm?: number;
+  pausePricePerMinute?: number;
 };

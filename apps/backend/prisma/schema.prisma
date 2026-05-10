@@ -90,8 +90,7 @@ model GeoZone {
   createdByUserId  String           @map("created_by_user_id") @db.Uuid()
   createdByUser    User             @relation("GeoZoneCreatedBy", fields: [createdByUserId], references: [id])
   currentVersion   GeoZoneVersion?  @relation("GeoZoneCurrentVersion", fields: [currentVersionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  versions         GeoZoneVersion[] @relation("GeoZoneVersions")
-  tariffs          Tariff[]
+  versions GeoZoneVersion[] @relation("GeoZoneVersions")
 
   @@map("geo_zone")
 }
@@ -106,32 +105,36 @@ model GeoZoneVersion {
   pricePerMinute       Decimal                                    @default(0) @map("price_per_minute") @db.Decimal(19, 2)
   pricePerKm           Decimal                                    @default(0) @map("price_per_km") @db.Decimal(19, 2)
   pausePricePerMinute  Decimal                                    @default(0) @map("pause_price_per_minute") @db.Decimal(19, 2)
+  tariffPresetId       String?                                    @map("tariff_preset_id") @db.Uuid()
+  tariffPreset         TariffPreset?                              @relation(fields: [tariffPresetId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   createdAt            DateTime                                   @default(now()) @map("created_at")
   disabledAt           DateTime?                                  @map("disabled_at")
   currentForZone       GeoZone?                                   @relation("GeoZoneCurrentVersion")
-  tripsAsTariffVersion Trip[]                                     @relation("TripTariffVersion")
+  tripsAsGeoZoneVersion Trip[]                                    @relation("TripGeoZoneVersion")
 
   @@index([geozoneId])
+  @@index([tariffPresetId])
   @@map("geo_zone_version")
 }
 
-/// Логический «тариф» зоны; **поездка** привязана не к этой строке, а к версии зоны (`GeoZoneVersion` / `Trip.tariffVersionId`), где зафиксированы ставки на момент старта.
-model Tariff {
-  id             String    @id @default(uuid()) @db.Uuid()
-  name           String    @db.Text()
-  pricePerMinute Decimal   @map("price_per_minute") @db.Decimal(19, 2)
-  pricePerKm     Decimal   @map("price_per_km") @db.Decimal(19, 2)
-  geoZoneId      String    @map("geo_zone_id") @db.Uuid()
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-  deletedAt      DateTime? @map("deleted_at")
-  geoZone        GeoZone   @relation(fields: [geoZoneId], references: [id])
+/// Глобальный шаблон ставок; в расчёте поездки не участвует — копируется в `GeoZoneVersion` при создании/публикации версии.
+model TariffPreset {
+  id                  String           @id @default(uuid()) @db.Uuid()
+  name                String           @db.Text()
+  pricePerMinute      Decimal          @map("price_per_minute") @db.Decimal(19, 2)
+  pricePerKm          Decimal          @map("price_per_km") @db.Decimal(19, 2)
+  pausePricePerMinute Decimal          @default(0) @map("pause_price_per_minute") @db.Decimal(19, 2)
+  isDefault           Boolean          @default(false) @map("is_default")
+  isDeleted           Boolean          @default(false) @map("is_deleted")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+  geoZoneVersions     GeoZoneVersion[]
 
-  @@map("tariff")
+  @@map("tariff_preset")
 }
 
 /// Поездка. `status` — числовые значения `TripStatus` в коде. `distance` / `duration` — совместимость со старым API (например км / ч); детализация — `distanceMeters`, биллинг — `charged*`, `price*`.
-/// Привязка к тарифу — только через **версию** (`tariffVersionId` → `geo_zone_version`), а не через строку `tariff`.
+/// Ставки для расчёта — только из **версии геозоны** (`geoZoneVersionId` → `geo_zone_version`).
 model Trip {
   id         String    @id @default(uuid()) @db.Uuid()
   startedAt  DateTime  @map("start_time")
@@ -143,9 +146,9 @@ model Trip {
   userId String @map("user_id") @db.Uuid()
   carId  String @map("car_id") @db.Uuid()
 
-  /// Версия тарифа = версия геозоны со ставками на момент старта поездки (`geo_zone_version.id`).
-  tariffVersionId String         @map("tariff_version_id") @db.Uuid()
-  tariffVersion   GeoZoneVersion @relation("TripTariffVersion", fields: [tariffVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  /// Версия геозоны со ставками на момент старта поездки (`geo_zone_version.id`).
+  geoZoneVersionId String         @map("geo_zone_version_id") @db.Uuid()
+  geoZoneVersion   GeoZoneVersion @relation("TripGeoZoneVersion", fields: [geoZoneVersionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   pauseStartedAt DateTime? @map("pause_started_at")
   totalPausedSec Int       @default(0) @map("total_paused_sec")
@@ -179,7 +182,7 @@ model Trip {
 
   @@index([userId])
   @@index([carId])
-  @@index([tariffVersionId])
+  @@index([geoZoneVersionId])
   @@map("trip")
 }
 

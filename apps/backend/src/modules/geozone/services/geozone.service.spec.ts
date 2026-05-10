@@ -16,6 +16,7 @@ import { GeozoneUpdate } from '../entities/dtos/geozone.update';
 import { GeozoneMapper } from '../common/mapper';
 import type { GeoJSONMultiPolygon } from '../entities/geozone.geometry';
 import { GeozoneType } from '../entities/geozone.type';
+import { TariffRepository } from '../../tariff/repositories/tariff.repository';
 import { GeozoneRepository } from '../repositories/geozone.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
@@ -53,7 +54,8 @@ describe('GeozoneService', () => {
     createdByUserId = user.id;
 
     repository = new GeozoneRepository(prisma);
-    service = new GeozoneService(repository);
+    const tariffRepository = new TariffRepository(prisma);
+    service = new GeozoneService(repository, tariffRepository);
   });
 
   afterEach(async () => {

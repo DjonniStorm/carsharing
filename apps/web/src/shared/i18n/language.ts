@@ -1,5 +1,7 @@
 export type SupportedLanguage = "ru" | "en";
 
+export const LANGUAGE_STORAGE_KEY = "app_ui_language";
+
 export const SUPPORTED_LANGUAGES: readonly SupportedLanguage[] = [
   "ru",
   "en",
@@ -36,4 +38,24 @@ export function getInitialLanguage(): SupportedLanguage {
     }
   }
   return "ru";
+}
+
+/** Язык из localStorage, если пользователь уже переключал интерфейс. */
+export function getStoredLanguage(): SupportedLanguage | undefined {
+  if (typeof localStorage === "undefined") {
+    return undefined;
+  }
+  const raw = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  if (raw === "ru" || raw === "en") {
+    return raw;
+  }
+  return undefined;
+}
+
+export function getStoredLanguageOrFallback(): SupportedLanguage {
+  return getStoredLanguage() ?? getInitialLanguage();
+}
+
+export function persistLanguage(lang: SupportedLanguage): void {
+  localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
 }

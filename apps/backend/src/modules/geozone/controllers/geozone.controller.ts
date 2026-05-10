@@ -25,11 +25,13 @@ import {
 
 import { Roles } from 'src/modules/auth/decorators/roles.decorator';
 import { ADMIN_ROLES, ALL_APP_ROLES } from 'src/modules/auth/roles.constants';
+import { TariffNotFoundException } from 'src/modules/tariff/common/errors';
 
 import {
   DatabaseGeozoneErrorException,
   GeozoneAlreadyDeletedException,
   GeozoneCreatedByUserIdRequiredException,
+  GeozoneInvalidPublishPricingException,
   GeozoneNotDeletedException,
   GeozoneNotFoundException,
   GeozoneVersionNotFoundException,
@@ -154,6 +156,29 @@ export class GeozoneController implements IGeozoneController {
     }
   }
 
+  @Get('versions/by-id/:versionId')
+  @ApiOperation({
+    summary:
+      'Версия геозоны по ID (без id геозоны в URL; удобно для geoZoneVersionId поездки)',
+  })
+  @ApiResponse({ status: 200, type: GeozoneVersionRead })
+  async findVersionByGlobalId(
+    @Param('versionId') versionId: string,
+  ): Promise<GeozoneVersionRead> {
+    this.logger.debug('findVersionByGlobalId', { versionId });
+    try {
+      return await this.geozoneService.findVersionById(versionId);
+    } catch (error) {
+      this.logger.error('Failed to find geozone version by global id', error);
+      if (error instanceof GeozoneVersionNotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+      throw new BadRequestException(
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
   @Get()
   @ApiOperation({ summary: 'Получить все геозоны' })
   @ApiQuery({ name: 'includeDeleted', type: Boolean, required: false })
@@ -197,6 +222,9 @@ export class GeozoneController implements IGeozoneController {
       this.logger.error('Failed to create geozone', error);
       if (error instanceof GeozoneCreatedByUserIdRequiredException) {
         throw new BadRequestException(error.message);
+      }
+      if (error instanceof TariffNotFoundException) {
+        throw new NotFoundException(error.message);
       }
       if (error instanceof DatabaseGeozoneErrorException) {
         throw new BadRequestException(error.message);
@@ -292,6 +320,12 @@ export class GeozoneController implements IGeozoneController {
       this.logger.error('Failed to publish geozone version', error);
       if (error instanceof GeozoneNotFoundException) {
         throw new NotFoundException(error.message);
+      }
+      if (error instanceof TariffNotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+      if (error instanceof GeozoneInvalidPublishPricingException) {
+        throw new BadRequestException(error.message);
       }
       throw new BadRequestException(
         error instanceof Error ? error.message : String(error),

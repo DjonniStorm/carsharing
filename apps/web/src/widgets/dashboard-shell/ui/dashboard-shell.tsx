@@ -8,6 +8,7 @@ import {
   Stack,
   Text,
   Title,
+  UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useAction, useAtom } from "@reatom/react";
@@ -19,10 +20,18 @@ import {
 } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
-import { accessTokenAtom, clearSession } from "@/features/auth/model/session";
+import {
+  accessTokenAtom,
+  authUserAtom,
+  clearSession,
+  sessionProfileAtom,
+} from "@/features/auth/model/session";
 import { ROUTES } from "@/shared/config/routes-paths";
 import type { LangKey } from "@/shared/i18n/keys";
 import { LANG_KEYS } from "@/shared/i18n/keys";
+import { showSnow } from "@/shared/lib/confetti";
+import { ShellLanguageControl } from "@/widgets/dashboard-shell/ui/shell-language-control";
+import { useState } from "react";
 
 export type DashboardShellNavItem = {
   labelKey: LangKey;
@@ -42,22 +51,44 @@ const DashboardShell = ({ navItems }: Props) => {
     },
   });
   const [token] = useAtom(accessTokenAtom);
+  const [sessionProfile] = useAtom(sessionProfileAtom);
+  const [authUser] = useAtom(authUserAtom);
   const logout = useAction(clearSession);
   const navigate = useNavigate();
 
+  const [show] = useState(showSnow);
+
   const handleLogout = () => {
     logout();
-    navigate({ to: ROUTES.login, search: { redirect: undefined } });
+    navigate({
+      to: ROUTES.login,
+      search: { redirect: undefined, reason: undefined },
+    });
   };
 
   const navLinkNodes = navItems.map((item) => {
+    const active =
+      pathname === item.to ||
+      (item.to === ROUTES.dashboard.geozones &&
+        pathname !== ROUTES.dashboard.geozones &&
+        pathname.startsWith(`${ROUTES.dashboard.geozones}/`)) ||
+      (item.to === ROUTES.dashboard.violations &&
+        pathname !== ROUTES.dashboard.violations &&
+        pathname.startsWith(`${ROUTES.dashboard.violations}/`)) ||
+      (item.to === ROUTES.dashboard.tariffs &&
+        pathname !== ROUTES.dashboard.tariffs &&
+        pathname.startsWith(`${ROUTES.dashboard.tariffs}/`)) ||
+      (item.to === ROUTES.dashboard.users &&
+        (pathname === ROUTES.dashboard.users ||
+          pathname.startsWith(`${ROUTES.dashboard.users}/`)));
+
     return (
       <NavLink
         key={item.to}
         component={Link}
         to={item.to}
         label={t(item.labelKey)}
-        active={pathname === item.to}
+        active={active}
         onClick={() => {
           close();
         }}
@@ -66,7 +97,7 @@ const DashboardShell = ({ navItems }: Props) => {
             borderRadius: "var(--mantine-radius-md)",
           },
           label: {
-            fontWeight: pathname === item.to ? 600 : 500,
+            fontWeight: active ? 600 : 500,
           },
         }}
       />
@@ -97,14 +128,24 @@ const DashboardShell = ({ navItems }: Props) => {
               hiddenFrom="sm"
               size="sm"
             />
-            <Title order={4}>{t(LANG_KEYS.brand.name)}</Title>
+            <Title order={4} onClick={show}>
+              {t(LANG_KEYS.brand.name)}
+            </Title>
           </Group>
           <Group gap="sm" visibleFrom="sm">
             {token ? (
               <>
-                <Text size="sm" c="dimmed" visibleFrom="md">
-                  {t(LANG_KEYS.shell.sessionActive)}
-                </Text>
+                <UnstyledButton
+                  component={Link}
+                  to={ROUTES.dashboard.profile}
+                  style={{
+                    borderRadius: "var(--mantine-radius-sm)",
+                  }}
+                >
+                  <Text size="sm" fw={500} c="dimmed">
+                    {sessionProfile?.name ?? authUser?.email ?? "—"}
+                  </Text>
+                </UnstyledButton>
                 <Button
                   variant="light"
                   size="compact-sm"
@@ -155,9 +196,23 @@ const DashboardShell = ({ navItems }: Props) => {
             <Stack gap={4} hiddenFrom="sm">
               <Divider />
               {token ? (
-                <Button variant="light" fullWidth onClick={handleLogout}>
-                  {t(LANG_KEYS.shell.logout)}
-                </Button>
+                <>
+                  <ShellLanguageControl />
+                  <UnstyledButton
+                    component={Link}
+                    to={ROUTES.dashboard.profile}
+                    onClick={() => {
+                      close();
+                    }}
+                  >
+                    <Text size="sm" fw={600}>
+                      {sessionProfile?.name ?? authUser?.email ?? "—"}
+                    </Text>
+                  </UnstyledButton>
+                  <Button variant="light" fullWidth onClick={handleLogout}>
+                    {t(LANG_KEYS.shell.logout)}
+                  </Button>
+                </>
               ) : (
                 <>
                   <NavLink

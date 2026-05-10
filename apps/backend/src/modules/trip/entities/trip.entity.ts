@@ -6,8 +6,8 @@ export class TripEntity extends BaseEntity<string> {
     public readonly id: string,
     public readonly userId: string,
     public readonly carId: string,
-    /** Версия тарифа: FK на `geo_zone_version.id` (ставки на момент старта). */
-    public readonly tariffVersionId: string,
+    /** Версия геозоны: FK на `geo_zone_version.id` (ставки на момент старта). */
+    public readonly geoZoneVersionId: string,
 
     public readonly status: TripStatus,
 

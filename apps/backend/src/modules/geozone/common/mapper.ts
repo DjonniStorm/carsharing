@@ -16,6 +16,7 @@ export type GeozoneCreateRepositoryInput = {
   pricePerMinute: number;
   pricePerKm: number;
   pausePricePerMinute: number;
+  tariffPresetId: string | null;
 };
 
 export class GeozoneMapper {
@@ -30,9 +31,10 @@ export class GeozoneMapper {
       createdByUserId,
       geometry: dto.geometry,
       rules: dto.rules ?? null,
-      pricePerMinute: dto.pricePerMinute,
-      pricePerKm: dto.pricePerKm,
-      pausePricePerMinute: dto.pausePricePerMinute,
+      pricePerMinute: dto.pricePerMinute!,
+      pricePerKm: dto.pricePerKm!,
+      pausePricePerMinute: dto.pausePricePerMinute!,
+      tariffPresetId: null,
     };
   }
 
@@ -96,6 +98,7 @@ export class GeozoneMapper {
       dto.pricePerMinute,
       dto.pricePerKm,
       dto.pausePricePerMinute,
+      dto.tariffPresetId,
       dto.createdAt,
       dto.disabledAt,
     );
@@ -112,6 +115,7 @@ export class GeozoneMapper {
     dto.pricePerMinute = entity.pricePerMinute;
     dto.pricePerKm = entity.pricePerKm;
     dto.pausePricePerMinute = entity.pausePricePerMinute;
+    dto.tariffPresetId = entity.tariffPresetId;
     dto.createdAt = entity.createdAt;
     dto.disabledAt = entity.disabledAt;
     return dto;
@@ -152,6 +156,7 @@ export class GeozoneMapper {
     copy.pricePerMinute = version.pricePerMinute;
     copy.pricePerKm = version.pricePerKm;
     copy.pausePricePerMinute = version.pausePricePerMinute;
+    copy.tariffPresetId = version.tariffPresetId;
     copy.createdAt = version.createdAt;
     copy.disabledAt = version.disabledAt;
     return copy;

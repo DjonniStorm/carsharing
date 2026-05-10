@@ -3,12 +3,16 @@ import type {
   TripListParams,
 } from '../entities/trip-query.types';
 import type { TripStatus } from '../entities/trip.status';
+import type {
+  TripHistoryFullSqlRow,
+  TripHistorySqlRow,
+} from '../common/trip-history.types';
 import { TripEntity } from '../entities/trip.entity';
 
 export type TripRepositoryCreateInput = {
   userId: string;
   carId: string;
-  tariffVersionId: string;
+  geoZoneVersionId: string;
   status?: TripStatus;
   startedAt?: Date;
   distance?: number;
@@ -38,7 +42,7 @@ export type TripRepositoryUpdatePatch = Partial<{
   pricePause: number | null;
   priceTotal: number | null;
   /** Смена версии тарифа (редко); `null` в домене не допускается — поле в БД NOT NULL. */
-  tariffVersionId?: string;
+  geoZoneVersionId?: string;
   carPlateSnapshot: string | null;
   carDisplayNameSnapshot: string | null;
 }>;
@@ -54,6 +58,19 @@ export interface ITripRepository {
   create(input: TripRepositoryCreateInput): Promise<TripEntity>;
 
   update(id: string, patch: TripRepositoryUpdatePatch): Promise<TripEntity>;
+
+  /** Поездка + авто + агрегированные нарушения (один SQL). */
+  findHistoryShortByUserId(
+    userId: string,
+    options?: { limit?: number; offset?: number },
+  ): Promise<TripHistorySqlRow[]>;
+
+  findHistoryShortByTripId(tripId: string): Promise<TripHistorySqlRow | null>;
+
+  /** Поездка + авто + нарушения + телеметрия (один SQL). */
+  findHistoryFullByTripId(
+    tripId: string,
+  ): Promise<TripHistoryFullSqlRow | null>;
 }
 
 export const ITripRepositoryToken = Symbol('ITripRepository');

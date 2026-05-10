@@ -6,8 +6,50 @@ export type YMapMarkerProps = {
   draggable?: boolean;
 };
 
+/** Экземпляр {@link YMaps3Global.YMapMarker}: координаты через `update`; удаление — через {@link YMaps3MapInstance.removeChild}. */
+export type YMapMarkerInstance = {
+  update: (props: Partial<YMapMarkerProps>) => void;
+};
+
+/** Геометрия для {@link YMaps3Global.YMapFeature} (подмножество GeoJSON). */
+export type YMapFeatureGeometry =
+  | { type: "Polygon"; coordinates: YMapLngLat[][] }
+  | { type: "LineString"; coordinates: YMapLngLat[] };
+
+export type YMapFeatureStyle = {
+  stroke?: Array<{ color: string; width: number }>;
+  fill?: string;
+};
+
+export type YMapClickEvent = {
+  coordinates?: YMapLngLat;
+};
+
+/** Фрагмент `location` в колбэке `YMapListener` `onUpdate`. */
+export type YMapLocationSnapshot = {
+  center?: YMapLngLat;
+  zoom?: number;
+  /** Углы видимой области (пары [lon, lat]). */
+  bounds?: YMapLngLat[];
+};
+
+export type YMapMapUpdateEvent = {
+  type: "update";
+  camera?: unknown;
+  location?: YMapLocationSnapshot;
+  mapInAction?: boolean;
+};
+
 export type YMaps3MapInstance = {
   addChild: (child: unknown) => void;
+  /** Снять дочерний объект (полигон, маркер и т.д.) — иначе артефакт может остаться на карте. */
+  removeChild?: (child: unknown) => void;
+  /** Программно изменить центр/zoom без remount-а карты (JS API 3.0). */
+  setLocation?: (location: {
+    center?: YMapLngLat;
+    zoom?: number;
+    duration?: number;
+  }) => void;
   destroy: () => void;
 };
 
@@ -22,11 +64,24 @@ export type YMaps3Global = {
       };
     },
   ) => YMaps3MapInstance;
-  YMapDefaultSchemeLayer: new () => unknown;
-  /** Слой для объектов (маркеры и т.д.). */
-  YMapDefaultFeaturesLayer?: new () => unknown;
+  YMapDefaultSchemeLayer: new (props?: Record<string, unknown>) => unknown;
+  /** Слой для векторных объектов (полигоны, линии). */
+  YMapDefaultFeaturesLayer?: new (props?: Record<string, unknown>) => unknown;
   /** Маркер с произвольным DOM в качестве содержимого. */
-  YMapMarker?: new (props: YMapMarkerProps, element: HTMLElement) => unknown;
+  YMapMarker?: new (
+    props: YMapMarkerProps,
+    element: HTMLElement,
+  ) => YMapMarkerInstance;
+  YMapFeature?: new (props: {
+    geometry: YMapFeatureGeometry;
+    style?: YMapFeatureStyle;
+  }) => unknown;
+  YMapListener?: new (props: {
+    layer?: string;
+    onClick?: (object: unknown, event: YMapClickEvent) => void;
+    onUpdate?: (event: YMapMapUpdateEvent) => void;
+    onResize?: (event: unknown) => void;
+  }) => unknown;
 };
 
 declare global {

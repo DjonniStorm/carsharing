@@ -32,8 +32,8 @@ describe('TripRepository', () => {
   let geozoneRepository: GeozoneRepository;
   let userId: string;
   let carId: string;
-  let tariffVersionId: string;
-  let tariffVersionIdOther: string;
+  let geoZoneVersionId: string;
+  let geoZoneVersionIdOther: string;
 
   beforeAll(async () => {
     loadBackendDevEnv();
@@ -43,7 +43,7 @@ describe('TripRepository', () => {
 
   beforeEach(async () => {
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -94,7 +94,7 @@ describe('TripRepository', () => {
     if (!zone.currentVersionId) {
       throw new Error('ожидался currentVersionId у созданной зоны');
     }
-    tariffVersionId = zone.currentVersionId;
+    geoZoneVersionId = zone.currentVersionId;
 
     const zoneOther = await geozoneRepository.createWithInitialVersion({
       name: 'Вторая зона',
@@ -110,14 +110,14 @@ describe('TripRepository', () => {
     if (!zoneOther.currentVersionId) {
       throw new Error('ожидался currentVersionId у второй зоны');
     }
-    tariffVersionIdOther = zoneOther.currentVersionId;
+    geoZoneVersionIdOther = zoneOther.currentVersionId;
 
     repository = new TripRepository(prisma);
   });
 
   afterEach(async () => {
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -126,7 +126,7 @@ describe('TripRepository', () => {
 
   afterAll(async () => {
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -146,30 +146,30 @@ describe('TripRepository', () => {
       const first = await repository.create({
         userId,
         carId,
-        tariffVersionId,
+        geoZoneVersionId,
         startedAt: older,
       });
       const second = await repository.create({
         userId,
         carId,
-        tariffVersionId,
+        geoZoneVersionId,
         startedAt: newer,
       });
       const list = await repository.findMany();
       expect(list.map((t) => t.id)).toEqual([second.id, first.id]);
     });
 
-    it('фильтрует по userId, carId, tariffVersionId и status', async () => {
+    it('фильтрует по userId, carId, geoZoneVersionId и status', async () => {
       await repository.create({
         userId,
         carId,
-        tariffVersionId,
+        geoZoneVersionId,
         status: TripStatus.PENDING,
       });
       const active = await repository.create({
         userId,
         carId,
-        tariffVersionId: tariffVersionIdOther,
+        geoZoneVersionId: geoZoneVersionIdOther,
         status: TripStatus.ACTIVE,
       });
 
@@ -180,7 +180,7 @@ describe('TripRepository', () => {
       expect(byCar).toHaveLength(2);
 
       const byVersion = await repository.findMany({
-        tariffVersionId: tariffVersionIdOther,
+        geoZoneVersionId: geoZoneVersionIdOther,
       });
       expect(byVersion.map((t) => t.id)).toEqual([active.id]);
 
@@ -192,13 +192,13 @@ describe('TripRepository', () => {
       await repository.create({
         userId,
         carId,
-        tariffVersionId,
+        geoZoneVersionId,
         startedAt: new Date('2024-03-01T00:00:00.000Z'),
       });
       await repository.create({
         userId,
         carId,
-        tariffVersionId,
+        geoZoneVersionId,
         startedAt: new Date('2024-06-15T00:00:00.000Z'),
       });
 
@@ -223,7 +223,7 @@ describe('TripRepository', () => {
       const created = await repository.create({
         userId,
         carId,
-        tariffVersionId,
+        geoZoneVersionId,
         status: TripStatus.STARTED,
         startLat: 55.75,
         startLng: 37.61,
@@ -235,28 +235,28 @@ describe('TripRepository', () => {
       assertTripScalarsEqual(found!, created);
     });
 
-    it('опции withUser / withCar / withTariffVersion не ломают выборку (include в Prisma)', async () => {
+    it('опции withUser / withCar / withGeoZoneVersion не ломают выборку (include в Prisma)', async () => {
       const created = await repository.create({
         userId,
         carId,
-        tariffVersionId,
+        geoZoneVersionId,
       });
       const id = created.id;
       const withAll = await repository.findById(id, {
         withUser: true,
         withCar: true,
-        withTariffVersion: true,
+        withGeoZoneVersion: true,
       });
       expect(withAll).not.toBeNull();
       assertTripScalarsEqual(withAll!, created);
 
       const row = await prisma.trip.findUnique({
         where: { id },
-        include: { user: true, car: true, tariffVersion: true },
+        include: { user: true, car: true, geoZoneVersion: true },
       });
       expect(row?.user?.id).toBe(userId);
       expect(row?.car?.id).toBe(carId);
-      expect(row?.tariffVersion?.id).toBe(tariffVersionId);
+      expect(row?.geoZoneVersion?.id).toBe(geoZoneVersionId);
     });
   });
 
@@ -266,21 +266,21 @@ describe('TripRepository', () => {
       const created = await repository.create({
         userId,
         carId,
-        tariffVersionId,
+        geoZoneVersionId,
       });
       expect(created.status).toBe(TripStatus.PENDING);
       expect(created.startedAt.getTime()).toBeGreaterThanOrEqual(before - 1000);
       expect(created.distance).toBe(0);
       expect(created.duration).toBe(0);
-      expect(created.tariffVersionId).toBe(tariffVersionId);
+      expect(created.geoZoneVersionId).toBe(geoZoneVersionId);
     });
 
-    it('P2003 при несуществующем tariffVersionId', async () => {
+    it('P2003 при несуществующем geoZoneVersionId', async () => {
       await expect(
         repository.create({
           userId,
           carId,
-          tariffVersionId: uuidv4(),
+          geoZoneVersionId: uuidv4(),
         }),
       ).rejects.toMatchObject({ code: 'P2003' });
     });
@@ -290,7 +290,7 @@ describe('TripRepository', () => {
         repository.create({
           userId: uuidv4(),
           carId,
-          tariffVersionId,
+          geoZoneVersionId,
         }),
       ).rejects.toMatchObject({ code: 'P2003' });
     });
@@ -301,7 +301,7 @@ describe('TripRepository', () => {
       const t = await repository.create({
         userId,
         carId,
-        tariffVersionId,
+        geoZoneVersionId,
       });
       const id = t.id;
       const finishedAt = new Date('2024-08-01T15:30:00.000Z');
@@ -310,16 +310,16 @@ describe('TripRepository', () => {
         finishedAt,
         distanceMeters: 12_500,
         priceTotal: 199.5,
-        tariffVersionId: tariffVersionIdOther,
+        geoZoneVersionId: geoZoneVersionIdOther,
       });
       expect(updated.status).toBe(TripStatus.FINISHED);
       expect(updated.finishedAt?.getTime()).toBe(finishedAt.getTime());
       expect(updated.distanceMeters).toBe(12_500);
       expect(updated.priceTotal).toBe(199.5);
-      expect(updated.tariffVersionId).toBe(tariffVersionIdOther);
+      expect(updated.geoZoneVersionId).toBe(geoZoneVersionIdOther);
 
       const again = await repository.findById(id);
-      expect(again!.tariffVersionId).toBe(tariffVersionIdOther);
+      expect(again!.geoZoneVersionId).toBe(geoZoneVersionIdOther);
     });
 
     it('P2025 если поездки с таким id нет', async () => {
@@ -334,7 +334,7 @@ const assertTripScalarsEqual = (actual: TripEntity, expected: TripEntity) => {
   expect(actual.id).toBe(expected.id);
   expect(actual.userId).toBe(expected.userId);
   expect(actual.carId).toBe(expected.carId);
-  expect(actual.tariffVersionId).toBe(expected.tariffVersionId);
+  expect(actual.geoZoneVersionId).toBe(expected.geoZoneVersionId);
   expect(actual.status).toBe(expected.status);
   expect(actual.startedAt.getTime()).toBe(expected.startedAt.getTime());
   expect(actual.finishedAt).toEqual(expected.finishedAt);

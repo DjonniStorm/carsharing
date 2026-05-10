@@ -3,13 +3,37 @@ import type {
   LoginResponseBody,
   PublicRegisterBody,
 } from "@/entities/auth";
-import { BaseApiClient, HttpApiError } from "@/shared/api";
+import {
+  BaseApiClient,
+  HttpApiError,
+  type AccessTokenGetter,
+} from "@/shared/api";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 import { translate } from "@/shared/i18n/translate";
 
+export type AuthSessionUser = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: number;
+  isActive?: boolean;
+  isDeleted?: boolean;
+};
+
 export class AuthApi extends BaseApiClient {
-  constructor(baseUrl: string) {
-    super(baseUrl);
+  constructor(baseUrl: string, getAccessToken?: AccessTokenGetter) {
+    super(baseUrl, getAccessToken);
+  }
+
+  /** Проверка сессии: пользователь есть в БД и активен (`GET /auth/me`). */
+  getMe(): Promise<AuthSessionUser> {
+    return this.getJson<AuthSessionUser>("/auth/me");
+  }
+
+  /** Смена отображаемого имени (`PATCH /auth/me`). */
+  patchMe(body: { name: string }): Promise<AuthSessionUser> {
+    return this.patchJson<AuthSessionUser>("/auth/me", body);
   }
 
   login(body: LoginRequestBody): Promise<LoginResponseBody> {

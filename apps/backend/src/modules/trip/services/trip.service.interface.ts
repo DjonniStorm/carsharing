@@ -1,4 +1,8 @@
 import type { UserRole } from 'src/modules/user/entities/user.role';
+import type {
+  TripHistoryRead,
+  TripHistoryShortInfoRead,
+} from '../entities/dtos/trip.history.read';
 import { TripCreate } from '../entities/dtos/trip.create';
 import { TripRead } from '../entities/dtos/trip.read';
 import { TripUpdate } from '../entities/dtos/trip.update';
@@ -22,4 +26,14 @@ export interface ITripService {
     userId: string,
     tripId: string,
   ): Promise<void>;
+
+  /** История поездок (сырой SQL в репозитории). */
+  getTripHistoryShortInfoList(
+    userId: string,
+    options?: { limit?: number; offset?: number },
+  ): Promise<TripHistoryShortInfoRead[]>;
+
+  getTripHistoryShortInfo(tripId: string): Promise<TripHistoryShortInfoRead>;
+
+  getTripHistoryFullInfo(tripId: string): Promise<TripHistoryRead>;
 }

@@ -7,8 +7,8 @@ export class TripRead {
   id: string;
   userId: string;
   carId: string;
-  /** Версия тарифа (`geo_zone_version.id`). */
-  tariffVersionId: string;
+  /** Версия геозоны со ставками (`geo_zone_version.id`). */
+  geoZoneVersionId: string;
 
   status: TripStatus;
 

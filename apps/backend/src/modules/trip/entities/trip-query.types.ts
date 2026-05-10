@@ -2,13 +2,13 @@ import type { TripStatus } from './trip.status';
 
 /**
  * Опции чтения одной поездки из хранилища (жадные связи).
- * Поездка не ссылается на строку `tariff` — только на `tariffVersion` (геоверсия).
+ * Поездка ссылается на версию геозоны (`GeoZoneVersion`).
  */
 export type TripFindByIdOptions = {
   withUser?: boolean;
   withCar?: boolean;
-  /** Версия тарифа (`GeoZoneVersion`), FK `trip.tariff_version_id`. */
-  withTariffVersion?: boolean;
+  /** Версия геозоны (`GeoZoneVersion`), FK `trip.geo_zone_version_id`. */
+  withGeoZoneVersion?: boolean;
 };
 
 /**
@@ -17,7 +17,7 @@ export type TripFindByIdOptions = {
 export type TripListParams = {
   userId?: string;
   carId?: string;
-  tariffVersionId?: string;
+  geoZoneVersionId?: string;
   status?: TripStatus;
   startedAfter?: Date;
   startedBefore?: Date;

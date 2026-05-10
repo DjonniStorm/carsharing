@@ -92,7 +92,7 @@ describe('ViolationRepository', () => {
       data: {
         userId: user.id,
         carId: car.id,
-        tariffVersionId: zone.currentVersionId!,
+        geoZoneVersionId: zone.currentVersionId!,
         startedAt: new Date(),
         distance: 0,
         duration: 0,

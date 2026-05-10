@@ -51,7 +51,7 @@ describe('executeRentalMovementZoneCheck (integration, без моков)', () =
     await truncateApplicationTable(prisma, 'violation');
     await truncateApplicationTable(prisma, 'telemetry');
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -71,7 +71,7 @@ describe('executeRentalMovementZoneCheck (integration, без моков)', () =
     await truncateApplicationTable(prisma, 'violation');
     await truncateApplicationTable(prisma, 'telemetry');
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');

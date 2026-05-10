@@ -40,6 +40,13 @@ export class GeozoneNotDeletedException extends Error {
   }
 }
 
+export class GeozoneInvalidPublishPricingException extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'GeozoneInvalidPublishPricingException';
+  }
+}
+
 export class GeozoneVersionNotFoundException extends Error {
   constructor(message: string) {
     super(message);

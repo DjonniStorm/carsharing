@@ -3,11 +3,13 @@ import {
   Body,
   ConflictException,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   Logger,
   NotFoundException,
   Param,
+  ParseBoolPipe,
   Patch,
   Post,
   Query,
@@ -43,7 +45,8 @@ export class UserController {
   @ApiOperation({ summary: 'Получить всех пользователей' })
   @ApiResponse({ status: 200, type: [ReadUserEntity] })
   async findAll(
-    @Query('includeDeleted') includeDeleted: boolean = false,
+    @Query('includeDeleted', new DefaultValuePipe(false), ParseBoolPipe)
+    includeDeleted: boolean,
   ): Promise<ReadUserEntity[]> {
     this.logger.debug('findAll', { includeDeleted });
     try {

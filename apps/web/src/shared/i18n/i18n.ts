@@ -3,10 +3,10 @@ import { initReactI18next } from "react-i18next";
 
 import { en } from "@/shared/i18n/locales/en";
 import { ru } from "@/shared/i18n/locales/ru";
-import { getInitialLanguage } from "@/shared/i18n/language";
+import { getStoredLanguageOrFallback } from "@/shared/i18n/language";
 
 void i18n.use(initReactI18next).init({
-  lng: getInitialLanguage(),
+  lng: getStoredLanguageOrFallback(),
   fallbackLng: "ru",
   resources: {
     ru: { translation: ru },

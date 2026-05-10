@@ -11,6 +11,6 @@ import { TariffService } from './services/tariff.service';
     TariffService,
     { provide: ITariffRepositoryToken, useClass: TariffRepository },
   ],
-  exports: [TariffService],
+  exports: [TariffService, ITariffRepositoryToken],
 })
 export class TariffModule {}

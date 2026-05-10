@@ -4,3 +4,8 @@ export type {
   TripCreateBody,
   TripUpdateBody,
 } from "@/entities/trip/model/trip-contracts";
+export type {
+  TelemetryPointRead,
+  TripHistoryFullRead,
+  TripHistoryShortInfoRead,
+} from "@/entities/trip/model/trip-history-contracts";

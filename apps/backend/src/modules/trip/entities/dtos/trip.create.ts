@@ -14,7 +14,7 @@ import {
 import { TripStatus } from '../trip.status';
 
 /**
- * Создание поездки (старт сессии): пользователь, авто, **версия тарифа** (геоверсия зоны со ставками), опционально снимок машины для чеков/истории.
+ * Создание поездки (старт сессии): пользователь, авто, **версия геозоны** (со ставками), опционально снимок машины для чеков/истории.
  */
 export class TripCreate {
   @IsNotEmpty()
@@ -27,7 +27,7 @@ export class TripCreate {
 
   @IsNotEmpty()
   @IsUUID()
-  tariffVersionId: string;
+  geoZoneVersionId: string;
 
   @IsOptional()
   @IsEnum(TripStatus)

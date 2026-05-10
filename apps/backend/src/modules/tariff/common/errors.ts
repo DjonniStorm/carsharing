@@ -5,24 +5,10 @@ export class TariffNotFoundException extends Error {
   }
 }
 
-export class TariffGeoZoneNotFoundException extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'TariffGeoZoneNotFoundException';
-  }
-}
-
 export class TariffAlreadyDeletedException extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'TariffAlreadyDeletedException';
-  }
-}
-
-export class TariffNotDeletedException extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'TariffNotDeletedException';
   }
 }
 

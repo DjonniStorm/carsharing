@@ -1,14 +1,14 @@
 import type { YMapLngLat } from "@/shared/lib/yandex-maps/ymaps3";
 
-/** Центр по умолчанию (Москва): долгота, широта — формат API 3.0. */
-export const DEFAULT_MAP_CENTER: YMapLngLat = [37.588_144, 55.733_842];
+/** Центр по умолчанию (Ульяновск): долгота, широта — формат API 3.0. */
+export const DEFAULT_MAP_CENTER: YMapLngLat = [48.3866, 54.3282];
 
 export const DEFAULT_MAP_ZOOM = 11;
 
-/** Начальный bbox для подгрузки геозон на дашборде (вокруг {@link DEFAULT_MAP_CENTER}). */
+/** Fallback bbox до первого `onUpdate` карты; дальше запросы идут по видимой области (дебаунс на дашборде). */
 export const DEFAULT_MAP_GEOZONE_BOUNDS = {
-  minLon: 37.47,
-  minLat: 55.67,
-  maxLon: 37.71,
-  maxLat: 55.8,
+  minLon: 46.88,
+  minLat: 51.935,
+  maxLon: 50.12,
+  maxLat: 55.065,
 } as const;

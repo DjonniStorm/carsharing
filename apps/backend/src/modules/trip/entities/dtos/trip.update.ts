@@ -112,7 +112,7 @@ export class TripUpdate {
 
   @IsOptional()
   @IsUUID()
-  tariffVersionId?: string;
+  geoZoneVersionId?: string;
 
   @IsOptional()
   @IsString()

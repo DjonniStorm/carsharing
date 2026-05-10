@@ -10,4 +10,5 @@ export type { UpdatePositionBody } from "@/entities/car/model/update-position-bo
 export {
   carStatusToTone,
   carToMapMarker,
+  carToMapMarkerWithLive,
 } from "@/entities/car/lib/map-marker-tone";
