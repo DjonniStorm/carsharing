@@ -56,6 +56,7 @@ import {
 import { UserViewPage } from "@/pages/users";
 import { HttpApiError } from "@/shared/api/http-api-error";
 import { ROUTES } from "@/shared/config/routes-paths";
+import { isUuidString } from "@/shared/lib/is-uuid-string";
 
 const readAccessToken = (): string | null => {
   return localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
@@ -172,6 +173,9 @@ const dashboardShellRoute = createRoute({
   getParentRoute: () => {
     return rootRoute;
   },
+  /** Pathless layout: дочерние `path` остаются абсолютными URL, но `route.id` получает префикс `/dashboard-shell/`
+   * (см. TanStack Router `route.ts`). Для `useParams({ from })` указывайте полный id, например
+   * `/dashboard-shell/dashboard/trips/$tripId`. */
   id: "dashboard-shell",
   beforeLoad: async ({ location }) => {
     if (!readAccessToken()) {
@@ -232,6 +236,14 @@ const dashboardTripViewRoute = createRoute({
     return dashboardShellRoute;
   },
   path: "/dashboard/trips/$tripId",
+  beforeLoad: ({ params }) => {
+    if (!isUuidString(params.tripId)) {
+      throw redirect({
+        to: ROUTES.error,
+        search: { reason: "trip_invalid_id" },
+      });
+    }
+  },
   component: TripViewPage,
 });
 

@@ -12,12 +12,15 @@ import { LANG_KEYS } from "@/shared/i18n/keys";
 import { translate } from "@/shared/i18n/translate";
 import { ymapsBoundsToGeozoneQuery } from "@/shared/lib/yandex-maps/map-viewport-bounds";
 import {
+  attachDefaultFeaturesLayer,
   createGeozonePolygonsController,
   createOverlayMarkersController,
+  createTripRoutePolylineController,
   yandexMapsRenderService,
 } from "@/shared/lib/yandex-maps/yandex-maps-render-service";
 import type {
   OverlayMarkersController,
+  TripRoutePolylineController,
   YandexMapOverlayMarker,
 } from "@/shared/lib/yandex-maps/yandex-maps-render-service";
 import type {
@@ -39,6 +42,8 @@ export type YandexMapCanvasProps = {
   onOverlayMarkerClick?: (carId: string) => void;
   /** Геозоны в области (полигоны текущей версии). */
   geozones?: GeozoneRead[] | null;
+  /** Линия маршрута [lon, lat] по точкам телеметрии. */
+  routeLine?: YMapLngLat[] | null;
   /**
    * Текущий видимый bbox после pan/zoom (`YMapListener` `onUpdate`).
    * Родитель может дебаунсить сетевые запросы.
@@ -58,15 +63,18 @@ const YandexMapCanvas = ({
   overlayMarkers,
   onOverlayMarkerClick,
   geozones,
+  routeLine,
   onMapViewportBoundsChange,
 }: YandexMapCanvasProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<YMaps3MapInstance | null>(null);
   const mapDestroyRef = useRef<(() => void) | null>(null);
+  const featuresLayerDetachRef = useRef<(() => void) | null>(null);
   const markersControllerRef = useRef<OverlayMarkersController | null>(null);
   const geozonePolygonsRef = useRef<ReturnType<
     typeof createGeozonePolygonsController
   > | null>(null);
+  const routePolylineRef = useRef<TripRoutePolylineController | null>(null);
   const markerClickRef = useRef<typeof onOverlayMarkerClick | undefined>(
     undefined,
   );
@@ -102,6 +110,10 @@ const YandexMapCanvas = ({
     markersControllerRef.current = null;
     geozonePolygonsRef.current?.destroy();
     geozonePolygonsRef.current = null;
+    routePolylineRef.current?.destroy();
+    routePolylineRef.current = null;
+    featuresLayerDetachRef.current?.();
+    featuresLayerDetachRef.current = null;
     mapDestroyRef.current?.();
     mapDestroyRef.current = null;
     mapInstanceRef.current = null;
@@ -129,7 +141,12 @@ const YandexMapCanvas = ({
 
         mapInstanceRef.current = handle.map;
         mapDestroyRef.current = handle.destroy;
+        /** Единственный слой векторных объектов на карту: общий для геозон и маршрута. */
+        featuresLayerDetachRef.current = attachDefaultFeaturesLayer(handle.map);
         geozonePolygonsRef.current = createGeozonePolygonsController(
+          handle.map,
+        );
+        routePolylineRef.current = createTripRoutePolylineController(
           handle.map,
         );
         markersControllerRef.current = createOverlayMarkersController(
@@ -174,11 +191,35 @@ const YandexMapCanvas = ({
       markersControllerRef.current = null;
       geozonePolygonsRef.current?.destroy();
       geozonePolygonsRef.current = null;
+      routePolylineRef.current?.destroy();
+      routePolylineRef.current = null;
+      featuresLayerDetachRef.current?.();
+      featuresLayerDetachRef.current = null;
       mapDestroyRef.current?.();
       mapDestroyRef.current = null;
       mapInstanceRef.current = null;
     };
-  }, [apiKey, centerLng, centerLat, zoom]);
+  }, [apiKey]);
+
+  useEffect(() => {
+    if (!mapReady) {
+      return;
+    }
+    const map = mapInstanceRef.current;
+    if (!map || typeof map.setLocation !== "function") {
+      return;
+    }
+    if (centerLng === undefined || centerLat === undefined) {
+      if (zoom !== undefined) {
+        map.setLocation({ zoom });
+      }
+      return;
+    }
+    map.setLocation({
+      center: [centerLng, centerLat],
+      ...(zoom !== undefined ? { zoom } : {}),
+    });
+  }, [mapReady, centerLng, centerLat, zoom]);
 
   useEffect(() => {
     if (!mapReady) {
@@ -186,6 +227,13 @@ const YandexMapCanvas = ({
     }
     geozonePolygonsRef.current?.setGeozones(geozones ?? undefined);
   }, [mapReady, geozones]);
+
+  useEffect(() => {
+    if (!mapReady) {
+      return;
+    }
+    routePolylineRef.current?.setRoute(routeLine ?? undefined);
+  }, [mapReady, routeLine]);
 
   useEffect(() => {
     if (!mapReady) {

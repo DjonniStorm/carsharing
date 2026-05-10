@@ -1,4 +1,10 @@
-import { ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { UserRole } from 'src/modules/user/entities/user.role';
 import {
@@ -11,7 +17,12 @@ import {
   TripNotFoundException,
   TripPublishFailedException,
 } from '../common/errors';
+import { TripHistoryMapper } from '../common/trip-history.mapper';
 import { TripMapper } from '../common/mapper';
+import {
+  TripHistoryRead,
+  type TripHistoryShortInfoRead,
+} from '../entities/dtos/trip.history.read';
 import { TripCreate } from '../entities/dtos/trip.create';
 import { TripRead } from '../entities/dtos/trip.read';
 import { TripUpdate } from '../entities/dtos/trip.update';
@@ -116,6 +127,32 @@ export class TripService implements ITripService {
     if (trip.userId !== userId) {
       throw new ForbiddenException('Forbidden');
     }
+  }
+
+  async getTripHistoryShortInfoList(
+    userId: string,
+    options?: { limit?: number; offset?: number },
+  ): Promise<TripHistoryShortInfoRead[]> {
+    const rows = await this.repository.findHistoryShortByUserId(userId, options);
+    return rows.map(TripHistoryMapper.shortInfoFromSqlRow);
+  }
+
+  async getTripHistoryShortInfo(
+    tripId: string,
+  ): Promise<TripHistoryShortInfoRead> {
+    const row = await this.repository.findHistoryShortByTripId(tripId);
+    if (!row) {
+      throw new NotFoundException(`Trip ${tripId} not found`);
+    }
+    return TripHistoryMapper.shortInfoFromSqlRow(row);
+  }
+
+  async getTripHistoryFullInfo(tripId: string): Promise<TripHistoryRead> {
+    const row = await this.repository.findHistoryFullByTripId(tripId);
+    if (!row) {
+      throw new NotFoundException(`Trip ${tripId} not found`);
+    }
+    return TripHistoryMapper.fullInfoFromSqlRow(row);
   }
 
   async update(id: string, input: TripUpdate): Promise<TripRead> {

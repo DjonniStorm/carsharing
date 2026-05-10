@@ -12,6 +12,7 @@ import { Module } from '@nestjs/common';
  * цикла с `TelemetryModule` здесь нет — он не импортируется.
  */
 import { TripController } from './controllers/trip.controller';
+import { TripHistoryController } from './controllers/trip.history.controller';
 import { TripRealtimeModule } from './trip-realtime.module';
 import { TripRepository } from './repositories/trip.repository';
 import { ITripRepositoryToken } from './repositories/trip.repository.interface';
@@ -21,7 +22,7 @@ import { TripService } from './services/trip.service';
 
 @Module({
   imports: [TripRealtimeModule],
-  controllers: [TripController],
+  controllers: [TripController, TripHistoryController],
   providers: [
     TripService,
     {

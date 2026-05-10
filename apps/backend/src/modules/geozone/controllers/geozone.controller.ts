@@ -156,6 +156,29 @@ export class GeozoneController implements IGeozoneController {
     }
   }
 
+  @Get('versions/by-id/:versionId')
+  @ApiOperation({
+    summary:
+      'Версия геозоны по ID (без id геозоны в URL; удобно для geoZoneVersionId поездки)',
+  })
+  @ApiResponse({ status: 200, type: GeozoneVersionRead })
+  async findVersionByGlobalId(
+    @Param('versionId') versionId: string,
+  ): Promise<GeozoneVersionRead> {
+    this.logger.debug('findVersionByGlobalId', { versionId });
+    try {
+      return await this.geozoneService.findVersionById(versionId);
+    } catch (error) {
+      this.logger.error('Failed to find geozone version by global id', error);
+      if (error instanceof GeozoneVersionNotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+      throw new BadRequestException(
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
   @Get()
   @ApiOperation({ summary: 'Получить все геозоны' })
   @ApiQuery({ name: 'includeDeleted', type: Boolean, required: false })

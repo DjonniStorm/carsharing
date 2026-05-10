@@ -198,9 +198,9 @@ export class TripController implements ITripController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() trip: TripCreate,
   ): Promise<TripRead> {
-    // if (user.role === UserRole.MANAGER) {
-    //   throw new ForbiddenException('Manager cannot create trips');
-    // }
+    if (user.role === UserRole.MANAGER) {
+      throw new ForbiddenException('Manager cannot create trips');
+    }
 
     if (user.role === UserRole.DRIVER) {
       if (

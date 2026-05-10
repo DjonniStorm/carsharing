@@ -20,7 +20,7 @@ export type YandexMapOverlayMarker = {
   coordinates: YMapLngLat;
   label: string;
   /** Цвет индикатора на маркере (как в легенде карты). */
-  tone?: "available" | "inUse" | "offline";
+  tone?: "available" | "inUse" | "offline" | "tripStart" | "tripFinish";
 };
 
 export type YandexSchemeMapOptions = {
@@ -43,6 +43,10 @@ const toneColor: Record<NonNullable<YandexMapOverlayMarker["tone"]>, string> = {
   available: "#22c55e",
   inUse: "#228be6",
   offline: "#adb5bd",
+  /** Зелёный «флаг» начала поездки. */
+  tripStart: "#16a34a",
+  /** Розовый «флаг» финиша — сочетается с цветом линии трека. */
+  tripFinish: "#c2255c",
 };
 
 function buildOverlayMarkerElement(
@@ -120,8 +124,10 @@ export type GeozonePolygonsController = {
 };
 
 /**
- * Полигоны текущих версий геозон на карте обзора (каждый полигон MultiPolygon — отдельный {@link YMaps3Global.YMapFeature}).
- * Добавляет слой {@link attachDefaultFeaturesLayer}, как при ручном черчении геозоны.
+ * Полигоны текущих версий геозон (каждый полигон MultiPolygon — отдельный {@link YMaps3Global.YMapFeature}).
+ *
+ * ВАЖНО: общий {@link attachDefaultFeaturesLayer} должен быть создан **один раз** на уровне карты
+ * (см. {@link YandexMapCanvas}); этот контроллер только управляет фичами.
  */
 export function createGeozonePolygonsController(
   map: YMaps3MapInstance,
@@ -141,7 +147,6 @@ export function createGeozonePolygonsController(
     };
   }
 
-  const detachFeaturesLayer = attachDefaultFeaturesLayer(map);
   const entities: unknown[] = [];
 
   function clear() {
@@ -182,10 +187,63 @@ export function createGeozonePolygonsController(
 
   function destroy() {
     clear();
-    detachFeaturesLayer();
   }
 
   return { setGeozones, destroy };
+}
+
+export type TripRoutePolylineController = {
+  setRoute: (coordinates: YMapLngLat[] | null | undefined) => void;
+  destroy: () => void;
+};
+
+/**
+ * Линия маршрута по телеметрии. Использует общий {@link YMaps3Global.YMapDefaultFeaturesLayer}
+ * с карты — собственного слоя не создаёт.
+ */
+export function createTripRoutePolylineController(
+  map: YMaps3MapInstance,
+): TripRoutePolylineController {
+  const ymaps3 = window.ymaps3;
+  const YMapFeatureCtor = ymaps3?.YMapFeature;
+  if (!ymaps3 || !YMapFeatureCtor) {
+    return {
+      setRoute: () => {},
+      destroy: () => {},
+    };
+  }
+
+  let lineFeature: unknown | null = null;
+
+  function clearLine() {
+    if (lineFeature) {
+      detachMapChild(map, lineFeature);
+      lineFeature = null;
+    }
+  }
+
+  function setRoute(coordinates: YMapLngLat[] | null | undefined) {
+    clearLine();
+    if (!coordinates || coordinates.length < 2) {
+      return;
+    }
+    const feature = new (YMapFeatureCtor as NonNullable<
+      YMaps3Global["YMapFeature"]
+    >)({
+      geometry: { type: "LineString", coordinates },
+      style: {
+        stroke: [{ color: "#c2255c", width: 4 }],
+      },
+    });
+    map.addChild(feature);
+    lineFeature = feature;
+  }
+
+  function destroy() {
+    clearLine();
+  }
+
+  return { setRoute, destroy };
 }
 
 /** Слой объектов для полигонов/линий (JS API 3.0). Без него {@link YMapFeature} может не отображаться. */

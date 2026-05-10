@@ -14,7 +14,13 @@ const ErrorPage = () => {
   const bodyKey =
     reason === "session"
       ? LANG_KEYS.pages.errorSessionBody
-      : LANG_KEYS.pages.errorGenericBody;
+      : reason === "trip_invalid_id"
+        ? LANG_KEYS.pages.errorTripInvalidIdBody
+        : reason === "trip_not_found"
+          ? LANG_KEYS.pages.errorTripNotFoundBody
+          : reason === "trip_forbidden"
+            ? LANG_KEYS.pages.errorTripForbiddenBody
+            : LANG_KEYS.pages.errorGenericBody;
 
   return (
     <Container size="sm" py="xl">

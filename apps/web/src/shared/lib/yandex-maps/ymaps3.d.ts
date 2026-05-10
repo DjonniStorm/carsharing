@@ -44,6 +44,12 @@ export type YMaps3MapInstance = {
   addChild: (child: unknown) => void;
   /** Снять дочерний объект (полигон, маркер и т.д.) — иначе артефакт может остаться на карте. */
   removeChild?: (child: unknown) => void;
+  /** Программно изменить центр/zoom без remount-а карты (JS API 3.0). */
+  setLocation?: (location: {
+    center?: YMapLngLat;
+    zoom?: number;
+    duration?: number;
+  }) => void;
   destroy: () => void;
 };
 
