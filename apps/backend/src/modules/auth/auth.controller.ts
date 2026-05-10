@@ -24,6 +24,8 @@ import { LoginDto } from './dto/login.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { PatchMeDto } from './dto/patch-me.dto';
 import { RegisterDto } from './dto/register.dto';
+import { RegisterResponseDto } from './dto/register-response.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import type { AuthenticatedUser } from './types/authenticated-user';
 
 @Controller('auth')
@@ -75,15 +77,30 @@ export class AuthController {
   @ApiOperation({
     summary: 'Публичная регистрация',
     description:
-      'По умолчанию создаёт пользователя с ролью DRIVER, учётная запись сразу активна. JWT как после логина. ' +
-      'Если в окружении OPEN_MANAGER_SELF_REGISTER=true, в теле можно передать role=MANAGER (0) или DRIVER (1). ' +
-      'SYSTEM_ADMIN через этот эндпоинт недоступен.',
+      'Роль по умолчанию DRIVER; при OPEN_MANAGER_SELF_REGISTER=true можно передать MANAGER или DRIVER. SYSTEM_ADMIN недоступен. ' +
+      'Если AUTH_SKIP_VERIFICATION=true — как раньше: сразу активная учётная запись и JWT. ' +
+      'Иначе создаётся неактивная запись, на email уходит код подтверждения (нужен SMTP в NOTIFICATION_EMAIL_*); JWT после подтверждения кода (отдельный эндпоинт позже).',
   })
-  @ApiResponse({ status: 201, type: LoginResponseDto })
+  @ApiResponse({ status: 201, type: RegisterResponseDto })
   @ApiConflictResponse({
     description: 'Email или телефон уже заняты',
   })
-  async register(@Body() dto: RegisterDto): Promise<LoginResponseDto> {
+  async register(@Body() dto: RegisterDto): Promise<RegisterResponseDto> {
     return this.authService.register(dto);
+  }
+
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  @ApiOperation({
+    summary: 'Подтвердить email после регистрации',
+    description:
+      'Передаётся email и 6-значный код из письма. При успехе учётная запись активируется (isActive), выдаётся JWT. ' +
+      'Код держится только в памяти сервера до перезапуска.',
+  })
+  @ApiResponse({ status: 200, type: LoginResponseDto })
+  @ApiResponse({ status: 400, description: 'Неверный или просроченный код' })
+  async verifyEmail(@Body() dto: VerifyEmailDto): Promise<LoginResponseDto> {
+    return this.authService.verifyEmail(dto);
   }
 }

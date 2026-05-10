@@ -16,12 +16,13 @@ export interface IUserService {
   create(user: CreateUserEntity): Promise<ReadUserEntity>;
 
   /**
-   * Публичная регистрация (без JWT): учётная запись сразу активна.
-   * Роль обычно DRIVER; при включённом OPEN_MANAGER_SELF_REGISTER — может быть MANAGER (решает AuthService).
+   * Публичная регистрация (без JWT).
+   * `activateImmediately: false` — создаёт неактивную запись (ожидание кода на email).
    */
   registerPublic(
     input: RegisterUserInput,
     role: UserRole,
+    options?: { activateImmediately?: boolean },
   ): Promise<ReadUserEntity>;
   update(id: string, user: Partial<UpdateUserEntity>): Promise<ReadUserEntity>;
   delete(id: string): Promise<ReadUserEntity>;

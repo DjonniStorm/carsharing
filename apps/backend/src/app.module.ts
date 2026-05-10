@@ -15,6 +15,7 @@ import { UserModule } from './modules/user/user.module';
 import { TelemetryModule } from './modules/telemetry/telemetry.module';
 import { ViolationModule } from './modules/violation/violation.module';
 import { BackgroundModule } from './shared/background/background.module';
+import { NotificationModule } from './shared/notification/notification.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { BackgroundModule } from './shared/background/background.module';
     EventEmitterModule.forRoot(),
     AuthModule,
     PrismaModule,
+    NotificationModule,
     BackgroundModule,
     LoggerModule.forRoot(),
     GeozoneModule,

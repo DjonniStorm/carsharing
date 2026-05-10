@@ -9,6 +9,8 @@ export interface IUserRepository {
   update(id: string, data: UserEntity): Promise<UserEntity>;
   delete(id: string): Promise<UserEntity>;
   restore(id: string): Promise<UserEntity>;
+
+  setIsActive(id: string, isActive: boolean): Promise<void>;
 }
 
 export const IUserRepositoryToken = Symbol('IUserRepository');

@@ -38,4 +38,11 @@ export class UserRepository implements IUserRepository {
       data: { isDeleted: false },
     });
   }
+
+  async setIsActive(id: string, isActive: boolean): Promise<void> {
+    await this.prisma.user.update({
+      where: { id },
+      data: { isActive },
+    });
+  }
 }

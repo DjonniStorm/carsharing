@@ -83,9 +83,13 @@ export class UserService implements IUserService {
   async registerPublic(
     input: RegisterUserInput,
     role: UserRole,
+    options?: { activateImmediately?: boolean },
   ): Promise<ReadUserEntity> {
     try {
-      this.logger.log(`Public register: ${input.email} role=${role}`);
+      const activateImmediately = options?.activateImmediately ?? true;
+      this.logger.log(
+        `Public register: ${input.email} role=${role} activateImmediately=${activateImmediately}`,
+      );
       const dto: CreateUserEntity = {
         name: input.name,
         email: input.email,
@@ -95,7 +99,7 @@ export class UserService implements IUserService {
       };
       const userEntity = UserMapper.toUserEntity(dto);
       userEntity.passwordHash = await bcrypt.hash(input.password, 10);
-      userEntity.isActive = true;
+      userEntity.isActive = activateImmediately;
       UserEntity.validate(userEntity);
       const createdUser = await this.repository.create(userEntity);
       return UserMapper.toReadUserEntity(createdUser);
