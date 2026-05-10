@@ -1,14 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
+import { IUserRepositoryToken } from 'src/modules/user/repositories/user.repository.interface';
+import type { IUserRepository } from 'src/modules/user/repositories/user.repository.interface';
+
 import type { JwtPayload } from '../types/jwt-payload';
 import type { AuthenticatedUser } from '../types/authenticated-user';
 
+/**
+ * После проверки подписи JWT подгружает пользователя из БД и отсекает удалённых и с `isActive: false`,
+ * чтобы не полагаться только на полезную нагрузку токена.
+ */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
-  constructor(configService: ConfigService) {
+  constructor(
+    configService: ConfigService,
+    @Inject(IUserRepositoryToken) private readonly users: IUserRepository,
+  ) {
     const secret =
       configService.get<string>('JWT_SECRET') ??
       configService.get<string>('AUTH_TOKEN_SECRET');
@@ -24,11 +34,15 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  validate(payload: JwtPayload): AuthenticatedUser {
+  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
+    const user = await this.users.findById(payload.sub);
+    if (!user || user.isDeleted || !user.isActive) {
+      throw new UnauthorizedException('Unauthorized');
+    }
     return {
-      id: payload.sub,
-      role: payload.role,
-      email: payload.email,
+      id: user.id,
+      role: user.role,
+      email: user.email,
     };
   }
 }

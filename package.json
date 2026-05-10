@@ -20,6 +20,7 @@
     "test:backend:repos": "moon run backend:test-repos",
     "test:backend:services": "moon run backend:test-services",
     "test:notification": "moon run notification:test",
+    "send-test-email:notification": "pnpm -F @carsharing/notification run build && pnpm -F @carsharing/notification run send-test-email",
     "test:telemetry": "moon run telemetry:test",
     "db:up:backend": "pnpm -F @carsharing/backend db:up",
     "db:down:backend": "pnpm -F @carsharing/backend db:down",

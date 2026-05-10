@@ -378,6 +378,7 @@ describe('UserService', () => {
         update: vi.fn(),
         delete: vi.fn(),
         restore: vi.fn(),
+        setIsActive: vi.fn(),
       };
       service = new UserService(mockRepo);
       vi.mocked(bcrypt.hash).mockResolvedValue('hashed-password' as never);

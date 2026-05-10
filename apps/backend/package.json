@@ -44,6 +44,7 @@
     "db:create:test": "docker compose exec -T postgres sh -lc \"psql -U carsharing -d postgres -tA -c \\\"SELECT 1 FROM pg_database WHERE datname = 'carsharing_test'\\\" | grep -q 1 || psql -U carsharing -d postgres -c \\\"CREATE DATABASE carsharing_test\\\"\""
   },
   "dependencies": {
+    "@carsharing/notification": "workspace:*",
     "@carsharing/types": "workspace:*",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.3",

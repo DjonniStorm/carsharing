@@ -6,8 +6,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { randomInt } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
 
+import { getNotificationConfig } from 'src/shared/notification/notification.config';
+import { NotificationService } from 'src/shared/notification/notification.service';
 import { EMAIL_REGEX } from 'src/shared/regexp/email';
 import {
   EmailAlreadyExistsException,
@@ -25,6 +28,33 @@ import type { JwtPayload } from './types/jwt-payload';
 import type { LoginDto } from './dto/login.dto';
 import type { PatchMeDto } from './dto/patch-me.dto';
 import type { RegisterDto } from './dto/register.dto';
+import type { RegisterResponseDto } from './dto/register-response.dto';
+import type { VerifyEmailDto } from './dto/verify-email.dto';
+import { isAuthSkipVerification } from './auth-skip-verification.config';
+import {
+  setPendingEmailVerification,
+  getPendingEmailVerification,
+  deletePendingEmailVerification,
+} from './email-verification.store';
+
+/**
+ * Время жизни кода подтверждения email в миллисекундах.
+ * 15 минут
+ */
+const EMAIL_VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
+/**
+ * Длина кода подтверждения email.
+ * 6 цифр
+ */
+const EMAIL_VERIFICATION_CODE_LENGTH = 6;
+
+function randomDigits(length: number): string {
+  let s = '';
+  for (let i = 0; i < length; i++) {
+    s += String(randomInt(0, 10));
+  }
+  return s;
+}
 
 @Injectable()
 export class AuthService {
@@ -33,6 +63,7 @@ export class AuthService {
     private readonly users: IUserRepository,
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
+    private readonly notifications: NotificationService,
   ) {}
 
   async login(dto: LoginDto): Promise<{ access_token: string }> {
@@ -57,8 +88,18 @@ export class AuthService {
     return { access_token };
   }
 
-  async register(dto: RegisterDto): Promise<{ access_token: string }> {
+  async register(dto: RegisterDto): Promise<RegisterResponseDto> {
     const role = this.resolveRegisterRole(dto);
+    const skipVerification = isAuthSkipVerification();
+
+    if (!skipVerification) {
+      const notificationCfg = getNotificationConfig();
+      if (!notificationCfg.email) {
+        throw new BadRequestException(
+          'Подтверждение email включено (AUTH_SKIP_VERIFICATION не задан или false), но SMTP не настроен. Укажите NOTIFICATION_EMAIL_* в окружении или установите AUTH_SKIP_VERIFICATION=true для локальных тестов.',
+        );
+      }
+    }
 
     try {
       const created = await this.userService.registerPublic(
@@ -69,14 +110,44 @@ export class AuthService {
           password: dto.password,
         },
         role,
+        { activateImmediately: skipVerification },
       );
-      const payload: JwtPayload = {
-        sub: created.id,
-        role: created.role,
-        email: created.email,
+
+      if (skipVerification) {
+        const payload: JwtPayload = {
+          sub: created.id,
+          role: created.role,
+          email: created.email,
+        };
+        const access_token = await this.jwtService.signAsync(payload);
+        return { access_token };
+      }
+
+      const code = randomDigits(EMAIL_VERIFICATION_CODE_LENGTH);
+      const expiresAt = Date.now() + EMAIL_VERIFICATION_CODE_TTL_MS;
+      const codeHash = await bcrypt.hash(code, 10);
+      setPendingEmailVerification(created.email, {
+        userId: created.id,
+        codeHash,
+        expiresAt,
+      });
+
+      try {
+        await this.notifications.sendVerificationCode({
+          code,
+          email: created.email,
+        });
+      } catch (err) {
+        throw new BadRequestException(
+          `Не удалось отправить код подтверждения: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+
+      return {
+        requiresVerification: true,
+        message:
+          'На указанный email отправлен код подтверждения. После ввода кода учётная запись будет активирована.',
       };
-      const access_token = await this.jwtService.signAsync(payload);
-      return { access_token };
     } catch (error) {
       if (error instanceof EmailAlreadyExistsException) {
         throw new ConflictException(
@@ -90,6 +161,46 @@ export class AuthService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Подтверждение email по коду из письма: выставляет `isActive: true` и выдаёт JWT.
+   * Код хранится только в памяти процесса (см. `email-verification.store.ts`).
+   */
+  async verifyEmail(dto: VerifyEmailDto): Promise<{ access_token: string }> {
+    const emailTrim = dto.email.trim();
+    const pending = getPendingEmailVerification(emailTrim);
+    if (!pending) {
+      throw new BadRequestException(
+        'Код недействителен или истёк. Зарегистрируйтесь снова.',
+      );
+    }
+
+    const user = await this.users.findByEmail(emailTrim);
+    if (!user || user.isDeleted) {
+      deletePendingEmailVerification(emailTrim);
+      throw new BadRequestException('Пользователь не найден');
+    }
+    if (user.id !== pending.userId) {
+      deletePendingEmailVerification(emailTrim);
+      throw new BadRequestException('Код не соответствует email');
+    }
+
+    const codeOk = await bcrypt.compare(dto.code.trim(), pending.codeHash);
+    if (!codeOk) {
+      throw new BadRequestException('Неверный код');
+    }
+
+    await this.users.setIsActive(user.id, true);
+    deletePendingEmailVerification(emailTrim);
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      role: user.role,
+      email: user.email,
+    };
+    const access_token = await this.jwtService.signAsync(payload);
+    return { access_token };
   }
 
   /**
