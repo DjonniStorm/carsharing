@@ -3,6 +3,7 @@ import {
   IsNumber,
   IsObject,
   IsOptional,
+  IsUUID,
   Max,
   Min,
 } from 'class-validator';
@@ -22,21 +23,27 @@ export class GeozoneVersionCreate {
   @IsObject()
   rules?: Record<string, unknown> | null;
 
-  @IsNotEmpty()
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  @Max(999999999999.99)
-  pricePerMinute: number;
+  /** Если задан — ставки берутся из шаблона (имеет приоритет над полями `price*`). */
+  @IsOptional()
+  @IsUUID()
+  tariffPresetId?: string;
 
-  @IsNotEmpty()
+  /** Если не задан `tariffPresetId`, можно передать ставки явно или скопировать с текущей версии на сервере. */
+  @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(999999999999.99)
-  pricePerKm: number;
+  pricePerMinute?: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(999999999999.99)
-  pausePricePerMinute: number;
+  pricePerKm?: number;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(999999999999.99)
+  pausePricePerMinute?: number;
 }

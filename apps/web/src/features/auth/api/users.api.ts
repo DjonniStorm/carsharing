@@ -10,6 +10,23 @@ export class UsersApi extends BaseApiClient {
     super(baseUrl, getAccessToken);
   }
 
+  findById(id: string): Promise<ReadUser> {
+    return this.getJson<ReadUser>(`/users/${encodeURIComponent(id)}`).catch(
+      (err: unknown) => {
+        if (
+          err instanceof HttpApiError &&
+          (err.status === 401 || err.status === 403)
+        ) {
+          throw new HttpApiError(
+            translate(LANG_KEYS.api.createUserManagerOnly),
+            err.status,
+          );
+        }
+        throw err;
+      },
+    );
+  }
+
   createUser(body: CreateUserRequestBody): Promise<ReadUser> {
     const token = this.getAccessToken?.();
     if (!token) {

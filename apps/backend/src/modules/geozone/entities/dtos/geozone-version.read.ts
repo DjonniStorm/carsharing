@@ -9,6 +9,8 @@ export class GeozoneVersionRead {
   pricePerMinute: number;
   pricePerKm: number;
   pausePricePerMinute: number;
+  /** Шаблон, из которого скопировали ставки при публикации этой версии (аудит). */
+  tariffPresetId: string | null;
   createdAt: Date;
   disabledAt: Date | null;
 }

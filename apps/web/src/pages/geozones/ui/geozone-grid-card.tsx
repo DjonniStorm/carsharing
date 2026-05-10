@@ -45,7 +45,12 @@ const GeozoneGridCard = ({ zone, t }: Props) => {
   return (
     <Paper radius="md" p="md" withBorder shadow="xs">
       <Stack gap="sm">
-        <Group justify="space-between" align="flex-start" wrap="nowrap" gap="xs">
+        <Group
+          justify="space-between"
+          align="flex-start"
+          wrap="nowrap"
+          gap="xs"
+        >
           <Stack gap={4} style={{ minWidth: 0 }}>
             <Text fw={700} size="lg" truncate="end">
               {zone.name}

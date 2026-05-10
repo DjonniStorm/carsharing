@@ -10,7 +10,10 @@ export type {
   YandexBasicMapOptions,
   YandexMapMountHandle,
   YandexMapOverlayMarker,
+  OverlayMarkersController,
+  OverlayMarkersControllerOptions,
 } from "@/shared/lib/yandex-maps/yandex-maps-render-service";
+export { createOverlayMarkersController } from "@/shared/lib/yandex-maps/yandex-maps-render-service";
 export type {
   YMapLngLat,
   YMaps3Global,

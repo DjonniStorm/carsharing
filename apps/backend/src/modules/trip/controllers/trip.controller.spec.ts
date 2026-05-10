@@ -47,8 +47,8 @@ describe('TripController', () => {
   let controller: TripController;
   let userId: string;
   let carId: string;
-  let tariffVersionId: string;
-  let tariffVersionIdOther: string;
+  let geoZoneVersionId: string;
+  let geoZoneVersionIdOther: string;
 
   beforeAll(async () => {
     loadBackendDevEnv();
@@ -58,7 +58,7 @@ describe('TripController', () => {
 
   beforeEach(async () => {
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -120,8 +120,8 @@ describe('TripController', () => {
     if (!firstZone.currentVersionId || !secondZone.currentVersionId) {
       throw new Error('currentVersionId expected');
     }
-    tariffVersionId = firstZone.currentVersionId;
-    tariffVersionIdOther = secondZone.currentVersionId;
+    geoZoneVersionId = firstZone.currentVersionId;
+    geoZoneVersionIdOther = secondZone.currentVersionId;
 
     const service = new TripService(
       new TripRepository(prisma),
@@ -137,7 +137,7 @@ describe('TripController', () => {
 
   afterEach(async () => {
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -146,7 +146,7 @@ describe('TripController', () => {
 
   afterAll(async () => {
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -158,12 +158,12 @@ describe('TripController', () => {
     it('creates trip', async () => {
       const created = await controller.create(
         adminActor(),
-        buildTripCreate({ userId, carId, tariffVersionId }),
+        buildTripCreate({ userId, carId, geoZoneVersionId }),
       );
       expect(created.id).toBeTruthy();
       expect(created.userId).toBe(userId);
       expect(created.carId).toBe(carId);
-      expect(created.tariffVersionId).toBe(tariffVersionId);
+      expect(created.geoZoneVersionId).toBe(geoZoneVersionId);
     });
 
     it('maps invalid relation to BadRequest', async () => {
@@ -173,7 +173,7 @@ describe('TripController', () => {
           buildTripCreate({
             userId,
             carId,
-            tariffVersionId: uuidv4(),
+            geoZoneVersionId: uuidv4(),
           }),
         ),
       ).rejects.toThrow(BadRequestException);
@@ -186,13 +186,13 @@ describe('TripController', () => {
       expect(list).toEqual([]);
     });
 
-    it('filters by tariffVersionId and status', async () => {
+    it('filters by geoZoneVersionId and status', async () => {
       await controller.create(
         adminActor(),
         buildTripCreate({
           userId,
           carId,
-          tariffVersionId,
+          geoZoneVersionId,
           status: TripStatus.PENDING,
         }),
       );
@@ -201,7 +201,7 @@ describe('TripController', () => {
         buildTripCreate({
           userId,
           carId,
-          tariffVersionId: tariffVersionIdOther,
+          geoZoneVersionId: geoZoneVersionIdOther,
           status: TripStatus.ACTIVE,
         }),
       );
@@ -210,7 +210,7 @@ describe('TripController', () => {
         adminActor(),
         undefined,
         undefined,
-        tariffVersionIdOther,
+        geoZoneVersionIdOther,
         String(TripStatus.ACTIVE),
       );
       expect(filtered).toHaveLength(1);
@@ -267,7 +267,7 @@ describe('TripController', () => {
     it('returns trip by id', async () => {
       const created = await controller.create(
         adminActor(),
-        buildTripCreate({ userId, carId, tariffVersionId }),
+        buildTripCreate({ userId, carId, geoZoneVersionId }),
       );
       const found = await controller.findById(adminActor(), created.id);
       expect(found.id).toBe(created.id);
@@ -281,17 +281,17 @@ describe('TripController', () => {
   });
 
   describe('update', () => {
-    it('updates status and tariffVersionId', async () => {
+    it('updates status and geoZoneVersionId', async () => {
       const created = await controller.create(
         adminActor(),
-        buildTripCreate({ userId, carId, tariffVersionId }),
+        buildTripCreate({ userId, carId, geoZoneVersionId }),
       );
       const patch = new TripUpdate();
       patch.status = TripStatus.FINISHED;
-      patch.tariffVersionId = tariffVersionIdOther;
+      patch.geoZoneVersionId = geoZoneVersionIdOther;
       const updated = await controller.update(adminActor(), created.id, patch);
       expect(updated.status).toBe(TripStatus.FINISHED);
-      expect(updated.tariffVersionId).toBe(tariffVersionIdOther);
+      expect(updated.geoZoneVersionId).toBe(geoZoneVersionIdOther);
     });
 
     it('NotFound for missing id', async () => {
@@ -306,14 +306,14 @@ describe('TripController', () => {
       const dto = buildTripCreate({
         userId: 'not-uuid',
         carId: 'bad',
-        tariffVersionId: 'bad',
+        geoZoneVersionId: 'bad',
         startLat: 120,
       });
       const errors = await validate(dto);
       const props = errors.map((e) => e.property);
       expect(props).toContain('userId');
       expect(props).toContain('carId');
-      expect(props).toContain('tariffVersionId');
+      expect(props).toContain('geoZoneVersionId');
       expect(props).toContain('startLat');
     });
 
@@ -321,7 +321,7 @@ describe('TripController', () => {
       const dto = buildTripCreate({
         userId,
         carId,
-        tariffVersionId,
+        geoZoneVersionId,
         startLat: -90,
         startLng: 180,
       });
@@ -355,7 +355,7 @@ function buildTripCreate(overrides: Partial<TripCreate>): TripCreate {
   const dto = new TripCreate();
   dto.userId = overrides.userId ?? uuidv4();
   dto.carId = overrides.carId ?? uuidv4();
-  dto.tariffVersionId = overrides.tariffVersionId ?? uuidv4();
+  dto.geoZoneVersionId = overrides.geoZoneVersionId ?? uuidv4();
   dto.status = overrides.status;
   dto.startLat = overrides.startLat;
   dto.startLng = overrides.startLng;

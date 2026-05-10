@@ -5,6 +5,7 @@ import {
   GeozoneAlreadyDeletedException,
   GeozoneCreatedByUserIdRequiredException,
   GeozoneGeometryMissingException,
+  GeozoneInvalidPublishPricingException,
   GeozoneNotDeletedException,
   GeozoneNotFoundException,
   GeozoneVersionNotFoundException,
@@ -12,6 +13,7 @@ import {
 
 function isDomainGeozoneError(error: unknown): boolean {
   return (
+    error instanceof GeozoneInvalidPublishPricingException ||
     error instanceof GeozoneNotFoundException ||
     error instanceof GeozoneCreatedByUserIdRequiredException ||
     error instanceof GeozoneGeometryMissingException ||

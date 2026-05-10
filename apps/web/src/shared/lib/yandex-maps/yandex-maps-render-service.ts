@@ -1,13 +1,22 @@
+import type { GeozoneRead } from "@/entities/geozone";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 import { translate } from "@/shared/i18n/translate";
 import { loadYandexMapsApi } from "@/shared/lib/yandex-maps/load-yandex-maps-api";
 
 import type {
+  YMapFeatureStyle,
   YMapLngLat,
+  YMapMarkerInstance,
+  YMaps3Global,
   YMaps3MapInstance,
 } from "@/shared/lib/yandex-maps/ymaps3";
 
 export type YandexMapOverlayMarker = {
+  /**
+   * Стабильный идентификатор для in-place обновления координат через `marker.update`.
+   * Если не задан — маркер при каждом изменении массива пересоздаётся (старое поведение).
+   */
+  id?: string;
   coordinates: YMapLngLat;
   label: string;
   /** Цвет индикатора на маркере (как в легенде карты). */
@@ -81,6 +90,104 @@ function destroyUnknown(entity: unknown): void {
   }
 }
 
+/** Снять дочерний объект карты: сначала `removeChild` (актуально для JS API 3), иначе `destroy()` если есть. */
+function detachMapChild(map: YMaps3MapInstance, entity: unknown): void {
+  const removeChild = map.removeChild;
+  if (typeof removeChild === "function") {
+    try {
+      removeChild.call(map, entity);
+      return;
+    } catch {
+      // уже снят или иная модель жизненного цикла
+    }
+  }
+  destroyUnknown(entity);
+}
+
+function hexToGeozonePolygonStyle(hex: string): YMapFeatureStyle {
+  const raw = hex.trim().replace(/^#/, "");
+  const safe =
+    raw.length === 6 && /^[0-9a-fA-F]+$/.test(raw) ? `#${raw}` : "#868e96";
+  return {
+    stroke: [{ color: `${safe}DD`, width: 2 }],
+    fill: `${safe}33`,
+  };
+}
+
+export type GeozonePolygonsController = {
+  setGeozones: (geozones: GeozoneRead[] | null | undefined) => void;
+  destroy: () => void;
+};
+
+/**
+ * Полигоны текущих версий геозон на карте обзора (каждый полигон MultiPolygon — отдельный {@link YMaps3Global.YMapFeature}).
+ * Добавляет слой {@link attachDefaultFeaturesLayer}, как при ручном черчении геозоны.
+ */
+export function createGeozonePolygonsController(
+  map: YMaps3MapInstance,
+): GeozonePolygonsController {
+  const ymaps3 = window.ymaps3;
+  if (!ymaps3) {
+    return {
+      setGeozones: () => {},
+      destroy: () => {},
+    };
+  }
+  const YMapFeatureCtor = ymaps3.YMapFeature;
+  if (!YMapFeatureCtor) {
+    return {
+      setGeozones: () => {},
+      destroy: () => {},
+    };
+  }
+
+  const detachFeaturesLayer = attachDefaultFeaturesLayer(map);
+  const entities: unknown[] = [];
+
+  function clear() {
+    for (const e of entities) {
+      detachMapChild(map, e);
+    }
+    entities.length = 0;
+  }
+
+  function setGeozones(geozones: GeozoneRead[] | null | undefined) {
+    clear();
+    if (!geozones?.length) {
+      return;
+    }
+
+    for (const gz of geozones) {
+      const geom = gz.currentVersion?.geometry;
+      if (!geom || geom.type !== "MultiPolygon") {
+        continue;
+      }
+      const style = hexToGeozonePolygonStyle(gz.color || "#868e96");
+      for (const polygon of geom.coordinates) {
+        if (!polygon?.length) {
+          continue;
+        }
+        const coordinates = polygon as YMapLngLat[][];
+        const feature = new (YMapFeatureCtor as NonNullable<
+          YMaps3Global["YMapFeature"]
+        >)({
+          geometry: { type: "Polygon", coordinates },
+          style,
+        });
+        map.addChild(feature);
+        entities.push(feature);
+      }
+    }
+  }
+
+  function destroy() {
+    clear();
+    detachFeaturesLayer();
+  }
+
+  return { setGeozones, destroy };
+}
+
 /** Слой объектов для полигонов/линий (JS API 3.0). Без него {@link YMapFeature} может не отображаться. */
 export function attachDefaultFeaturesLayer(map: YMaps3MapInstance): () => void {
   const ymaps3 = window.ymaps3;
@@ -97,6 +204,10 @@ export function attachDefaultFeaturesLayer(map: YMaps3MapInstance): () => void {
 
 /**
  * Добавляет слой объектов и маркеры. Возвращает функцию отключения (без уничтожения карты).
+ *
+ * Подходит, когда массив маркеров **меняется редко** (например, рендерится один раз).
+ * Для частых обновлений координат используйте {@link createOverlayMarkersController},
+ * чтобы не пересоздавать маркеры на каждом тике.
  */
 export function attachOverlayMarkers(
   map: YMaps3MapInstance,
@@ -126,10 +237,148 @@ export function attachOverlayMarkers(
 
   return () => {
     for (const entity of markerEntities) {
-      destroyUnknown(entity);
+      detachMapChild(map, entity);
     }
-    destroyUnknown(featuresLayer);
+    detachMapChild(map, featuresLayer);
   };
+}
+
+export type OverlayMarkersController = {
+  /** Применить новый набор маркеров: добавить/удалить/`update({ coordinates })` существующие. */
+  setMarkers: (markers: YandexMapOverlayMarker[] | undefined) => void;
+  /** Снять все маркеры (карта остаётся жива). */
+  destroy: () => void;
+};
+
+export type OverlayMarkersControllerOptions = {
+  /**
+   * Фабрика колбэка клика по маркеру с полем `id` (актуальный обработчик из React — через ref).
+   */
+  resolveMarkerClick?: () => ((carId: string) => void) | undefined;
+};
+
+type ManagedMarker = {
+  marker: YMapMarkerInstance;
+  spec: YandexMapOverlayMarker;
+  rootEl: HTMLElement;
+  markerClickHandler?: (e: MouseEvent) => void;
+};
+
+/**
+ * Контроллер маркеров с in-place обновлениями. Создаётся один раз вместе с картой.
+ *
+ * - Слой объектов создаётся **один раз**.
+ * - Для маркеров с `id` смена координат идёт через `marker.update({ coordinates })`.
+ * - Маркер пересоздаётся только при смене `label` или `tone` (изменение DOM-содержимого).
+ * - Маркеры без `id` пересоздаются при каждом вызове (старое поведение для совместимости).
+ *
+ * Это исключает мерцание/«стояние» при частых апдейтах локаций (телеметрия по сокету).
+ */
+export function createOverlayMarkersController(
+  map: YMaps3MapInstance,
+  options?: OverlayMarkersControllerOptions,
+): OverlayMarkersController {
+  const ymaps3 = window.ymaps3;
+  const Marker = ymaps3?.YMapMarker;
+  if (!ymaps3 || !Marker) {
+    return {
+      setMarkers: () => {},
+      destroy: () => {},
+    };
+  }
+
+  const byId = new Map<string, ManagedMarker>();
+  let anonymous: ManagedMarker[] = [];
+
+  function detachManagedMarker(entry: ManagedMarker): void {
+    if (entry.markerClickHandler) {
+      entry.rootEl.removeEventListener("click", entry.markerClickHandler);
+      entry.markerClickHandler = undefined;
+    }
+    detachMapChild(map, entry.marker);
+  }
+
+  function createMarker(m: YandexMapOverlayMarker): ManagedMarker {
+    const el = buildOverlayMarkerElement(m);
+    let markerClickHandler: ((e: MouseEvent) => void) | undefined;
+    if (m.id && options?.resolveMarkerClick) {
+      markerClickHandler = (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        options.resolveMarkerClick?.()?.(m.id!);
+      };
+      el.addEventListener("click", markerClickHandler);
+    }
+    const instance = new Marker!({ coordinates: m.coordinates }, el);
+    map.addChild(instance);
+    return {
+      marker: instance,
+      spec: m,
+      rootEl: el,
+      markerClickHandler,
+    };
+  }
+
+  function disposeAnonymous() {
+    for (const a of anonymous) {
+      detachManagedMarker(a);
+    }
+    anonymous = [];
+  }
+
+  function setMarkers(markers: YandexMapOverlayMarker[] | undefined): void {
+    disposeAnonymous();
+
+    const seen = new Set<string>();
+    if (markers) {
+      for (const m of markers) {
+        if (!m.id) {
+          anonymous.push(createMarker(m));
+          continue;
+        }
+
+        seen.add(m.id);
+        const existing = byId.get(m.id);
+        if (!existing) {
+          byId.set(m.id, createMarker(m));
+          continue;
+        }
+
+        const sameLook =
+          existing.spec.label === m.label && existing.spec.tone === m.tone;
+        if (!sameLook) {
+          detachManagedMarker(existing);
+          byId.set(m.id, createMarker(m));
+          continue;
+        }
+
+        const sameCoords =
+          existing.spec.coordinates[0] === m.coordinates[0] &&
+          existing.spec.coordinates[1] === m.coordinates[1];
+        if (!sameCoords) {
+          existing.marker.update({ coordinates: m.coordinates });
+        }
+        existing.spec = m;
+      }
+    }
+
+    for (const [id, entry] of byId) {
+      if (!seen.has(id)) {
+        detachManagedMarker(entry);
+        byId.delete(id);
+      }
+    }
+  }
+
+  function destroy(): void {
+    disposeAnonymous();
+    for (const entry of byId.values()) {
+      detachManagedMarker(entry);
+    }
+    byId.clear();
+  }
+
+  return { setMarkers, destroy };
 }
 
 /**

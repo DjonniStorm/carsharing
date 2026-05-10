@@ -6,6 +6,11 @@ export type YMapMarkerProps = {
   draggable?: boolean;
 };
 
+/** Экземпляр {@link YMaps3Global.YMapMarker}: координаты через `update`; удаление — через {@link YMaps3MapInstance.removeChild}. */
+export type YMapMarkerInstance = {
+  update: (props: Partial<YMapMarkerProps>) => void;
+};
+
 /** Геометрия для {@link YMaps3Global.YMapFeature} (подмножество GeoJSON). */
 export type YMapFeatureGeometry =
   | { type: "Polygon"; coordinates: YMapLngLat[][] }
@@ -18,6 +23,21 @@ export type YMapFeatureStyle = {
 
 export type YMapClickEvent = {
   coordinates?: YMapLngLat;
+};
+
+/** Фрагмент `location` в колбэке `YMapListener` `onUpdate`. */
+export type YMapLocationSnapshot = {
+  center?: YMapLngLat;
+  zoom?: number;
+  /** Углы видимой области (пары [lon, lat]). */
+  bounds?: YMapLngLat[];
+};
+
+export type YMapMapUpdateEvent = {
+  type: "update";
+  camera?: unknown;
+  location?: YMapLocationSnapshot;
+  mapInAction?: boolean;
 };
 
 export type YMaps3MapInstance = {
@@ -42,13 +62,19 @@ export type YMaps3Global = {
   /** Слой для векторных объектов (полигоны, линии). */
   YMapDefaultFeaturesLayer?: new (props?: Record<string, unknown>) => unknown;
   /** Маркер с произвольным DOM в качестве содержимого. */
-  YMapMarker?: new (props: YMapMarkerProps, element: HTMLElement) => unknown;
+  YMapMarker?: new (
+    props: YMapMarkerProps,
+    element: HTMLElement,
+  ) => YMapMarkerInstance;
   YMapFeature?: new (props: {
     geometry: YMapFeatureGeometry;
     style?: YMapFeatureStyle;
   }) => unknown;
   YMapListener?: new (props: {
+    layer?: string;
     onClick?: (object: unknown, event: YMapClickEvent) => void;
+    onUpdate?: (event: YMapMapUpdateEvent) => void;
+    onResize?: (event: unknown) => void;
   }) => unknown;
 };
 

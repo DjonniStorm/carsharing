@@ -108,7 +108,9 @@ const GeozonesPage = () => {
           to={ROUTES.dashboard.geozonesNew}
           style={{ textDecoration: "none" }}
         >
-          <Button component="span">{t(LANG_KEYS.pages.geozonesAddButton)}</Button>
+          <Button component="span">
+            {t(LANG_KEYS.pages.geozonesAddButton)}
+          </Button>
         </Link>
       </Group>
 

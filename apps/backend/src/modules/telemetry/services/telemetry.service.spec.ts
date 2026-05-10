@@ -35,7 +35,7 @@ describe('TelemetryService (integration)', () => {
   let service: TelemetryService;
   let userId: string;
   let carId: string;
-  let tariffVersionId: string;
+  let geoZoneVersionId: string;
   let tripId: string;
 
   beforeAll(async () => {
@@ -47,7 +47,7 @@ describe('TelemetryService (integration)', () => {
   beforeEach(async () => {
     await truncateApplicationTable(prisma, 'telemetry');
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -98,14 +98,14 @@ describe('TelemetryService (integration)', () => {
     if (!zone.currentVersionId) {
       throw new Error('currentVersionId expected');
     }
-    tariffVersionId = zone.currentVersionId;
+    geoZoneVersionId = zone.currentVersionId;
 
     tripId = (
       await prisma.trip.create({
         data: {
           userId,
           carId,
-          tariffVersionId,
+          geoZoneVersionId,
           startedAt: new Date('2026-04-21T12:00:00.000Z'),
           distance: 0,
           duration: 0,
@@ -129,7 +129,7 @@ describe('TelemetryService (integration)', () => {
   afterEach(async () => {
     await truncateApplicationTable(prisma, 'telemetry');
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');

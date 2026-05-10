@@ -20,7 +20,7 @@ export class TripMapper {
       String(row.id),
       row.userId,
       row.carId,
-      row.tariffVersionId,
+      row.geoZoneVersionId,
       row.status as TripStatus,
       row.startedAt,
       row.finishedAt,
@@ -51,7 +51,7 @@ export class TripMapper {
     read.id = entity.id;
     read.userId = entity.userId;
     read.carId = entity.carId;
-    read.tariffVersionId = entity.tariffVersionId;
+    read.geoZoneVersionId = entity.geoZoneVersionId;
     read.status = entity.status;
     read.startedAt = entity.startedAt;
     read.finishedAt = entity.finishedAt;

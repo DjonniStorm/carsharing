@@ -1,23 +1,22 @@
-import type {
-  TariffFindByIdOptions,
-  TariffListParams,
-} from '../entities/tariff-query.types';
-import { TariffEntity } from '../entities/tariff.entity';
+import type { TariffListParams } from '../entities/tariff-query.types';
+import { TariffPresetEntity } from '../entities/tariff.entity';
 
 export interface ITariffRepository {
-  findMany(params?: TariffListParams): Promise<TariffEntity[]>;
+  findMany(params?: TariffListParams): Promise<TariffPresetEntity[]>;
 
-  findById(
-    id: string,
-    options?: TariffFindByIdOptions,
-  ): Promise<TariffEntity | null>;
+  /** По id без фильтра по удалению (для админки). */
+  findById(id: string): Promise<TariffPresetEntity | null>;
+
+  /** Активный (не удалённый) пресет по id — для копирования ставок в версию зоны. */
+  findActiveById(id: string): Promise<TariffPresetEntity | null>;
 
   create(input: {
     name: string;
     pricePerMinute: number;
     pricePerKm: number;
-    geoZoneId: string;
-  }): Promise<TariffEntity>;
+    pausePricePerMinute: number;
+    isDefault: boolean;
+  }): Promise<TariffPresetEntity>;
 
   update(
     id: string,
@@ -25,11 +24,11 @@ export interface ITariffRepository {
       name: string;
       pricePerMinute: number;
       pricePerKm: number;
-      geoZoneId: string;
+      pausePricePerMinute: number;
+      isDefault: boolean;
+      isDeleted: boolean;
     }>,
-  ): Promise<TariffEntity>;
-
-  setDeletedAt(id: string, deletedAt: Date | null): Promise<TariffEntity>;
+  ): Promise<TariffPresetEntity>;
 }
 
 export const ITariffRepositoryToken = Symbol('ITariffRepository');

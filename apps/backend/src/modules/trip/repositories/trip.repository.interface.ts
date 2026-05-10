@@ -8,7 +8,7 @@ import { TripEntity } from '../entities/trip.entity';
 export type TripRepositoryCreateInput = {
   userId: string;
   carId: string;
-  tariffVersionId: string;
+  geoZoneVersionId: string;
   status?: TripStatus;
   startedAt?: Date;
   distance?: number;
@@ -38,7 +38,7 @@ export type TripRepositoryUpdatePatch = Partial<{
   pricePause: number | null;
   priceTotal: number | null;
   /** Смена версии тарифа (редко); `null` в домене не допускается — поле в БД NOT NULL. */
-  tariffVersionId?: string;
+  geoZoneVersionId?: string;
   carPlateSnapshot: string | null;
   carDisplayNameSnapshot: string | null;
 }>;

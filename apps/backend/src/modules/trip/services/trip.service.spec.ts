@@ -41,8 +41,8 @@ describe('TripService (integration)', () => {
   let service: TripService;
   let userId: string;
   let carId: string;
-  let tariffVersionId: string;
-  let tariffVersionIdOther: string;
+  let geoZoneVersionId: string;
+  let geoZoneVersionIdOther: string;
 
   beforeAll(async () => {
     loadBackendDevEnv();
@@ -52,7 +52,7 @@ describe('TripService (integration)', () => {
 
   beforeEach(async () => {
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -114,8 +114,8 @@ describe('TripService (integration)', () => {
     if (!firstZone.currentVersionId || !secondZone.currentVersionId) {
       throw new Error('currentVersionId must exist for trip tests');
     }
-    tariffVersionId = firstZone.currentVersionId;
-    tariffVersionIdOther = secondZone.currentVersionId;
+    geoZoneVersionId = firstZone.currentVersionId;
+    geoZoneVersionIdOther = secondZone.currentVersionId;
 
     service = new TripService(
       new TripRepository(prisma),
@@ -130,7 +130,7 @@ describe('TripService (integration)', () => {
 
   afterEach(async () => {
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -139,7 +139,7 @@ describe('TripService (integration)', () => {
 
   afterAll(async () => {
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -153,7 +153,7 @@ describe('TripService (integration)', () => {
         createTripInput({
           userId,
           carId,
-          tariffVersionId,
+          geoZoneVersionId,
           status: TripStatus.STARTED,
           startLat: 55.75,
           startLng: 37.61,
@@ -162,7 +162,7 @@ describe('TripService (integration)', () => {
       expect(created.id).toBeTruthy();
       expect(created.userId).toBe(userId);
       expect(created.carId).toBe(carId);
-      expect(created.tariffVersionId).toBe(tariffVersionId);
+      expect(created.geoZoneVersionId).toBe(geoZoneVersionId);
       expect(created.status).toBe(TripStatus.STARTED);
       expect(created.startLat).toBe(55.75);
       expect(created.startLng).toBe(37.61);
@@ -174,7 +174,7 @@ describe('TripService (integration)', () => {
           createTripInput({
             userId,
             carId,
-            tariffVersionId: uuidv4(),
+            geoZoneVersionId: uuidv4(),
           }),
         ),
       ).rejects.toThrow(TripRelationNotFoundException);
@@ -187,12 +187,12 @@ describe('TripService (integration)', () => {
       expect(list).toEqual([]);
     });
 
-    it('supports filters by status and tariffVersionId', async () => {
+    it('supports filters by status and geoZoneVersionId', async () => {
       await service.create(
         createTripInput({
           userId,
           carId,
-          tariffVersionId,
+          geoZoneVersionId,
           status: TripStatus.PENDING,
         }),
       );
@@ -200,13 +200,13 @@ describe('TripService (integration)', () => {
         createTripInput({
           userId,
           carId,
-          tariffVersionId: tariffVersionIdOther,
+          geoZoneVersionId: geoZoneVersionIdOther,
           status: TripStatus.ACTIVE,
         }),
       );
       const filtered = await service.findMany({
         status: TripStatus.ACTIVE,
-        tariffVersionId: tariffVersionIdOther,
+        geoZoneVersionId: geoZoneVersionIdOther,
       });
       expect(filtered).toHaveLength(1);
       expect(filtered[0].id).toBe(active.id);
@@ -219,16 +219,16 @@ describe('TripService (integration)', () => {
         createTripInput({
           userId,
           carId,
-          tariffVersionId,
+          geoZoneVersionId,
         }),
       );
       const found = await service.findById(created.id, {
         withUser: true,
         withCar: true,
-        withTariffVersion: true,
+        withGeoZoneVersion: true,
       });
       expect(found.id).toBe(created.id);
-      expect(found.tariffVersionId).toBe(tariffVersionId);
+      expect(found.geoZoneVersionId).toBe(geoZoneVersionId);
     });
 
     it('throws TripNotFoundException for unknown id', async () => {
@@ -244,19 +244,19 @@ describe('TripService (integration)', () => {
         createTripInput({
           userId,
           carId,
-          tariffVersionId,
+          geoZoneVersionId,
         }),
       );
       const patch = new TripUpdate();
       patch.status = TripStatus.FINISHED;
       patch.distanceMeters = 12_345;
       patch.priceTotal = 321.5;
-      patch.tariffVersionId = tariffVersionIdOther;
+      patch.geoZoneVersionId = geoZoneVersionIdOther;
       const updated = await service.update(created.id, patch);
       expect(updated.status).toBe(TripStatus.FINISHED);
       expect(updated.distanceMeters).toBe(12_345);
       expect(updated.priceTotal).toBe(321.5);
-      expect(updated.tariffVersionId).toBe(tariffVersionIdOther);
+      expect(updated.geoZoneVersionId).toBe(geoZoneVersionIdOther);
     });
 
     it('throws TripNotFoundException for unknown id', async () => {
@@ -271,7 +271,7 @@ function createTripInput(overrides: Partial<TripCreate>): TripCreate {
   const dto = new TripCreate();
   dto.userId = overrides.userId ?? uuidv4();
   dto.carId = overrides.carId ?? uuidv4();
-  dto.tariffVersionId = overrides.tariffVersionId ?? uuidv4();
+  dto.geoZoneVersionId = overrides.geoZoneVersionId ?? uuidv4();
   dto.status = overrides.status;
   dto.startLat = overrides.startLat;
   dto.startLng = overrides.startLng;

@@ -16,6 +16,7 @@ export class GeozoneVersionEntity {
     public readonly pricePerMinute: number,
     public readonly pricePerKm: number,
     public readonly pausePricePerMinute: number,
+    public readonly tariffPresetId: string | null,
     public readonly createdAt: Date,
     /** Версия снята с публикации; `null` — текущая активная для зоны (если она ещё current). */
     public readonly disabledAt: Date | null,

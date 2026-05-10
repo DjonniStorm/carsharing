@@ -25,7 +25,6 @@ import { ADMIN_ROLES, ALL_APP_ROLES } from 'src/modules/auth/roles.constants';
 import {
   DatabaseTariffErrorException,
   TariffAlreadyDeletedException,
-  TariffGeoZoneNotFoundException,
   TariffNotFoundException,
 } from '../common/errors';
 import { TariffCreate } from '../entities/dtos/tariff.create';
@@ -44,15 +43,14 @@ export class TariffController implements ITariffController {
 
   @Get()
   @Roles(...ALL_APP_ROLES)
-  @ApiOperation({ summary: 'Список тарифов' })
-  @ApiResponse({ status: 200, description: 'Список тарифов' })
+  @ApiOperation({ summary: 'Список шаблонов тарифов' })
+  @ApiResponse({ status: 200, description: 'Список шаблонов тарифов' })
   async findAll(
     @Query('includeDeleted') includeDeleted: boolean = false,
-    @Query('geoZoneId') geoZoneId?: string,
   ): Promise<TariffRead[]> {
-    this.logger.debug('findAll', { includeDeleted, geoZoneId });
+    this.logger.debug('findAll', { includeDeleted });
     try {
-      return await this.tariffService.findMany({ includeDeleted, geoZoneId });
+      return await this.tariffService.findMany({ includeDeleted });
     } catch (error) {
       if (error instanceof DatabaseTariffErrorException) {
         throw new BadRequestException(error.message);
@@ -65,8 +63,8 @@ export class TariffController implements ITariffController {
 
   @Get(':id')
   @Roles(...ALL_APP_ROLES)
-  @ApiOperation({ summary: 'Тариф по id' })
-  @ApiResponse({ status: 200, description: 'Тариф' })
+  @ApiOperation({ summary: 'Шаблон тарифа по id' })
+  @ApiResponse({ status: 200, description: 'Шаблон тарифа' })
   async findById(@Param('id') id: string): Promise<TariffRead> {
     this.logger.debug('findById', { id });
     try {
@@ -86,16 +84,13 @@ export class TariffController implements ITariffController {
 
   @Post()
   @Roles(...ADMIN_ROLES)
-  @ApiOperation({ summary: 'Создать тариф' })
-  @ApiResponse({ status: 201, description: 'Созданный тариф' })
+  @ApiOperation({ summary: 'Создать шаблон тарифа' })
+  @ApiResponse({ status: 201, description: 'Созданный шаблон' })
   async create(@Body() tariff: TariffCreate): Promise<TariffRead> {
     this.logger.debug('create', { name: tariff.name });
     try {
       return await this.tariffService.create(tariff);
     } catch (error) {
-      if (error instanceof TariffGeoZoneNotFoundException) {
-        throw new BadRequestException(error.message);
-      }
       if (error instanceof DatabaseTariffErrorException) {
         throw new BadRequestException(error.message);
       }
@@ -107,8 +102,8 @@ export class TariffController implements ITariffController {
 
   @Patch(':id')
   @Roles(...ADMIN_ROLES)
-  @ApiOperation({ summary: 'Обновить тариф' })
-  @ApiResponse({ status: 200, description: 'Обновлённый тариф' })
+  @ApiOperation({ summary: 'Обновить шаблон тарифа' })
+  @ApiResponse({ status: 200, description: 'Обновлённый шаблон' })
   async update(
     @Param('id') id: string,
     @Body() tariff: TariffUpdate,
@@ -119,9 +114,6 @@ export class TariffController implements ITariffController {
     } catch (error) {
       if (error instanceof TariffNotFoundException) {
         throw new NotFoundException(error.message);
-      }
-      if (error instanceof TariffGeoZoneNotFoundException) {
-        throw new BadRequestException(error.message);
       }
       if (error instanceof DatabaseTariffErrorException) {
         throw new BadRequestException(error.message);
@@ -134,8 +126,8 @@ export class TariffController implements ITariffController {
 
   @Delete(':id')
   @Roles(...ADMIN_ROLES)
-  @ApiOperation({ summary: 'Удалить тариф (soft delete)' })
-  @ApiResponse({ status: 200, description: 'Тариф помечен удалённым' })
+  @ApiOperation({ summary: 'Удалить шаблон (soft delete)' })
+  @ApiResponse({ status: 200, description: 'Шаблон помечен удалённым' })
   async delete(@Param('id') id: string): Promise<TariffRead> {
     this.logger.debug('delete', { id });
     try {

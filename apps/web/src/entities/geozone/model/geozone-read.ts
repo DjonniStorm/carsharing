@@ -12,6 +12,8 @@ export type GeozoneVersionRead = {
   pricePerMinute: number;
   pricePerKm: number;
   pausePricePerMinute: number;
+  /** Шаблон тарифа, из которого скопировали ставки при публикации версии. */
+  tariffPresetId: string | null;
   createdAt: string;
   disabledAt: string | null;
 };

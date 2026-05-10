@@ -22,8 +22,12 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { GeozoneUpdateBody } from "@/entities/geozone";
+import type {
+  GeozoneUpdateBody,
+  GeozoneVersionCreateBody,
+} from "@/entities/geozone";
 import { GeozoneType } from "@/entities/geozone";
+import type { TariffRead } from "@/entities/tariff";
 import { geozonesApi } from "@/features/geozones/api";
 import type { GeozoneDrawMode } from "@/features/geozones/create-geozone/ui/geozone-draw-map";
 import { GeozoneDrawMap } from "@/features/geozones/create-geozone/ui/geozone-draw-map";
@@ -40,6 +44,7 @@ import {
   geozoneTypeLangKey,
 } from "@/features/geozones/lib/geozone-type-present";
 import { loadGeozonesCatalog } from "@/features/geozones/model/geozones-state";
+import { tariffsApi } from "@/features/tariffs/api";
 import { HttpApiError } from "@/shared/api/http-api-error";
 import { getYandexMapsApiKey } from "@/shared/config/env";
 import { ROUTES } from "@/shared/config/routes-paths";
@@ -47,6 +52,8 @@ import { LANG_KEYS } from "@/shared/i18n/keys";
 import type { YMapLngLat } from "@/shared/lib/yandex-maps/ymaps3";
 
 const apiKey = getYandexMapsApiKey();
+
+const PRESET_NONE = "__none__";
 
 function normalizeColorHex(raw: string): string {
   const t = raw.trim();
@@ -62,6 +69,7 @@ type InitialMeta = {
 
 type VersionFingerprint = {
   ringJson: string;
+  tariffPresetId: string | null;
   pricePerMinute: number;
   pricePerKm: number;
   pausePricePerMinute: number;
@@ -101,6 +109,9 @@ const GeozoneEditPage = () => {
   >(0);
   const [rulesJson, setRulesJson] = useState("");
 
+  const [tariffPresets, setTariffPresets] = useState<TariffRead[]>([]);
+  const [tariffPresetId, setTariffPresetId] = useState<string | null>(null);
+
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -110,6 +121,45 @@ const GeozoneEditPage = () => {
       label: t(geozoneTypeLangKey(gt)),
     }));
   }, [t]);
+
+  const tariffPresetSelectData = useMemo(() => {
+    const explicit = {
+      value: PRESET_NONE,
+      label: t(LANG_KEYS.pages.geozonesCreateTariffPresetExplicit),
+    };
+    const fromApi = tariffPresets.map((p) => ({
+      value: p.id,
+      label: p.name,
+    }));
+    const opts = [explicit, ...fromApi];
+    if (
+      tariffPresetId !== null &&
+      tariffPresetId !== "" &&
+      !fromApi.some((o) => o.value === tariffPresetId)
+    ) {
+      return [{ value: tariffPresetId, label: tariffPresetId }, ...opts];
+    }
+    return opts;
+  }, [t, tariffPresetId, tariffPresets]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void tariffsApi
+      .findAll({ includeDeleted: false })
+      .then((list) => {
+        if (!cancelled) {
+          setTariffPresets(list.filter((x) => !x.isDeleted));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTariffPresets([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!geozoneId) {
@@ -154,6 +204,9 @@ const GeozoneEditPage = () => {
             : null;
         setClosedRing(ring);
 
+        const presetId = version?.tariffPresetId ?? null;
+        setTariffPresetId(presetId);
+
         const pm = version?.pricePerMinute ?? 0;
         const pk = version?.pricePerKm ?? 0;
         const pp = version?.pausePricePerMinute ?? 0;
@@ -162,13 +215,12 @@ const GeozoneEditPage = () => {
         setPausePricePerMinute(pp);
 
         const rulesText =
-          version?.rules != null
-            ? JSON.stringify(version.rules, null, 2)
-            : "";
+          version?.rules != null ? JSON.stringify(version.rules, null, 2) : "";
         setRulesJson(rulesText);
 
         initialVersionRef.current = {
           ringJson: ring ? JSON.stringify(ring) : "",
+          tariffPresetId: presetId,
           pricePerMinute: pm,
           pricePerKm: pk,
           pausePricePerMinute: pp,
@@ -265,9 +317,7 @@ const GeozoneEditPage = () => {
     let metaDirty = false;
     if (im) {
       metaDirty =
-        name.trim() !== im.name ||
-        type !== im.type ||
-        colorNorm !== im.color;
+        name.trim() !== im.name || type !== im.type || colorNorm !== im.color;
     }
 
     let versionDirty = false;
@@ -284,12 +334,17 @@ const GeozoneEditPage = () => {
         ? JSON.stringify(rulesParsed.value ?? null)
         : "__invalid__";
 
+      const presetCur = tariffPresetId ?? null;
+      const presetIv = iv.tariffPresetId ?? null;
+
       versionDirty =
         ringJson !== iv.ringJson ||
-        pm !== iv.pricePerMinute ||
-        pk !== iv.pricePerKm ||
-        pp !== iv.pausePricePerMinute ||
-        rulesNorm !== iv.rulesJson;
+        presetCur !== presetIv ||
+        rulesNorm !== iv.rulesJson ||
+        (presetCur === null &&
+          (pm !== iv.pricePerMinute ||
+            pk !== iv.pricePerKm ||
+            pp !== iv.pausePricePerMinute));
     }
 
     return { metaDirty, versionDirty };
@@ -301,6 +356,7 @@ const GeozoneEditPage = () => {
     pricePerKm,
     pricePerMinute,
     rulesJson,
+    tariffPresetId,
     type,
   ]);
 
@@ -327,12 +383,14 @@ const GeozoneEditPage = () => {
     const pk = Number(pricePerKm);
     const pp = Number(pausePricePerMinute);
     if (
-      Number.isNaN(pm) ||
-      Number.isNaN(pk) ||
-      Number.isNaN(pp) ||
-      pm < 0 ||
-      pk < 0 ||
-      pp < 0
+      versionDirty &&
+      !tariffPresetId &&
+      (Number.isNaN(pm) ||
+        Number.isNaN(pk) ||
+        Number.isNaN(pp) ||
+        pm < 0 ||
+        pk < 0 ||
+        pp < 0)
     ) {
       setFormError(t(LANG_KEYS.pages.geozonesCreatePricesInvalid));
       return;
@@ -374,13 +432,18 @@ const GeozoneEditPage = () => {
         if (!rulesParsed.ok || !closedRing) {
           return;
         }
-        await geozonesApi.publishVersion(geozoneId, {
+        const pub: GeozoneVersionCreateBody = {
           geometry: ringToMultiPolygon(closedRing),
           rules: rulesParsed.value ?? null,
-          pricePerMinute: pm,
-          pricePerKm: pk,
-          pausePricePerMinute: pp,
-        });
+        };
+        if (tariffPresetId) {
+          pub.tariffPresetId = tariffPresetId;
+        } else {
+          pub.pricePerMinute = pm;
+          pub.pricePerKm = pk;
+          pub.pausePricePerMinute = pp;
+        }
+        await geozonesApi.publishVersion(geozoneId, pub);
       }
 
       notifications.show({
@@ -440,7 +503,9 @@ const GeozoneEditPage = () => {
       <Stack gap="lg">
         <Group justify="space-between" align="flex-start" wrap="wrap">
           <Stack gap={4}>
-            <Title order={2}>{t(LANG_KEYS.pages.geozonesEditorEditTitle)}</Title>
+            <Title order={2}>
+              {t(LANG_KEYS.pages.geozonesEditorEditTitle)}
+            </Title>
             <Text size="sm" ff="monospace" c="dimmed">
               {geozoneId}
             </Text>
@@ -473,7 +538,9 @@ const GeozoneEditPage = () => {
 
         <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
           <Stack gap="md">
-            <Title order={4}>{t(LANG_KEYS.pages.geozonesCreateSectionForm)}</Title>
+            <Title order={4}>
+              {t(LANG_KEYS.pages.geozonesCreateSectionForm)}
+            </Title>
             <TextInput
               label={t(LANG_KEYS.pages.geozonesCreateFieldName)}
               value={name}
@@ -495,14 +562,21 @@ const GeozoneEditPage = () => {
               value={color}
               onChange={setColor}
               format="hex"
-              swatches={[
-                "#228be6",
-                "#40c057",
-                "#fab005",
-                "#fa5252",
-                "#be4bdb",
-              ]}
+              swatches={["#228be6", "#40c057", "#fab005", "#fa5252", "#be4bdb"]}
             />
+            <Select
+              label={t(LANG_KEYS.pages.geozonesCreateFieldTariffPreset)}
+              data={tariffPresetSelectData}
+              value={tariffPresetId ?? PRESET_NONE}
+              onChange={(v) => {
+                setTariffPresetId(v === null || v === PRESET_NONE ? null : v);
+              }}
+            />
+            {tariffPresetId ? (
+              <Alert color="gray" variant="light">
+                {t(LANG_KEYS.pages.geozonesCreateTariffPresetHint)}
+              </Alert>
+            ) : null}
             <NumberInput
               label={t(LANG_KEYS.pages.geozonesCreateFieldPricePerMinute)}
               value={pricePerMinute}
@@ -510,6 +584,7 @@ const GeozoneEditPage = () => {
               min={0}
               decimalScale={2}
               fixedDecimalScale
+              disabled={!!tariffPresetId}
             />
             <NumberInput
               label={t(LANG_KEYS.pages.geozonesCreateFieldPricePerKm)}
@@ -518,16 +593,16 @@ const GeozoneEditPage = () => {
               min={0}
               decimalScale={2}
               fixedDecimalScale
+              disabled={!!tariffPresetId}
             />
             <NumberInput
-              label={t(
-                LANG_KEYS.pages.geozonesCreateFieldPausePricePerMinute,
-              )}
+              label={t(LANG_KEYS.pages.geozonesCreateFieldPausePricePerMinute)}
               value={pausePricePerMinute}
               onChange={setPausePricePerMinute}
               min={0}
               decimalScale={2}
               fixedDecimalScale
+              disabled={!!tariffPresetId}
             />
             <Textarea
               label={t(LANG_KEYS.pages.geozonesCreateRulesOptional)}
@@ -543,7 +618,9 @@ const GeozoneEditPage = () => {
           </Stack>
 
           <Stack gap="md">
-            <Title order={4}>{t(LANG_KEYS.pages.geozonesCreateSectionMap)}</Title>
+            <Title order={4}>
+              {t(LANG_KEYS.pages.geozonesCreateSectionMap)}
+            </Title>
             <SegmentedControl
               value={drawMode}
               onChange={(v) => handleDrawModeChange(v as GeozoneDrawMode)}

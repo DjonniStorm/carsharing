@@ -58,7 +58,7 @@ export const RegisterFormView = () => {
         t(LANG_KEYS.auth.notifyRegisterSuccessTitle),
         t(LANG_KEYS.auth.notifyRegisterSuccessBody),
       );
-      const nextPath = safeInternalPath(redirect, ROUTES.home);
+      const nextPath = safeInternalPath(redirect, ROUTES.dashboard.overview);
       navigate({ to: nextPath });
     } catch (err: unknown) {
       const msg =

@@ -141,7 +141,10 @@ const GeozoneDrawMap = ({
         if (Listener) {
           handle.map.addChild(
             new Listener({
-              onClick: (_object: unknown, event: { coordinates?: YMapLngLat }) => {
+              onClick: (
+                _object: unknown,
+                event: { coordinates?: YMapLngLat },
+              ) => {
                 const c = event?.coordinates;
                 if (!c || c.length < 2) {
                   return;
@@ -223,11 +226,7 @@ const GeozoneDrawMap = ({
       );
     }
 
-    if (
-      drawMode === "polygon" &&
-      polygonVertices.length >= 2 &&
-      !closedRing
-    ) {
+    if (drawMode === "polygon" && polygonVertices.length >= 2 && !closedRing) {
       push(
         new YMapFeature({
           geometry: { type: "LineString", coordinates: polygonVertices },

@@ -51,7 +51,7 @@ describe('TripController: ошибки публикации (интеграци�
   let controller: TripController;
   let userId: string;
   let carId: string;
-  let tariffVersionId: string;
+  let geoZoneVersionId: string;
 
   beforeAll(async () => {
     loadBackendDevEnv();
@@ -61,7 +61,7 @@ describe('TripController: ошибки публикации (интеграци�
 
   beforeEach(async () => {
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -112,7 +112,7 @@ describe('TripController: ошибки публикации (интеграци�
     if (!zone.currentVersionId) {
       throw new Error('currentVersionId expected');
     }
-    tariffVersionId = zone.currentVersionId;
+    geoZoneVersionId = zone.currentVersionId;
 
     moduleRef = await Test.createTestingModule({
       controllers: [TripController],
@@ -134,7 +134,7 @@ describe('TripController: ошибки публикации (интеграци�
   afterEach(async () => {
     await moduleRef.close();
     await truncateApplicationTable(prisma, 'trip');
-    await truncateApplicationTable(prisma, 'tariff');
+    await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
     await truncateApplicationTable(prisma, 'geo_zone');
     await truncateApplicationTable(prisma, 'car');
@@ -149,7 +149,7 @@ describe('TripController: ошибки публикации (интеграци�
     const dto = new TripCreate();
     dto.userId = userId;
     dto.carId = carId;
-    dto.tariffVersionId = tariffVersionId;
+    dto.geoZoneVersionId = geoZoneVersionId;
 
     await expect(controller.create(dto)).rejects.toThrow(BadRequestException);
   });
@@ -158,7 +158,7 @@ describe('TripController: ошибки публикации (интеграци�
     const dto = new TripCreate();
     dto.userId = userId;
     dto.carId = carId;
-    dto.tariffVersionId = tariffVersionId;
+    dto.geoZoneVersionId = geoZoneVersionId;
 
     await expect(controller.create(dto)).rejects.toMatchObject({
       message: expect.any(String),

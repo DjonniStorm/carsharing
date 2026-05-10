@@ -1,5 +1,5 @@
 import {
-  Anchor,
+  Alert,
   Button,
   PasswordInput,
   Stack,
@@ -24,7 +24,7 @@ import { notification } from "@/shared/lib/notification";
 export const LoginFormView = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { redirect } = useSearch({ from: "/login" });
+  const { redirect, reason } = useSearch({ from: "/login" });
   const applyToken = useAction(applyAccessToken);
 
   const form = useForm({
@@ -44,7 +44,7 @@ export const LoginFormView = () => {
         t(LANG_KEYS.auth.notifyLoginSuccessTitle),
         t(LANG_KEYS.auth.notifyLoginSuccessBody),
       );
-      const nextPath = safeInternalPath(redirect, ROUTES.home);
+      const nextPath = safeInternalPath(redirect, ROUTES.dashboard.overview);
       navigate({ to: nextPath });
     } catch (err: unknown) {
       const msg =
@@ -59,6 +59,11 @@ export const LoginFormView = () => {
     <form onSubmit={form.onSubmit(handleSubmit)}>
       <Stack gap="md">
         <Title order={2}>{t(LANG_KEYS.auth.loginTitle)}</Title>
+        {reason === "manager_only" ? (
+          <Alert color="orange" title={t(LANG_KEYS.auth.managerOnlyWebTitle)}>
+            {t(LANG_KEYS.auth.managerOnlyWebPanel)}
+          </Alert>
+        ) : null}
         <TextInput
           label={t(LANG_KEYS.auth.loginField)}
           placeholder={t(LANG_KEYS.auth.loginPlaceholder)}
@@ -77,13 +82,19 @@ export const LoginFormView = () => {
         </Button>
         <Text size="sm">
           {t(LANG_KEYS.auth.noAccount)}{" "}
-          <Anchor
-            component={Link}
+          <Link
             to={ROUTES.register}
-            search={redirect ? { redirect } : {}}
+            search={{ redirect: redirect !== undefined ? redirect : undefined }}
           >
-            {t(LANG_KEYS.shell.register)}
-          </Anchor>
+            <Text
+              component="span"
+              inherit
+              td="underline"
+              c="var(--mantine-color-anchor)"
+            >
+              {t(LANG_KEYS.shell.register)}
+            </Text>
+          </Link>
         </Text>
       </Stack>
     </form>

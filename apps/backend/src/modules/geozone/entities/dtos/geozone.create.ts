@@ -10,6 +10,7 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 
 import type { GeoJSONMultiPolygon } from '../geozone.geometry';
@@ -44,23 +45,31 @@ export class GeozoneCreate {
   @IsObject()
   rules?: Record<string, unknown> | null;
 
-  @IsNotEmpty()
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  @Max(999999999999.99)
-  pricePerMinute: number;
+  /** Если задан — ставки копируются из шаблона; поля `price*` ниже не обязательны. */
+  @IsOptional()
+  @IsUUID()
+  tariffPresetId?: string;
 
+  @ValidateIf((o: GeozoneCreate) => !o.tariffPresetId)
   @IsNotEmpty()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(999999999999.99)
-  pricePerKm: number;
+  pricePerMinute?: number;
 
+  @ValidateIf((o: GeozoneCreate) => !o.tariffPresetId)
   @IsNotEmpty()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(999999999999.99)
-  pausePricePerMinute: number;
+  pricePerKm?: number;
+
+  @ValidateIf((o: GeozoneCreate) => !o.tariffPresetId)
+  @IsNotEmpty()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(999999999999.99)
+  pausePricePerMinute?: number;
 
   @IsOptional()
   @IsUUID()

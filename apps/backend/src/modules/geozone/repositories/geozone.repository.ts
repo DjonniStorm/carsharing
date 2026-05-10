@@ -96,7 +96,9 @@ export class GeozoneRepository implements IGeozoneRepository {
     pricePerMinute: number;
     pricePerKm: number;
     pausePricePerMinute: number;
+    tariffPresetId?: string | null;
   }): Promise<GeozoneRead> {
+    const tariffPresetRef = input.tariffPresetId ?? null;
     const zoneId = randomUUID();
     const versionId = randomUUID();
     const rulesJson =
@@ -118,8 +120,8 @@ export class GeozoneRepository implements IGeozoneRepository {
           },
         });
         await prismaTx.$executeRawUnsafe(
-          `INSERT INTO geo_zone_version (id, geozone_id, geometry, rules, created_at, disabled_at, price_per_minute, price_per_km, pause_price_per_minute)
-           VALUES ($1::uuid, $2::uuid, ST_SetSRID(ST_GeomFromGeoJSON($3::json), 4326), $4::jsonb, NOW(), NULL, $5::numeric, $6::numeric, $7::numeric)`,
+          `INSERT INTO geo_zone_version (id, geozone_id, geometry, rules, created_at, disabled_at, price_per_minute, price_per_km, pause_price_per_minute, tariff_preset_id)
+           VALUES ($1::uuid, $2::uuid, ST_SetSRID(ST_GeomFromGeoJSON($3::json), 4326), $4::jsonb, NOW(), NULL, $5::numeric, $6::numeric, $7::numeric, $8::uuid)`,
           versionId,
           zoneId,
           geometryJson,
@@ -127,6 +129,7 @@ export class GeozoneRepository implements IGeozoneRepository {
           input.pricePerMinute,
           input.pricePerKm,
           input.pausePricePerMinute,
+          tariffPresetRef,
         );
         await prismaTx.geoZone.update({
           where: { id: zoneId },
@@ -197,6 +200,34 @@ export class GeozoneRepository implements IGeozoneRepository {
    * Публикует новую версию: помечает предыдущую текущую как отключённую,
    * вставляет новую строку версии и обновляет `current_version_id`.
    */
+  async findVersionPricingSnapshot(versionId: string): Promise<{
+    pricePerMinute: number;
+    pricePerKm: number;
+    pausePricePerMinute: number;
+    tariffPresetId: string | null;
+  } | null> {
+    const row = await this.prisma.geoZoneVersion.findUnique({
+      where: { id: versionId },
+      select: {
+        pricePerMinute: true,
+        pricePerKm: true,
+        pausePricePerMinute: true,
+        tariffPresetId: true,
+      },
+    });
+    if (!row) {
+      return null;
+    }
+    return {
+      pricePerMinute: GeozoneRepository.decimalToNumber(row.pricePerMinute),
+      pricePerKm: GeozoneRepository.decimalToNumber(row.pricePerKm),
+      pausePricePerMinute: GeozoneRepository.decimalToNumber(
+        row.pausePricePerMinute,
+      ),
+      tariffPresetId: row.tariffPresetId,
+    };
+  }
+
   async publishNewVersion(
     geozoneId: string,
     input: {
@@ -205,6 +236,7 @@ export class GeozoneRepository implements IGeozoneRepository {
       pricePerMinute: number;
       pricePerKm: number;
       pausePricePerMinute: number;
+      tariffPresetId: string | null;
     },
   ): Promise<GeozoneRead> {
     const versionId = randomUUID();
@@ -231,8 +263,8 @@ export class GeozoneRepository implements IGeozoneRepository {
           });
         }
         await prismaTx.$executeRawUnsafe(
-          `INSERT INTO geo_zone_version (id, geozone_id, geometry, rules, created_at, disabled_at, price_per_minute, price_per_km, pause_price_per_minute)
-           VALUES ($1::uuid, $2::uuid, ST_SetSRID(ST_GeomFromGeoJSON($3::json), 4326), $4::jsonb, NOW(), NULL, $5::numeric, $6::numeric, $7::numeric)`,
+          `INSERT INTO geo_zone_version (id, geozone_id, geometry, rules, created_at, disabled_at, price_per_minute, price_per_km, pause_price_per_minute, tariff_preset_id)
+           VALUES ($1::uuid, $2::uuid, ST_SetSRID(ST_GeomFromGeoJSON($3::json), 4326), $4::jsonb, NOW(), NULL, $5::numeric, $6::numeric, $7::numeric, $8::uuid)`,
           versionId,
           geozoneId,
           geometryJson,
@@ -240,6 +272,7 @@ export class GeozoneRepository implements IGeozoneRepository {
           input.pricePerMinute,
           input.pricePerKm,
           input.pausePricePerMinute,
+          input.tariffPresetId,
         );
         await prismaTx.geoZone.update({
           where: { id: geozoneId },
@@ -282,6 +315,7 @@ export class GeozoneRepository implements IGeozoneRepository {
         pricePerMinute: true,
         pricePerKm: true,
         pausePricePerMinute: true,
+        tariffPresetId: true,
         createdAt: true,
         disabledAt: true,
       },
@@ -311,6 +345,7 @@ export class GeozoneRepository implements IGeozoneRepository {
         pricePerMinute: true,
         pricePerKm: true,
         pausePricePerMinute: true,
+        tariffPresetId: true,
         createdAt: true,
         disabledAt: true,
       },
@@ -462,6 +497,7 @@ export class GeozoneRepository implements IGeozoneRepository {
       pricePerMinute: Prisma.Decimal | number;
       pricePerKm: Prisma.Decimal | number;
       pausePricePerMinute: Prisma.Decimal | number;
+      tariffPresetId: string | null;
       createdAt: Date;
       disabledAt: Date | null;
     },
@@ -482,6 +518,7 @@ export class GeozoneRepository implements IGeozoneRepository {
       pausePricePerMinute: GeozoneRepository.decimalToNumber(
         versionMeta.pausePricePerMinute,
       ),
+      tariffPresetId: versionMeta.tariffPresetId,
       createdAt: versionMeta.createdAt,
       disabledAt: versionMeta.disabledAt,
     };
@@ -541,6 +578,7 @@ export class GeozoneRepository implements IGeozoneRepository {
           pricePerMinute: true,
           pricePerKm: true,
           pausePricePerMinute: true,
+          tariffPresetId: true,
           createdAt: true,
           disabledAt: true,
         },

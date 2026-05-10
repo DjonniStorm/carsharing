@@ -25,11 +25,13 @@ import {
 
 import { Roles } from 'src/modules/auth/decorators/roles.decorator';
 import { ADMIN_ROLES, ALL_APP_ROLES } from 'src/modules/auth/roles.constants';
+import { TariffNotFoundException } from 'src/modules/tariff/common/errors';
 
 import {
   DatabaseGeozoneErrorException,
   GeozoneAlreadyDeletedException,
   GeozoneCreatedByUserIdRequiredException,
+  GeozoneInvalidPublishPricingException,
   GeozoneNotDeletedException,
   GeozoneNotFoundException,
   GeozoneVersionNotFoundException,
@@ -198,6 +200,9 @@ export class GeozoneController implements IGeozoneController {
       if (error instanceof GeozoneCreatedByUserIdRequiredException) {
         throw new BadRequestException(error.message);
       }
+      if (error instanceof TariffNotFoundException) {
+        throw new NotFoundException(error.message);
+      }
       if (error instanceof DatabaseGeozoneErrorException) {
         throw new BadRequestException(error.message);
       }
@@ -292,6 +297,12 @@ export class GeozoneController implements IGeozoneController {
       this.logger.error('Failed to publish geozone version', error);
       if (error instanceof GeozoneNotFoundException) {
         throw new NotFoundException(error.message);
+      }
+      if (error instanceof TariffNotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+      if (error instanceof GeozoneInvalidPublishPricingException) {
+        throw new BadRequestException(error.message);
       }
       throw new BadRequestException(
         error instanceof Error ? error.message : String(error),

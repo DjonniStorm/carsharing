@@ -77,7 +77,7 @@ export class TripController implements ITripController {
   @ApiOperation({ summary: 'Список поездок' })
   @ApiQuery({ name: 'userId', required: false })
   @ApiQuery({ name: 'carId', required: false })
-  @ApiQuery({ name: 'tariffVersionId', required: false })
+  @ApiQuery({ name: 'geoZoneVersionId', required: false })
   @ApiQuery({
     name: 'status',
     required: false,
@@ -90,7 +90,7 @@ export class TripController implements ITripController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('userId') userId?: string,
     @Query('carId') carId?: string,
-    @Query('tariffVersionId') tariffVersionId?: string,
+    @Query('geoZoneVersionId') geoZoneVersionId?: string,
     @Query('status') rawStatus?: string,
     @Query('startedAfter') rawStartedAfter?: string,
     @Query('startedBefore') rawStartedBefore?: string,
@@ -106,7 +106,7 @@ export class TripController implements ITripController {
     this.logger.debug('findAll', {
       userId: effectiveUserId,
       carId,
-      tariffVersionId,
+      geoZoneVersionId,
     });
     const status = parseTripStatusQuery(rawStatus);
     const startedAfter = parseDateQuery(rawStartedAfter, 'startedAfter');
@@ -126,7 +126,7 @@ export class TripController implements ITripController {
       return await this.tripService.findMany({
         userId: effectiveUserId,
         carId,
-        tariffVersionId,
+        geoZoneVersionId,
         status,
         startedAfter,
         startedBefore,
@@ -149,22 +149,27 @@ export class TripController implements ITripController {
   @ApiOperation({ summary: 'Поездка по id' })
   @ApiQuery({ name: 'withUser', required: false, type: Boolean })
   @ApiQuery({ name: 'withCar', required: false, type: Boolean })
-  @ApiQuery({ name: 'withTariffVersion', required: false, type: Boolean })
+  @ApiQuery({ name: 'withGeoZoneVersion', required: false, type: Boolean })
   @ApiResponse({ status: 200, type: TripRead })
   async findById(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
     @Query('withUser') withUser?: string,
     @Query('withCar') withCar?: string,
-    @Query('withTariffVersion') withTariffVersion?: string,
+    @Query('withGeoZoneVersion') withGeoZoneVersion?: string,
   ): Promise<TripRead> {
-    this.logger.debug('findById', { id, withUser, withCar, withTariffVersion });
+    this.logger.debug('findById', {
+      id,
+      withUser,
+      withCar,
+      withGeoZoneVersion,
+    });
     try {
       await this.tripService.ensureTripAccessForUser(user.role, user.id, id);
       return await this.tripService.findById(id, {
         withUser: withUser === 'true',
         withCar: withCar === 'true',
-        withTariffVersion: withTariffVersion === 'true',
+        withGeoZoneVersion: withGeoZoneVersion === 'true',
       });
     } catch (error) {
       if (error instanceof ForbiddenException) {
@@ -193,6 +198,10 @@ export class TripController implements ITripController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() trip: TripCreate,
   ): Promise<TripRead> {
+    // if (user.role === UserRole.MANAGER) {
+    //   throw new ForbiddenException('Manager cannot create trips');
+    // }
+
     if (user.role === UserRole.DRIVER) {
       if (
         trip.userId != null &&

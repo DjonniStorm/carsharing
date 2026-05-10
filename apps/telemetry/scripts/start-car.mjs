@@ -62,7 +62,7 @@ const backendUrl = await promptDefault(
 );
 const telemetryKey = await promptDefault(
   'TELEMETRY_DEVICE_KEY',
-  process.env.TELEMETRY_DEVICE_KEY || 'dev-telemetry-key',
+  process.env.TELEMETRY_DEVICE_KEY || 'carsharing-telemetry-device-key',
 );
 const initialLat = await promptDefault('INITIAL_LAT', process.env.INITIAL_LAT || '54.3282');
 const initialLon = await promptDefault('INITIAL_LON', process.env.INITIAL_LON || '48.3866');

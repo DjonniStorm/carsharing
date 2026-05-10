@@ -9,7 +9,7 @@ export interface ITripController {
     user: AuthenticatedUser,
     userId?: string,
     carId?: string,
-    tariffVersionId?: string,
+    geoZoneVersionId?: string,
     status?: string,
     startedAfter?: string,
     startedBefore?: string,
@@ -20,7 +20,7 @@ export interface ITripController {
     id: string,
     withUser?: string,
     withCar?: string,
-    withTariffVersion?: string,
+    withGeoZoneVersion?: string,
   ): Promise<TripRead>;
 
   create(user: AuthenticatedUser, input: TripCreate): Promise<TripRead>;

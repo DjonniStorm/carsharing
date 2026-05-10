@@ -37,7 +37,16 @@ export interface IGeozoneRepository {
     pricePerMinute: number;
     pricePerKm: number;
     pausePricePerMinute: number;
+    tariffPresetId?: string | null;
   }): Promise<GeozoneRead>;
+
+  /** Ставки и ссылка на шаблон для версии (без геометрии). */
+  findVersionPricingSnapshot(versionId: string): Promise<{
+    pricePerMinute: number;
+    pricePerKm: number;
+    pausePricePerMinute: number;
+    tariffPresetId: string | null;
+  } | null>;
 
   /** Патч полей зоны; если зоны нет — `GeozoneNotFoundException`. */
   updateZone(
@@ -57,6 +66,7 @@ export interface IGeozoneRepository {
       pricePerMinute: number;
       pricePerKm: number;
       pausePricePerMinute: number;
+      tariffPresetId: string | null;
     },
   ): Promise<GeozoneRead>;
 

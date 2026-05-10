@@ -1,15 +1,16 @@
 import {
+  IsBoolean,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   Min,
   MinLength,
 } from 'class-validator';
 
 /**
- * Создание тарифа для геозоны.
+ * Создание шаблона тарифа (глобальный пресет).
  */
 export class TariffCreate {
   @IsNotEmpty()
@@ -26,7 +27,12 @@ export class TariffCreate {
   @Min(0)
   pricePerKm: number;
 
-  @IsNotEmpty()
-  @IsUUID()
-  geoZoneId: string;
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  pausePricePerMinute?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isDefault?: boolean;
 }

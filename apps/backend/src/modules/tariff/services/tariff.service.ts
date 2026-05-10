@@ -3,17 +3,13 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { TariffDbErrors } from '../common/db-errors';
 import {
   TariffAlreadyDeletedException,
-  TariffNotDeletedException,
   TariffNotFoundException,
 } from '../common/errors';
 import { TariffMapper } from '../common/mapper';
 import { TariffCreate } from '../entities/dtos/tariff.create';
 import { TariffRead } from '../entities/dtos/tariff.read';
 import { TariffUpdate } from '../entities/dtos/tariff.update';
-import {
-  TariffFindByIdOptions,
-  TariffListParams,
-} from '../entities/tariff-query.types';
+import type { TariffListParams } from '../entities/tariff-query.types';
 import {
   ITariffRepositoryToken,
   type ITariffRepository,
@@ -30,86 +26,87 @@ export class TariffService implements ITariffService {
   ) {}
 
   async findMany(params?: TariffListParams): Promise<TariffRead[]> {
-    this.logger.log('Finding tariffs');
     try {
       const list = await this.repository.findMany(params);
       return list.map(TariffMapper.fromEntityToRead);
     } catch (error) {
-      this.logger.error('Failed to find tariffs', error);
       throw TariffDbErrors.mapError(error);
     }
   }
 
-  async findById(
-    id: string,
-    options?: TariffFindByIdOptions,
-  ): Promise<TariffRead> {
-    this.logger.log(`Finding tariff by id: ${id}`);
+  async findById(id: string): Promise<TariffRead> {
     try {
-      const tariff = await this.repository.findById(id, options);
+      const tariff = await this.repository.findById(id);
       if (!tariff) {
-        throw new TariffNotFoundException(`Tariff with id ${id} was not found`);
+        throw new TariffNotFoundException(`Шаблон тарифа не найден: ${id}`);
       }
       return TariffMapper.fromEntityToRead(tariff);
     } catch (error) {
-      this.logger.error(`Failed to find tariff by id: ${id}`, error);
       throw TariffDbErrors.mapError(error);
     }
   }
 
   async create(input: TariffCreate): Promise<TariffRead> {
-    this.logger.log(`Creating tariff: ${input.name}`);
     try {
+      const pause =
+        input.pausePricePerMinute !== undefined ? input.pausePricePerMinute : 0;
+      const isDefault = input.isDefault === true;
       const created = await this.repository.create({
         name: input.name,
         pricePerMinute: input.pricePerMinute,
         pricePerKm: input.pricePerKm,
-        geoZoneId: input.geoZoneId,
+        pausePricePerMinute: pause,
+        isDefault,
       });
       return TariffMapper.fromEntityToRead(created);
     } catch (error) {
-      this.logger.error(`Failed to create tariff: ${input.name}`, error);
       throw TariffDbErrors.mapError(error);
     }
   }
 
   async update(id: string, input: TariffUpdate): Promise<TariffRead> {
-    this.logger.log(`Updating tariff: ${id}`);
     try {
       const existing = await this.repository.findById(id);
       if (!existing) {
-        throw new TariffNotFoundException(`Tariff with id ${id} was not found`);
+        throw new TariffNotFoundException(`Шаблон тарифа не найден: ${id}`);
       }
-
-      const updated = await this.repository.update(id, {
-        name: input.name,
-        pricePerMinute: input.pricePerMinute,
-        pricePerKm: input.pricePerKm,
-        geoZoneId: input.geoZoneId,
-      });
+      const patch: Parameters<ITariffRepository['update']>[1] = {};
+      if (input.name !== undefined) {
+        patch.name = input.name;
+      }
+      if (input.pricePerMinute !== undefined) {
+        patch.pricePerMinute = input.pricePerMinute;
+      }
+      if (input.pricePerKm !== undefined) {
+        patch.pricePerKm = input.pricePerKm;
+      }
+      if (input.pausePricePerMinute !== undefined) {
+        patch.pausePricePerMinute = input.pausePricePerMinute;
+      }
+      if (input.isDefault !== undefined) {
+        patch.isDefault = input.isDefault;
+      }
+      const updated = await this.repository.update(id, patch);
       return TariffMapper.fromEntityToRead(updated);
     } catch (error) {
-      this.logger.error(`Failed to update tariff: ${id}`, error);
       throw TariffDbErrors.mapError(error);
     }
   }
 
   async delete(id: string): Promise<TariffRead> {
-    this.logger.log(`Deleting tariff: ${id}`);
     try {
       const existing = await this.repository.findById(id);
       if (!existing) {
-        throw new TariffNotFoundException(`Tariff with id ${id} was not found`);
+        throw new TariffNotFoundException(`Шаблон тарифа не найден: ${id}`);
       }
-      if (existing.deletedAt !== null) {
+      if (existing.isDeleted) {
         throw new TariffAlreadyDeletedException(
-          `Tariff with id ${id} is already deleted`,
+          `Шаблон тарифа уже удалён: ${id}`,
         );
       }
-      const deleted = await this.repository.setDeletedAt(id, new Date());
+      const deleted = await this.repository.update(id, { isDeleted: true });
       return TariffMapper.fromEntityToRead(deleted);
     } catch (error) {
-      this.logger.error(`Failed to delete tariff: ${id}`, error);
       throw TariffDbErrors.mapError(error);
     }
   }

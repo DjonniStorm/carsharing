@@ -25,7 +25,10 @@ export function ringToMultiPolygon(ring: YMapLngLat[]): GeoJSONMultiPolygon {
 }
 
 /** Прямоугольник по диагонали (порядок обхода для простого полигона). */
-export function rectangleFromDiagonal(a: YMapLngLat, b: YMapLngLat): YMapLngLat[] {
+export function rectangleFromDiagonal(
+  a: YMapLngLat,
+  b: YMapLngLat,
+): YMapLngLat[] {
   const [lng1, lat1] = a;
   const [lng2, lat2] = b;
   const minLon = Math.min(lng1, lng2);

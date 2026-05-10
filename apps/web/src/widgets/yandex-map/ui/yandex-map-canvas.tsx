@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+import type { GeozoneRead } from "@/entities/geozone";
+import type { GeozoneBoundingBoxQuery } from "@/features/geozones/api";
 import { Center, Loader, Stack, Text } from "@mantine/core";
 
 import {
@@ -8,13 +10,19 @@ import {
 } from "@/shared/config/map-defaults";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 import { translate } from "@/shared/i18n/translate";
+import { ymapsBoundsToGeozoneQuery } from "@/shared/lib/yandex-maps/map-viewport-bounds";
 import {
-  attachOverlayMarkers,
+  createGeozonePolygonsController,
+  createOverlayMarkersController,
   yandexMapsRenderService,
 } from "@/shared/lib/yandex-maps/yandex-maps-render-service";
-import type { YandexMapOverlayMarker } from "@/shared/lib/yandex-maps/yandex-maps-render-service";
+import type {
+  OverlayMarkersController,
+  YandexMapOverlayMarker,
+} from "@/shared/lib/yandex-maps/yandex-maps-render-service";
 import type {
   YMapLngLat,
+  YMapMapUpdateEvent,
   YMaps3MapInstance,
 } from "@/shared/lib/yandex-maps/ymaps3";
 
@@ -27,6 +35,15 @@ export type YandexMapCanvasProps = {
   height?: number | string;
   /** Пример DOM-маркеров (чипы на карте). */
   overlayMarkers?: YandexMapOverlayMarker[];
+  /** Клик по маркеру с полем {@link YandexMapOverlayMarker.id}. */
+  onOverlayMarkerClick?: (carId: string) => void;
+  /** Геозоны в области (полигоны текущей версии). */
+  geozones?: GeozoneRead[] | null;
+  /**
+   * Текущий видимый bbox после pan/zoom (`YMapListener` `onUpdate`).
+   * Родитель может дебаунсить сетевые запросы.
+   */
+  onMapViewportBoundsChange?: (bbox: GeozoneBoundingBoxQuery) => void;
 };
 
 /**
@@ -39,11 +56,26 @@ const YandexMapCanvas = ({
   zoom,
   height = 420,
   overlayMarkers,
+  onOverlayMarkerClick,
+  geozones,
+  onMapViewportBoundsChange,
 }: YandexMapCanvasProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<YMaps3MapInstance | null>(null);
   const mapDestroyRef = useRef<(() => void) | null>(null);
-  const detachMarkersRef = useRef<(() => void) | null>(null);
+  const markersControllerRef = useRef<OverlayMarkersController | null>(null);
+  const geozonePolygonsRef = useRef<ReturnType<
+    typeof createGeozonePolygonsController
+  > | null>(null);
+  const markerClickRef = useRef<typeof onOverlayMarkerClick | undefined>(
+    undefined,
+  );
+  markerClickRef.current = onOverlayMarkerClick;
+
+  const viewportBoundsCbRef = useRef<
+    typeof onMapViewportBoundsChange | undefined
+  >(undefined);
+  viewportBoundsCbRef.current = onMapViewportBoundsChange;
 
   const [mapReady, setMapReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +83,6 @@ const YandexMapCanvas = ({
 
   const centerLng = center?.[0];
   const centerLat = center?.[1];
-  const markersKey = JSON.stringify(overlayMarkers ?? []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -67,8 +98,10 @@ const YandexMapCanvas = ({
     setLoading(true);
     setError(null);
 
-    detachMarkersRef.current?.();
-    detachMarkersRef.current = null;
+    markersControllerRef.current?.destroy();
+    markersControllerRef.current = null;
+    geozonePolygonsRef.current?.destroy();
+    geozonePolygonsRef.current = null;
     mapDestroyRef.current?.();
     mapDestroyRef.current = null;
     mapInstanceRef.current = null;
@@ -96,6 +129,30 @@ const YandexMapCanvas = ({
 
         mapInstanceRef.current = handle.map;
         mapDestroyRef.current = handle.destroy;
+        geozonePolygonsRef.current = createGeozonePolygonsController(
+          handle.map,
+        );
+        markersControllerRef.current = createOverlayMarkersController(
+          handle.map,
+          {
+            resolveMarkerClick: () => markerClickRef.current,
+          },
+        );
+
+        const ListenerCtor = window.ymaps3?.YMapListener;
+        if (ListenerCtor && viewportBoundsCbRef.current) {
+          const viewportListener = new ListenerCtor({
+            layer: "any",
+            onUpdate: (event: YMapMapUpdateEvent) => {
+              const q = ymapsBoundsToGeozoneQuery(event.location?.bounds);
+              if (q) {
+                viewportBoundsCbRef.current?.(q);
+              }
+            },
+          });
+          handle.map.addChild(viewportListener);
+        }
+
         setMapReady(true);
       } catch (e) {
         if (!cancelled) {
@@ -113,8 +170,10 @@ const YandexMapCanvas = ({
     return () => {
       cancelled = true;
       setMapReady(false);
-      detachMarkersRef.current?.();
-      detachMarkersRef.current = null;
+      markersControllerRef.current?.destroy();
+      markersControllerRef.current = null;
+      geozonePolygonsRef.current?.destroy();
+      geozonePolygonsRef.current = null;
       mapDestroyRef.current?.();
       mapDestroyRef.current = null;
       mapInstanceRef.current = null;
@@ -125,20 +184,15 @@ const YandexMapCanvas = ({
     if (!mapReady) {
       return;
     }
+    geozonePolygonsRef.current?.setGeozones(geozones ?? undefined);
+  }, [mapReady, geozones]);
 
-    const map = mapInstanceRef.current;
-    if (!map) {
+  useEffect(() => {
+    if (!mapReady) {
       return;
     }
-
-    detachMarkersRef.current?.();
-    detachMarkersRef.current = attachOverlayMarkers(map, overlayMarkers);
-
-    return () => {
-      detachMarkersRef.current?.();
-      detachMarkersRef.current = null;
-    };
-  }, [mapReady, markersKey]);
+    markersControllerRef.current?.setMarkers(overlayMarkers);
+  }, [mapReady, overlayMarkers]);
 
   const h = typeof height === "number" ? `${height}px` : height;
 

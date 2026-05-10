@@ -12,10 +12,12 @@ import { EMAIL_REGEX } from 'src/shared/regexp/email';
 import {
   EmailAlreadyExistsException,
   PhoneAlreadyExistsException,
+  UserNotFoundException,
 } from 'src/modules/user/common/errors';
 import { IUserRepositoryToken } from 'src/modules/user/repositories/user.repository.interface';
 import type { IUserRepository } from 'src/modules/user/repositories/user.repository.interface';
 import { UserService } from 'src/modules/user/services/user.service';
+import { ReadUserEntity } from 'src/modules/user/entities/dtos/user.read';
 import { UserRole } from 'src/modules/user/entities/user.role';
 import type { UserEntity } from 'src/modules/user/entities/user.entity';
 import { isOpenManagerSelfRegisterEnabled } from './open-manager-register.config';
@@ -127,5 +129,27 @@ export class AuthService {
       return this.users.findByEmail(login);
     }
     return this.users.findByPhone(login);
+  }
+
+  /** Проверка, что пользователь из JWT всё ещё существует и может пользоваться API. */
+  async getCurrentUser(userId: string): Promise<ReadUserEntity> {
+    try {
+      const user = await this.userService.findById(userId);
+      if (user == null) {
+        throw new UnauthorizedException('Invalid session');
+      }
+      if (user.isDeleted === true || user.isActive === false) {
+        throw new UnauthorizedException('Invalid session');
+      }
+      return user;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      if (error instanceof UserNotFoundException) {
+        throw new UnauthorizedException('Invalid session');
+      }
+      throw error;
+    }
   }
 }

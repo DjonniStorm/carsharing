@@ -23,6 +23,8 @@ import { accessTokenAtom, clearSession } from "@/features/auth/model/session";
 import { ROUTES } from "@/shared/config/routes-paths";
 import type { LangKey } from "@/shared/i18n/keys";
 import { LANG_KEYS } from "@/shared/i18n/keys";
+import { showSnow } from "@/shared/lib/confetti";
+import { useState } from "react";
 
 export type DashboardShellNavItem = {
   labelKey: LangKey;
@@ -45,6 +47,8 @@ const DashboardShell = ({ navItems }: Props) => {
   const logout = useAction(clearSession);
   const navigate = useNavigate();
 
+  const [show] = useState(showSnow);
+
   const handleLogout = () => {
     logout();
     navigate({ to: ROUTES.login, search: { redirect: undefined } });
@@ -55,7 +59,13 @@ const DashboardShell = ({ navItems }: Props) => {
       pathname === item.to ||
       (item.to === ROUTES.dashboard.geozones &&
         pathname !== ROUTES.dashboard.geozones &&
-        pathname.startsWith(`${ROUTES.dashboard.geozones}/`));
+        pathname.startsWith(`${ROUTES.dashboard.geozones}/`)) ||
+      (item.to === ROUTES.dashboard.violations &&
+        pathname !== ROUTES.dashboard.violations &&
+        pathname.startsWith(`${ROUTES.dashboard.violations}/`)) ||
+      (item.to === ROUTES.dashboard.tariffs &&
+        pathname !== ROUTES.dashboard.tariffs &&
+        pathname.startsWith(`${ROUTES.dashboard.tariffs}/`));
 
     return (
       <NavLink
@@ -103,7 +113,9 @@ const DashboardShell = ({ navItems }: Props) => {
               hiddenFrom="sm"
               size="sm"
             />
-            <Title order={4}>{t(LANG_KEYS.brand.name)}</Title>
+            <Title order={4} onClick={show}>
+              {t(LANG_KEYS.brand.name)}
+            </Title>
           </Group>
           <Group gap="sm" visibleFrom="sm">
             {token ? (

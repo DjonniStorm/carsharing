@@ -3,7 +3,7 @@ import { TariffRead } from '../entities/dtos/tariff.read';
 import { TariffUpdate } from '../entities/dtos/tariff.update';
 
 export interface ITariffController {
-  findAll(includeDeleted: boolean, geoZoneId?: string): Promise<TariffRead[]>;
+  findAll(includeDeleted: boolean): Promise<TariffRead[]>;
   findById(id: string): Promise<TariffRead>;
   create(tariff: TariffCreate): Promise<TariffRead>;
   update(id: string, tariff: TariffUpdate): Promise<TariffRead>;

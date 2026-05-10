@@ -25,8 +25,8 @@ export class TripRepository implements ITripRepository {
       where: {
         ...(listParams.userId ? { userId: listParams.userId } : {}),
         ...(listParams.carId ? { carId: listParams.carId } : {}),
-        ...(listParams.tariffVersionId
-          ? { tariffVersionId: listParams.tariffVersionId }
+        ...(listParams.geoZoneVersionId
+          ? { geoZoneVersionId: listParams.geoZoneVersionId }
           : {}),
         ...(listParams.status !== undefined
           ? { status: listParams.status }
@@ -56,7 +56,7 @@ export class TripRepository implements ITripRepository {
     const include: Prisma.TripInclude = {
       ...(options?.withUser ? { user: true } : {}),
       ...(options?.withCar ? { car: true } : {}),
-      ...(options?.withTariffVersion ? { tariffVersion: true } : {}),
+      ...(options?.withGeoZoneVersion ? { geoZoneVersion: true } : {}),
     };
     const row = await this.prisma.trip.findUnique({
       where: { id },
@@ -73,7 +73,7 @@ export class TripRepository implements ITripRepository {
       data: {
         userId: input.userId,
         carId: input.carId,
-        tariffVersionId: input.tariffVersionId,
+        geoZoneVersionId: input.geoZoneVersionId,
         status: input.status ?? TripStatus.PENDING,
         startedAt: input.startedAt ?? new Date(),
         distance: input.distance ?? 0,
@@ -143,8 +143,8 @@ export class TripRepository implements ITripRepository {
     if (patch.priceTotal !== undefined) {
       data.priceTotal = patch.priceTotal;
     }
-    if (patch.tariffVersionId !== undefined) {
-      data.tariffVersionId = patch.tariffVersionId;
+    if (patch.geoZoneVersionId !== undefined) {
+      data.geoZoneVersionId = patch.geoZoneVersionId;
     }
     if (patch.carPlateSnapshot !== undefined) {
       data.carPlateSnapshot = patch.carPlateSnapshot;

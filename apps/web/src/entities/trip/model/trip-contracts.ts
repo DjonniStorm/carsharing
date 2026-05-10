@@ -4,7 +4,9 @@ export type TripRead = {
   id: string;
   userId: string;
   carId: string;
-  tariffVersionId: string;
+  /** Историческое поле в типах; API может отдавать только {@link geoZoneVersionId}. */
+  tariffVersionId?: string;
+  geoZoneVersionId?: string;
   status: TripStatus;
   startedAt: string;
   finishedAt: string | null;

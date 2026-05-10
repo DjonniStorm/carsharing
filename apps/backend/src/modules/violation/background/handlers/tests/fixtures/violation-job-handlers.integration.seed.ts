@@ -64,7 +64,7 @@ export async function seedTripWithRentalTariff(
     data: {
       userId: user.id,
       carId: car.id,
-      tariffVersionId: zone.currentVersionId,
+      geoZoneVersionId: zone.currentVersionId,
       startedAt: new Date('2026-05-09T08:00:00.000Z'),
       distance: 0,
       duration: 0,

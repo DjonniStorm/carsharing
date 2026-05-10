@@ -74,7 +74,7 @@ export class TripService implements ITripService {
       const created = await this.repository.create({
         userId: input.userId,
         carId: input.carId,
-        tariffVersionId: input.tariffVersionId,
+        geoZoneVersionId: input.geoZoneVersionId,
         status: input.status,
         startLat: input.startLat,
         startLng: input.startLng,
@@ -143,7 +143,7 @@ export class TripService implements ITripService {
         priceDistance: input.priceDistance,
         pricePause: input.pricePause,
         priceTotal: input.priceTotal,
-        tariffVersionId: input.tariffVersionId,
+        geoZoneVersionId: input.geoZoneVersionId,
         carPlateSnapshot: input.carPlateSnapshot,
         carDisplayNameSnapshot: input.carDisplayNameSnapshot,
       });
