@@ -35,7 +35,8 @@ export class UpdateUserEntity {
   role?: UserRole;
 
   // Пароль пользователя
-  @IsString({ message: 'Password is required and must be a string' })
+  @IsOptional()
+  @IsString({ message: 'Password must be a string' })
   @ApiPropertyOptional({ description: 'Пароль пользователя' })
   password?: string;
 

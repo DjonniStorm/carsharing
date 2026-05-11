@@ -1,0 +1,50 @@
+{
+  "app": {
+    "title": "Carsharing"
+  },
+  "common": {
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "logout": "Logout"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "verify_email": "Email verification",
+    "email_or_phone": "Email or phone",
+    "email": "Email",
+    "phone": "Phone",
+    "name": "Name",
+    "password": "Password",
+    "code": "Code (6 digits)",
+    "have_account": "Already have an account? Login",
+    "no_account": "No account? Register"
+  },
+  "map": {
+    "title": "Map",
+    "active_trip": "Active trip",
+    "trip_stub": "Trip: placeholder data"
+  },
+  "profile": {
+    "title": "Profile",
+    "settings": "Settings",
+    "support": "Support",
+    "update_name_hint": "Update name",
+    "name_updated": "Name updated",
+    "name_update_failed": "Failed to update name"
+  },
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme",
+    "theme_dark": "Dark",
+    "theme_light": "Light",
+    "language": "Language"
+  },
+  "support": {
+    "title": "Support",
+    "phone": "Support phone",
+    "faq": "FAQ"
+  }
+}
