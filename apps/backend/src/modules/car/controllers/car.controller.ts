@@ -5,7 +5,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Roles } from 'src/modules/auth/decorators/roles.decorator';
-import { ADMIN_ROLES } from 'src/modules/auth/roles.constants';
+import { ADMIN_ROLES, ALL_APP_ROLES } from 'src/modules/auth/roles.constants';
 import {
   CarAlreadyDeletedException,
   CarAlreadyExistsException,
@@ -36,12 +36,12 @@ import { UpdatePosition } from '../entities/dtos/update-position';
 @Controller('cars')
 @ApiTags('Cars')
 @ApiBearerAuth()
-@Roles(...ADMIN_ROLES)
 export class CarController implements ICarController {
   private readonly logger = new Logger(CarController.name);
   constructor(private readonly carService: CarService) {}
 
   @Get()
+  @Roles(...ALL_APP_ROLES)
   @ApiOperation({ summary: 'Получить все автомобили' })
   @ApiResponse({ status: 200, type: [CarRead] })
   async findAll(
@@ -61,6 +61,7 @@ export class CarController implements ICarController {
   }
 
   @Get(':id')
+  @Roles(...ALL_APP_ROLES)
   @ApiOperation({ summary: 'Получить автомобиль по ID' })
   @ApiResponse({ status: 200, type: CarRead })
   async findById(@Param('id') id: string): Promise<CarRead> {
@@ -79,6 +80,7 @@ export class CarController implements ICarController {
   }
 
   @Get('license-plate/:licensePlate')
+  @Roles(...ALL_APP_ROLES)
   @ApiOperation({ summary: 'Получить автомобиль по номеру' })
   @ApiResponse({ status: 200, type: CarRead })
   async findByLicensePlate(
@@ -99,6 +101,7 @@ export class CarController implements ICarController {
   }
 
   @Post()
+  @Roles(...ADMIN_ROLES)
   @ApiOperation({ summary: 'Создать автомобиль' })
   @ApiResponse({ status: 201, type: CarRead })
   async create(@Body() car: Car): Promise<CarRead> {
@@ -120,6 +123,7 @@ export class CarController implements ICarController {
   }
 
   @Patch(':id')
+  @Roles(...ADMIN_ROLES)
   @ApiOperation({ summary: 'Обновить автомобиль' })
   @ApiResponse({ status: 200, type: CarRead })
   async update(
@@ -144,6 +148,7 @@ export class CarController implements ICarController {
   }
 
   @Delete(':id')
+  @Roles(...ADMIN_ROLES)
   @ApiOperation({ summary: 'Удалить автомобиль' })
   @ApiResponse({ status: 200, type: CarRead })
   async delete(@Param('id') id: string): Promise<CarRead> {
@@ -165,6 +170,7 @@ export class CarController implements ICarController {
   }
 
   @Post('restore/:id')
+  @Roles(...ADMIN_ROLES)
   @ApiOperation({ summary: 'Восстановить автомобиль' })
   @ApiResponse({ status: 200, type: CarRead })
   async restore(@Param('id') id: string): Promise<CarRead> {
@@ -186,6 +192,7 @@ export class CarController implements ICarController {
   }
 
   @Post('update-position/:id')
+  @Roles(...ADMIN_ROLES)
   @ApiOperation({ summary: 'Обновить позицию автомобиля' })
   @ApiResponse({ status: 200, type: CarRead })
   async updatePosition(

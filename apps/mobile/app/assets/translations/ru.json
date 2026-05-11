@@ -1,0 +1,50 @@
+{
+  "app": {
+    "title": "Carsharing"
+  },
+  "common": {
+    "back": "Назад",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "continue": "Продолжить",
+    "logout": "Выйти"
+  },
+  "auth": {
+    "login": "Вход",
+    "register": "Регистрация",
+    "verify_email": "Подтверждение email",
+    "email_or_phone": "Email или телефон",
+    "email": "Email",
+    "phone": "Телефон",
+    "name": "Имя",
+    "password": "Пароль",
+    "code": "Код (6 цифр)",
+    "have_account": "Уже есть аккаунт? Войти",
+    "no_account": "Нет аккаунта? Зарегистрироваться"
+  },
+  "map": {
+    "title": "Карта",
+    "active_trip": "Активная поездка",
+    "trip_stub": "Поездка: заглушка данных"
+  },
+  "profile": {
+    "title": "Личный кабинет",
+    "settings": "Настройки",
+    "support": "Поддержка",
+    "update_name_hint": "Обновить имя",
+    "name_updated": "Имя обновлено",
+    "name_update_failed": "Не удалось обновить имя"
+  },
+  "settings": {
+    "title": "Настройки",
+    "theme": "Тема",
+    "theme_dark": "Тёмная",
+    "theme_light": "Светлая",
+    "language": "Язык"
+  },
+  "support": {
+    "title": "Поддержка",
+    "phone": "Телефон техподдержки",
+    "faq": "Частые вопросы"
+  }
+}
