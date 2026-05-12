@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -12,10 +14,15 @@ class AuthCubit extends Cubit<AuthState> {
     required SecureTokenStorage tokenStorage,
   })  : _repository = repository,
         _tokenStorage = tokenStorage,
-        super(const AuthUnauthorized());
+        super(const AuthUnauthorized()) {
+    _tokenSub = _tokenStorage.changes.listen((_) {
+      unawaited(restoreSession());
+    });
+  }
 
   final AuthRepository _repository;
   final SecureTokenStorage _tokenStorage;
+  StreamSubscription<void>? _tokenSub;
 
   Future<void> restoreSession() async {
     final token = await _tokenStorage.readAccessToken();
@@ -95,6 +102,12 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> logout() async {
     await _tokenStorage.clear();
     emit(const AuthUnauthorized());
+  }
+
+  @override
+  Future<void> close() async {
+    await _tokenSub?.cancel();
+    return super.close();
   }
 }
 

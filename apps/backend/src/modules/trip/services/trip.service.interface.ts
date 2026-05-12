@@ -8,6 +8,7 @@ import { TripRead } from '../entities/dtos/trip.read';
 import { TripUpdate } from '../entities/dtos/trip.update';
 import {
   TripFindByIdOptions,
+  type TripHistoryShortListOptions,
   TripListParams,
 } from '../entities/trip-query.types';
 
@@ -30,7 +31,7 @@ export interface ITripService {
   /** История поездок (сырой SQL в репозитории). */
   getTripHistoryShortInfoList(
     userId: string,
-    options?: { limit?: number; offset?: number },
+    options?: TripHistoryShortListOptions,
   ): Promise<TripHistoryShortInfoRead[]>;
 
   getTripHistoryShortInfo(tripId: string): Promise<TripHistoryShortInfoRead>;

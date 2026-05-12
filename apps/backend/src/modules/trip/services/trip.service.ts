@@ -29,6 +29,7 @@ import { TripUpdate } from '../entities/dtos/trip.update';
 import { TripStatus } from '../entities/trip.status';
 import {
   TripFindByIdOptions,
+  type TripHistoryShortListOptions,
   TripListParams,
 } from '../entities/trip-query.types';
 import {
@@ -131,7 +132,7 @@ export class TripService implements ITripService {
 
   async getTripHistoryShortInfoList(
     userId: string,
-    options?: { limit?: number; offset?: number },
+    options?: TripHistoryShortListOptions,
   ): Promise<TripHistoryShortInfoRead[]> {
     const rows = await this.repository.findHistoryShortByUserId(userId, options);
     return rows.map(TripHistoryMapper.shortInfoFromSqlRow);

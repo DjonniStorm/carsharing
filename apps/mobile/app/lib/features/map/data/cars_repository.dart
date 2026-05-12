@@ -6,15 +6,15 @@ class CarsRepository {
 
   final CarsApi _api;
 
-  Future<List<CarPosition>> listAvailableWithPosition() async {
+  /// Все неудалённые машины из REST, в т.ч. без `lastKnownLat/Lon` — координаты могут прийти по WS (как на вебе).
+  Future<List<CarPosition>> listForMap() async {
     final raw = await _api.listCars();
-    final cars = raw
+    return raw
         .whereType<Map>()
-        .map((m) => m.map((k, v) => MapEntry(k.toString(), v)))
+        .map((m) => Map<String, dynamic>.from(m.map((k, v) => MapEntry(k.toString(), v))))
         .map(CarPosition.fromJson)
-        .where((c) => c.isAvailable && c.lat != null && c.lon != null)
+        .where((c) => c.id.isNotEmpty && !c.isDeleted)
         .toList(growable: false);
-    return cars;
   }
 }
 

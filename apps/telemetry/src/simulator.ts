@@ -101,7 +101,7 @@ export class TelemetrySimulator {
     this.position = progress.position;
     this.fuelLevel = Math.max(
       0,
-      this.fuelLevel - drive.distanceMeters * (drive.isSpeeding ? 0.000021 : 0.000015),
+      this.fuelLevel - drive.distanceMeters * (drive.isSpeeding ? 0.0021 : 0.0015),
     );
 
     await this.client.sendTelemetry({

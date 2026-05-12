@@ -265,6 +265,75 @@ describe('TripRepository (история поездок, raw SQL)', () => {
       });
     });
 
+    describe('фильтры по датам', () => {
+      it('startedAfter / startedBefore ограничивают по start_time', async () => {
+        await repository.create({
+          userId,
+          carId,
+          geoZoneVersionId,
+          startedAt: new Date('2024-03-01T00:00:00.000Z'),
+        });
+        const mid = await repository.create({
+          userId,
+          carId,
+          geoZoneVersionId,
+          startedAt: new Date('2024-06-15T12:00:00.000Z'),
+        });
+        await repository.create({
+          userId,
+          carId,
+          geoZoneVersionId,
+          startedAt: new Date('2024-09-01T00:00:00.000Z'),
+        });
+
+        const list = await repository.findHistoryShortByUserId(userId, {
+          startedAfter: new Date('2024-04-01T00:00:00.000Z'),
+          startedBefore: new Date('2024-08-01T00:00:00.000Z'),
+        });
+        expect(list).toHaveLength(1);
+        expect(asTripJson(list[0]!.trip_json).id).toBe(mid.id);
+      });
+
+      it('finishedAfter / finishedBefore: только завершённые, по end_time', async () => {
+        const active = await repository.create({
+          userId,
+          carId,
+          geoZoneVersionId,
+          startedAt: new Date('2025-01-01T00:00:00.000Z'),
+          status: TripStatus.ACTIVE,
+        });
+        const earlyDone = await repository.create({
+          userId,
+          carId,
+          geoZoneVersionId,
+          startedAt: new Date('2025-01-02T00:00:00.000Z'),
+        });
+        await repository.update(earlyDone.id, {
+          status: TripStatus.FINISHED,
+          finishedAt: new Date('2025-01-10T10:00:00.000Z'),
+        });
+        const lateDone = await repository.create({
+          userId,
+          carId,
+          geoZoneVersionId,
+          startedAt: new Date('2025-01-03T00:00:00.000Z'),
+        });
+        await repository.update(lateDone.id, {
+          status: TripStatus.FINISHED,
+          finishedAt: new Date('2025-02-20T18:00:00.000Z'),
+        });
+
+        const list = await repository.findHistoryShortByUserId(userId, {
+          finishedAfter: new Date('2025-01-15T00:00:00.000Z'),
+          finishedBefore: new Date('2025-02-28T23:59:59.999Z'),
+        });
+        const ids = list.map((r) => String(asTripJson(r.trip_json).id));
+        expect(ids).toEqual([lateDone.id]);
+        expect(ids).not.toContain(active.id);
+        expect(ids).not.toContain(earlyDone.id);
+      });
+    });
+
     it('возвращает пустой массив для несуществующего userId', async () => {
       await repository.create({
         userId,

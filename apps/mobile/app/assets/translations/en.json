@@ -25,12 +25,59 @@
   "map": {
     "title": "Map",
     "active_trip": "Active trip",
-    "trip_stub": "Trip: placeholder data"
+    "trip_stub": "Trip: placeholder data",
+    "select_zone_hint": "Tap a rental zone on the map to select it.",
+    "select_car_hint": "Tap a car inside the selected zone to start a trip.",
+    "trip_working": "Working…",
+    "profile_required": "Load your profile first.",
+    "filter_rental": "Rental zones",
+    "filter_parking": "Parking zones",
+    "rental_layers_off_hint": "Turn on «Rental zones» to choose an area for a trip.",
+    "zoom_in": "Zoom in",
+    "zoom_out": "Zoom out",
+    "select_zone_to_start": "Select a rental zone on the map first, then tap the car again.",
+    "car_not_available": "This car is not available for rental.",
+    "car_outside_zone": "The car is outside the selected rental zone.",
+    "select_this_car": "Select",
+    "trip_history": "Trip history"
+  },
+  "car": {
+    "brand": "Brand",
+    "model": "Model",
+    "color": "Color",
+    "mileage": "Mileage",
+    "fuel_level": "Fuel level",
+    "status": "Status",
+    "status_available": "Available",
+    "status_unavailable": "Unavailable",
+    "km": "km"
+  },
+  "trip": {
+    "status_label": "Status",
+    "distance_km": "Distance (km)",
+    "price": "Price",
+    "finish": "Finish",
+    "begin_driving": "Start driving",
+    "pause": "Pause",
+    "resume": "Resume",
+    "cancel": "Cancel",
+    "confirm_cancel": "Cancel the trip without charging? The car will become available again.",
+    "status": {
+      "pending": "Pending",
+      "started": "Reserved",
+      "active": "Driving",
+      "paused": "Paused"
+    },
+    "error": {
+      "active_exists": "You already have an active trip.",
+      "transition_failed": "Failed to update the trip. Please try again."
+    }
   },
   "profile": {
     "title": "Profile",
     "settings": "Settings",
     "support": "Support",
+    "trip_history": "Trip history",
     "update_name_hint": "Update name",
     "name_updated": "Name updated",
     "name_update_failed": "Failed to update name"
@@ -46,5 +93,32 @@
     "title": "Support",
     "phone": "Support phone",
     "faq": "FAQ"
+  },
+  "trip_history": {
+    "title": "Trip history",
+    "filter_from": "From",
+    "filter_to": "To",
+    "filter_apply": "Apply",
+    "filter_clear": "Clear",
+    "load_more": "Load more",
+    "empty": "No trips for this period.",
+    "price_total": "Total: {} ₽",
+    "detail_title": "Trip details",
+    "status_label": "Status",
+    "started_at": "Started",
+    "finished_at": "Finished",
+    "violations": "Violations",
+    "map_no_route": "Not enough telemetry to draw a route.",
+    "map_legend": "A — start, B — finish",
+    "status": {
+      "pending": "Pending",
+      "started": "Reserved",
+      "active": "Driving",
+      "paused": "Paused",
+      "finished": "Finished",
+      "cancelled": "Cancelled",
+      "error": "Error",
+      "unknown": "Unknown"
+    }
   }
 }

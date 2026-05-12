@@ -169,7 +169,7 @@ const CarsPage = () => {
               </Text>
             ) : chartData.length > 0 ? (
               <Paper radius="md" p="md" withBorder>
-                <Grid gutter="lg">
+                <Grid gap="lg">
                   <Grid.Col span={{ base: 12, md: 5 }}>
                     <Box
                       style={{ minHeight: 240, minWidth: 200, width: "100%" }}

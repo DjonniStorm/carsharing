@@ -1,5 +1,6 @@
 import type {
   TripFindByIdOptions,
+  TripHistoryShortListOptions,
   TripListParams,
 } from '../entities/trip-query.types';
 import type { TripStatus } from '../entities/trip.status';
@@ -62,7 +63,7 @@ export interface ITripRepository {
   /** Поездка + авто + агрегированные нарушения (один SQL). */
   findHistoryShortByUserId(
     userId: string,
-    options?: { limit?: number; offset?: number },
+    options?: TripHistoryShortListOptions,
   ): Promise<TripHistorySqlRow[]>;
 
   findHistoryShortByTripId(tripId: string): Promise<TripHistorySqlRow | null>;

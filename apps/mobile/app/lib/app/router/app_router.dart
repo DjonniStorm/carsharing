@@ -9,6 +9,8 @@ import '../../features/map/view/map_screen.dart';
 import '../../features/profile/view/profile_screen.dart';
 import '../../features/settings/view/settings_screen.dart';
 import '../../features/support/view/support_screen.dart';
+import '../../features/trip_history/view/trip_history_detail_screen.dart';
+import '../../features/trip_history/view/trip_history_list_screen.dart';
 import 'app_routes.dart';
 import 'go_router_refresh_stream.dart';
 
@@ -62,6 +64,17 @@ class AppRouter {
         GoRoute(
           path: AppRoutes.support,
           builder: (context, state) => const SupportScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.trips,
+          builder: (context, state) => const TripHistoryListScreen(),
+        ),
+        GoRoute(
+          path: '/trips/:tripId',
+          builder: (context, state) {
+            final id = state.pathParameters['tripId'] ?? '';
+            return TripHistoryDetailScreen(tripId: id);
+          },
         ),
       ],
       errorBuilder: (context, state) => Scaffold(

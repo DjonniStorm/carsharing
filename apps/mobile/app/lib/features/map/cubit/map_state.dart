@@ -1,8 +1,6 @@
-import 'package:equatable/equatable.dart';
-
 import '../domain/car_position.dart';
 
-class MapState extends Equatable {
+class MapState {
   const MapState({
     required this.cars,
     required this.loading,
@@ -20,8 +18,5 @@ class MapState extends Equatable {
       loading: loading ?? this.loading,
     );
   }
-
-  @override
-  List<Object?> get props => [cars.length, loading];
 }
 
