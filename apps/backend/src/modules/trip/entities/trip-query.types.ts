@@ -22,3 +22,15 @@ export type TripListParams = {
   startedAfter?: Date;
   startedBefore?: Date;
 };
+
+/** Фильтры списка короткой истории (`GET /trip-history`). */
+export type TripHistoryShortListOptions = {
+  limit?: number;
+  offset?: number;
+  startedAfter?: Date;
+  startedBefore?: Date;
+  /** Только поездки с `end_time`; сравнение `end_time >= …`. */
+  finishedAfter?: Date;
+  /** Только поездки с `end_time`; сравнение `end_time <= …`. */
+  finishedBefore?: Date;
+};

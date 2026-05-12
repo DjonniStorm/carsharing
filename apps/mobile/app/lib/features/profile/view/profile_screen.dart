@@ -124,6 +124,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onPressed: () => context.push(AppRoutes.support),
                     child: Text('profile.support'.tr()),
                   ),
+                  const Gap(12),
+                  FilledButton.tonal(
+                    onPressed: () => context.push(AppRoutes.trips),
+                    child: Text('profile.trip_history'.tr()),
+                  ),
                 ],
               ),
             ),

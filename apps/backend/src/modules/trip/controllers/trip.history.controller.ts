@@ -52,12 +52,42 @@ export class TripHistoryController {
     description: 'Максимум записей (по умолчанию 100)',
   })
   @ApiQuery({ name: 'offset', required: false, description: 'Смещение' })
+  @ApiQuery({
+    name: 'startedAfter',
+    required: false,
+    type: String,
+    description: 'ISO-8601: нижняя граница по `trip.startedAt` (включительно)',
+  })
+  @ApiQuery({
+    name: 'startedBefore',
+    required: false,
+    type: String,
+    description: 'ISO-8601: верхняя граница по `trip.startedAt` (включительно)',
+  })
+  @ApiQuery({
+    name: 'finishedAfter',
+    required: false,
+    type: String,
+    description:
+      'ISO-8601: только завершённые поездки (`finishedAt` не null), `finishedAt >= …`',
+  })
+  @ApiQuery({
+    name: 'finishedBefore',
+    required: false,
+    type: String,
+    description:
+      'ISO-8601: только завершённые поездки, `finishedAt <= …`',
+  })
   @ApiResponse({ status: 200, type: [TripHistoryShortInfoRead] })
   async listHistory(
     @CurrentUser() user: AuthenticatedUser,
     @Query('userId') userId?: string,
     @Query('limit') rawLimit?: string,
     @Query('offset') rawOffset?: string,
+    @Query('startedAfter') rawStartedAfter?: string,
+    @Query('startedBefore') rawStartedBefore?: string,
+    @Query('finishedAfter') rawFinishedAfter?: string,
+    @Query('finishedBefore') rawFinishedBefore?: string,
   ): Promise<TripHistoryShortInfoRead[]> {
     const effectiveUserId = resolveHistoryUserId(
       user,
@@ -65,9 +95,24 @@ export class TripHistoryController {
     );
     const limit = parseOptionalNonNegativeInt(rawLimit, 'limit');
     const offset = parseOptionalNonNegativeInt(rawOffset, 'offset');
+    const startedAfter = parseDateQuery(rawStartedAfter, 'startedAfter');
+    const startedBefore = parseDateQuery(rawStartedBefore, 'startedBefore');
+    const finishedAfter = parseDateQuery(rawFinishedAfter, 'finishedAfter');
+    const finishedBefore = parseDateQuery(rawFinishedBefore, 'finishedBefore');
+    assertDateRangeOrder(startedAfter, startedBefore, 'startedAfter', 'startedBefore');
+    assertDateRangeOrder(
+      finishedAfter,
+      finishedBefore,
+      'finishedAfter',
+      'finishedBefore',
+    );
     return this.tripService.getTripHistoryShortInfoList(effectiveUserId, {
       ...(limit !== undefined ? { limit } : {}),
       ...(offset !== undefined ? { offset } : {}),
+      ...(startedAfter !== undefined ? { startedAfter } : {}),
+      ...(startedBefore !== undefined ? { startedBefore } : {}),
+      ...(finishedAfter !== undefined ? { finishedAfter } : {}),
+      ...(finishedBefore !== undefined ? { finishedBefore } : {}),
     });
   }
 
@@ -179,4 +224,36 @@ function parseOptionalNonNegativeInt(
     throw new BadRequestException(`${field} must be a non-negative integer`);
   }
   return n;
+}
+
+/** Как `TripController`: пустая строка → undefined. */
+function parseDateQuery(
+  raw: string | undefined,
+  field: string,
+): Date | undefined {
+  if (raw == null || raw.trim() === '') {
+    return undefined;
+  }
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new BadRequestException(`${field} must be a valid date`);
+  }
+  return parsed;
+}
+
+function assertDateRangeOrder(
+  after: Date | undefined,
+  before: Date | undefined,
+  afterName: string,
+  beforeName: string,
+): void {
+  if (
+    after &&
+    before &&
+    after.getTime() > before.getTime()
+  ) {
+    throw new BadRequestException(
+      `${afterName} must be less than or equal to ${beforeName}`,
+    );
+  }
 }

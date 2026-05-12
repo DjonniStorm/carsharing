@@ -70,6 +70,7 @@ class TripRealtimeClient {
   Future<void> disconnect() async {
     final s = _socket;
     if (s == null) return;
+    unsubscribeFleet();
     s.dispose();
     _socket = null;
   }
@@ -80,6 +81,15 @@ class TripRealtimeClient {
 
   void unsubscribeTrip(String tripId) {
     _socket?.emit(TripWsCommand.unsubscribeTrip, {'tripId': tripId});
+  }
+
+  /// Комната `fleet`: те же события позиций (`car.location.updated`), что видит веб-дашборд.
+  void subscribeFleet() {
+    _socket?.emit(TripWsCommand.subscribeFleet, <String, dynamic>{});
+  }
+
+  void unsubscribeFleet() {
+    _socket?.emit(TripWsCommand.unsubscribeFleet, <String, dynamic>{});
   }
 }
 

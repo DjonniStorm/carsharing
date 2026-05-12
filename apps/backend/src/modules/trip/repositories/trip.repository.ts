@@ -5,6 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { TripMapper } from '../common/mapper';
 import type {
   TripFindByIdOptions,
+  TripHistoryShortListOptions,
   TripListParams,
 } from '../entities/trip-query.types';
 import { TripStatus } from '../entities/trip.status';
@@ -165,14 +166,38 @@ export class TripRepository implements ITripRepository {
 
   async findHistoryShortByUserId(
     userId: string,
-    options?: { limit?: number; offset?: number },
+    options?: TripHistoryShortListOptions,
   ): Promise<TripHistorySqlRow[]> {
     const limit = options?.limit ?? 100;
     const offset = options?.offset ?? 0;
     return this.queryTripHistoryRows(
-      Prisma.sql`t.user_id = ${userId}::uuid`,
+      this.buildHistoryShortWhereSql(userId, options),
       this.paginationSql(limit, offset),
     );
+  }
+
+  private buildHistoryShortWhereSql(
+    userId: string,
+    opts?: TripHistoryShortListOptions,
+  ): Prisma.Sql {
+    const parts: Prisma.Sql[] = [Prisma.sql`t.user_id = ${userId}::uuid`];
+    if (opts?.startedAfter) {
+      parts.push(Prisma.sql`t.start_time >= ${opts.startedAfter}`);
+    }
+    if (opts?.startedBefore) {
+      parts.push(Prisma.sql`t.start_time <= ${opts.startedBefore}`);
+    }
+    if (opts?.finishedAfter) {
+      parts.push(
+        Prisma.sql`t.end_time IS NOT NULL AND t.end_time >= ${opts.finishedAfter}`,
+      );
+    }
+    if (opts?.finishedBefore) {
+      parts.push(
+        Prisma.sql`t.end_time IS NOT NULL AND t.end_time <= ${opts.finishedBefore}`,
+      );
+    }
+    return Prisma.join(parts, ' AND ');
   }
 
   /**

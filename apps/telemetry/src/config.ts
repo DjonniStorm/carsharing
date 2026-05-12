@@ -52,7 +52,7 @@ function seconds(name: string, fallback: number): number {
 
 export function readConfig(): TelemetryConfig {
   const minSpeedKmh = readNumber('MIN_SPEED_KMH', 12);
-  const maxSpeedKmh = readNumber('MAX_SPEED_KMH', 54);
+  const maxSpeedKmh = readNumber('MAX_SPEED_KMH', 90);
   if (minSpeedKmh > maxSpeedKmh) {
     throw new Error('MIN_SPEED_KMH must be less or equal MAX_SPEED_KMH');
   }
@@ -76,7 +76,7 @@ export function readConfig(): TelemetryConfig {
     maxSpeedKmh,
     initialFuelLevel: readNumber('INITIAL_FUEL_LEVEL', 80),
     routeSeed: readNumber('ROUTE_SEED', Date.now() % 10_000),
-    speedingChance: readNumber('SPEEDING_CHANCE', 0.08),
+    speedingChance: readNumber('SPEEDING_CHANCE', 0.15),
     destinationRefreshMeters: readNumber('DESTINATION_REFRESH_METERS', 140),
     source: Bun.env.TELEMETRY_SOURCE?.trim() || 'fake-car-bun',
   };

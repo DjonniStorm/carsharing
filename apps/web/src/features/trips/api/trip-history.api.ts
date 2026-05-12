@@ -21,6 +21,12 @@ export type TripHistoryListQuery = {
   userId?: string;
   limit?: number;
   offset?: number;
+  /** ISO-8601, границы по `trip.startedAt`. */
+  startedAfter?: string;
+  startedBefore?: string;
+  /** Только завершённые по `finishedAt`. */
+  finishedAfter?: string;
+  finishedBefore?: string;
 };
 
 export class TripHistoryApi extends BaseApiClient {
@@ -37,6 +43,10 @@ export class TripHistoryApi extends BaseApiClient {
           query.limit !== undefined ? String(query.limit) : undefined,
         offset:
           query.offset !== undefined ? String(query.offset) : undefined,
+        startedAfter: query.startedAfter,
+        startedBefore: query.startedBefore,
+        finishedAfter: query.finishedAfter,
+        finishedBefore: query.finishedBefore,
       })}`,
     );
   }

@@ -7,9 +7,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../features/auth/cubit/auth_cubit.dart';
 import '../features/auth/data/auth_api.dart';
 import '../features/auth/data/auth_repository.dart';
+import '../features/geozone/data/geozones_api.dart';
+import '../features/geozone/data/geozones_repository.dart';
 import '../features/map/cubit/map_cubit.dart';
 import '../features/map/data/cars_api.dart';
 import '../features/map/data/cars_repository.dart';
+import '../features/trip/cubit/trip_cubit.dart';
+import '../features/trip/data/trips_api.dart';
+import '../features/trip/data/trips_repository.dart';
+import '../features/trip_history/data/trip_history_api.dart';
+import '../features/trip_history/data/trip_history_repository.dart';
 import '../features/profile/cubit/profile_cubit.dart';
 import '../features/profile/data/profile_api.dart';
 import '../features/profile/data/profile_repository.dart';
@@ -30,11 +37,17 @@ Future<Widget> bootstrap() async {
   final settingsStorage = SettingsStorage(prefs);
   final tokenStorage = SecureTokenStorage(const FlutterSecureStorage());
 
-  final dio = DioFactory(tokenStorage).create();
+  final tripRealtime = TripRealtimeClient(tokenStorage);
+  final dio = DioFactory(
+    tokenStorage,
+    onUnauthorized: tripRealtime.disconnect,
+  ).create();
   final authRepository = AuthRepository(AuthApi(dio));
   final profileRepository = ProfileRepository(ProfileApi(dio));
   final carsRepository = CarsRepository(CarsApi(dio));
-  final tripRealtime = TripRealtimeClient(tokenStorage);
+  final tripsRepository = TripsRepository(TripsApi(dio));
+  final geozonesRepository = GeozonesRepository(GeozonesApi(dio));
+  final tripHistoryRepository = TripHistoryRepository(TripHistoryApi(dio));
 
   final appRouter = AppRouter(tokenStorage: tokenStorage);
 
@@ -50,6 +63,9 @@ Future<Widget> bootstrap() async {
         RepositoryProvider.value(value: authRepository),
         RepositoryProvider.value(value: profileRepository),
         RepositoryProvider.value(value: carsRepository),
+        RepositoryProvider.value(value: tripsRepository),
+        RepositoryProvider.value(value: geozonesRepository),
+        RepositoryProvider.value(value: tripHistoryRepository),
         RepositoryProvider.value(value: tripRealtime),
       ],
       child: MultiBlocProvider(
@@ -67,6 +83,13 @@ Future<Widget> bootstrap() async {
           BlocProvider(
             create: (_) => MapCubit(
               carsRepository: carsRepository,
+              realtime: tripRealtime,
+            ),
+          ),
+          BlocProvider(
+            create: (_) => TripCubit(
+              tripsRepository: tripsRepository,
+              geozonesRepository: geozonesRepository,
               realtime: tripRealtime,
             ),
           ),
