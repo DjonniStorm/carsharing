@@ -62,9 +62,16 @@ const ViolationGridCard = ({ violation, t }: Props) => {
             </Text>
             <Text size="sm" fw={600} truncate="end">
               {t(LANG_KEYS.pages.violationsColTrip)}:{" "}
-              <Text span ff="monospace" fw={500}>
+              <Link
+                to={ROUTES.dashboard.tripView(violation.tripId)}
+                style={{
+                  fontFamily: "var(--mantine-font-family-monospace)",
+                  fontWeight: 500,
+                  textDecoration: "underline",
+                }}
+              >
                 {violation.tripId}
-              </Text>
+              </Link>
             </Text>
           </Stack>
           <Tooltip label={t(LANG_KEYS.pages.violationsEditAria)}>
@@ -89,7 +96,8 @@ const ViolationGridCard = ({ violation, t }: Props) => {
         </Text>
 
         <Text size="xs" c="dimmed">
-          {t(LANG_KEYS.pages.violationsColCreated)}: {violation.createdAt}
+          {t(LANG_KEYS.pages.violationsColCreated)}:{" "}
+          {new Date(violation.createdAt).toLocaleString()}
         </Text>
       </Stack>
     </Paper>

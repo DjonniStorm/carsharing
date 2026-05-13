@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import type { CarRead } from "@/entities/car";
 import { CarStatus } from "@/entities/car";
 import { AddCarToolbarButton } from "@/features/cars/add-car";
+import { EditCarModal } from "@/features/cars/edit-car";
 import {
   CAR_STATUSES_ORDERED,
   carStatusChartColor,
@@ -58,6 +59,7 @@ const CarsPage = () => {
   const [query, setQuery] = useState("");
   const [debouncedQuery] = useDebouncedValue(query, 220);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [editingCar, setEditingCar] = useState<CarRead | null>(null);
 
   useEffect(() => {
     void load(false);
@@ -253,13 +255,30 @@ const CarsPage = () => {
             ) : (
               <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
                 {filteredCars.map((car) => (
-                  <CarGridCard key={car.id} car={car} t={t} />
+                  <CarGridCard
+                    key={car.id}
+                    car={car}
+                    t={t}
+                    onEdit={(c) => {
+                      setEditingCar(c);
+                    }}
+                  />
                 ))}
               </SimpleGrid>
             )}
           </Stack>
         </Stack>
       )}
+      <EditCarModal
+        car={editingCar}
+        opened={editingCar !== null}
+        onClose={() => {
+          setEditingCar(null);
+        }}
+        onSaved={() => {
+          void load(false);
+        }}
+      />
     </Container>
   );
 };

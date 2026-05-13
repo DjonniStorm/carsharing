@@ -4,7 +4,6 @@ import {
   ColorInput,
   Container,
   Group,
-  NumberInput,
   SegmentedControl,
   Select,
   SimpleGrid,
@@ -17,7 +16,7 @@ import {
 import { notifications } from "@mantine/notifications";
 import { useAction, useAtom } from "@reatom/react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { GeozoneCreateBody } from "@/entities/geozone";
@@ -37,6 +36,7 @@ import {
   GEOZONE_TYPES_ORDERED,
   geozoneTypeLangKey,
 } from "@/features/geozones/lib/geozone-type-present";
+import { pickDefaultTariffPresetId } from "@/features/geozones/lib/pick-default-tariff-preset";
 import { parseGeozoneRulesJson } from "@/features/geozones/lib/parse-geozone-rules-json";
 import { loadGeozonesCatalog } from "@/features/geozones/model/geozones-state";
 import { tariffsApi } from "@/features/tariffs/api";
@@ -48,7 +48,12 @@ import type { YMapLngLat } from "@/shared/lib/yandex-maps/ymaps3";
 
 const apiKey = getYandexMapsApiKey();
 
-const PRESET_NONE = "__none__";
+function formatTariffAmount(n: number): string {
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(n);
+}
 
 const GeozoneCreatePage = () => {
   const { t } = useTranslation();
@@ -66,15 +71,11 @@ const GeozoneCreatePage = () => {
   const [name, setName] = useState("");
   const [type, setType] = useState<GeozoneType>(GeozoneType.RENTAL);
   const [color, setColor] = useState("#228be6");
-  const [pricePerMinute, setPricePerMinute] = useState<number | string>(0);
-  const [pricePerKm, setPricePerKm] = useState<number | string>(0);
-  const [pausePricePerMinute, setPausePricePerMinute] = useState<
-    number | string
-  >(0);
   const [rulesJson, setRulesJson] = useState("");
 
   const [tariffPresets, setTariffPresets] = useState<TariffRead[]>([]);
   const [tariffPresetId, setTariffPresetId] = useState<string | null>(null);
+  const userChangedPresetRef = useRef(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -87,17 +88,15 @@ const GeozoneCreatePage = () => {
   }, [t]);
 
   const tariffPresetSelectData = useMemo(() => {
-    return [
-      {
-        value: PRESET_NONE,
-        label: t(LANG_KEYS.pages.geozonesCreateTariffPresetExplicit),
-      },
-      ...tariffPresets.map((p) => ({
-        value: p.id,
-        label: p.name,
-      })),
-    ];
-  }, [t, tariffPresets]);
+    return tariffPresets.map((p) => ({
+      value: p.id,
+      label: p.name,
+    }));
+  }, [tariffPresets]);
+
+  const selectedTariffPreset = useMemo(() => {
+    return tariffPresets.find((p) => p.id === tariffPresetId) ?? null;
+  }, [tariffPresets, tariffPresetId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,6 +116,19 @@ const GeozoneCreatePage = () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (tariffPresets.length === 0 || userChangedPresetRef.current) {
+      return;
+    }
+    if (tariffPresetId !== null) {
+      return;
+    }
+    const id = pickDefaultTariffPresetId(tariffPresets);
+    if (id) {
+      setTariffPresetId(id);
+    }
+  }, [tariffPresets, tariffPresetId]);
 
   useEffect(() => {
     setPolygonVertices([]);
@@ -187,24 +199,9 @@ const GeozoneCreatePage = () => {
       return;
     }
 
-    let pm = 0;
-    let pk = 0;
-    let pp = 0;
-    if (!tariffPresetId) {
-      pm = Number(pricePerMinute);
-      pk = Number(pricePerKm);
-      pp = Number(pausePricePerMinute);
-      if (
-        Number.isNaN(pm) ||
-        Number.isNaN(pk) ||
-        Number.isNaN(pp) ||
-        pm < 0 ||
-        pk < 0 ||
-        pp < 0
-      ) {
-        setFormError(t(LANG_KEYS.pages.geozonesCreatePricesInvalid));
-        return;
-      }
+    if (!tariffPresetId?.trim()) {
+      setFormError(t(LANG_KEYS.pages.geozonesCreateTariffPresetRequired));
+      return;
     }
 
     let colorStr = color.trim();
@@ -218,15 +215,8 @@ const GeozoneCreatePage = () => {
       color: colorStr.slice(0, 32),
       geometry: ringToMultiPolygon(closedRing),
       createdByUserId: user.id,
+      tariffPresetId: tariffPresetId.trim(),
     };
-
-    if (tariffPresetId) {
-      body.tariffPresetId = tariffPresetId;
-    } else {
-      body.pricePerMinute = pm;
-      body.pricePerKm = pk;
-      body.pausePricePerMinute = pp;
-    }
 
     if (rulesParsed.value !== null) {
       body.rules = rulesParsed.value;
@@ -240,7 +230,7 @@ const GeozoneCreatePage = () => {
         message: body.name,
         color: "green",
       });
-      void reloadCatalog(false);
+      void reloadCatalog();
       void navigate({ to: ROUTES.dashboard.geozones });
     } catch (e) {
       const msg =
@@ -333,43 +323,46 @@ const GeozoneCreatePage = () => {
             <Select
               label={t(LANG_KEYS.pages.geozonesCreateFieldTariffPreset)}
               data={tariffPresetSelectData}
-              value={tariffPresetId ?? PRESET_NONE}
+              value={tariffPresetId ?? ""}
               onChange={(v) => {
-                setTariffPresetId(v === null || v === PRESET_NONE ? null : v);
+                userChangedPresetRef.current = true;
+                setTariffPresetId(v && v !== "" ? v : null);
               }}
+              disabled={tariffPresetSelectData.length === 0}
             />
-            {tariffPresetId ? (
-              <Alert color="gray" variant="light">
-                {t(LANG_KEYS.pages.geozonesCreateTariffPresetHint)}
-              </Alert>
+            <Alert color="gray" variant="light">
+              {t(LANG_KEYS.pages.geozonesCreateTariffPresetHint)}
+            </Alert>
+            {selectedTariffPreset ? (
+              <Stack gap={6}>
+                <Text size="sm">
+                  <Text span c="dimmed">
+                    {t(LANG_KEYS.pages.geozonesCreateFieldPricePerMinute)}
+                  </Text>{" "}
+                  <Text span fw={500}>
+                    {formatTariffAmount(selectedTariffPreset.pricePerMinute)}
+                  </Text>
+                </Text>
+                <Text size="sm">
+                  <Text span c="dimmed">
+                    {t(LANG_KEYS.pages.geozonesCreateFieldPricePerKm)}
+                  </Text>{" "}
+                  <Text span fw={500}>
+                    {formatTariffAmount(selectedTariffPreset.pricePerKm)}
+                  </Text>
+                </Text>
+                <Text size="sm">
+                  <Text span c="dimmed">
+                    {t(LANG_KEYS.pages.geozonesCreateFieldPausePricePerMinute)}
+                  </Text>{" "}
+                  <Text span fw={500}>
+                    {formatTariffAmount(
+                      selectedTariffPreset.pausePricePerMinute,
+                    )}
+                  </Text>
+                </Text>
+              </Stack>
             ) : null}
-            <NumberInput
-              label={t(LANG_KEYS.pages.geozonesCreateFieldPricePerMinute)}
-              value={pricePerMinute}
-              onChange={setPricePerMinute}
-              min={0}
-              decimalScale={2}
-              fixedDecimalScale
-              disabled={!!tariffPresetId}
-            />
-            <NumberInput
-              label={t(LANG_KEYS.pages.geozonesCreateFieldPricePerKm)}
-              value={pricePerKm}
-              onChange={setPricePerKm}
-              min={0}
-              decimalScale={2}
-              fixedDecimalScale
-              disabled={!!tariffPresetId}
-            />
-            <NumberInput
-              label={t(LANG_KEYS.pages.geozonesCreateFieldPausePricePerMinute)}
-              value={pausePricePerMinute}
-              onChange={setPausePricePerMinute}
-              min={0}
-              decimalScale={2}
-              fixedDecimalScale
-              disabled={!!tariffPresetId}
-            />
             <Textarea
               label={t(LANG_KEYS.pages.geozonesCreateRulesOptional)}
               placeholder={t(LANG_KEYS.pages.geozonesCreateRulesPlaceholder)}

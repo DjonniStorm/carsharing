@@ -16,6 +16,7 @@ import { TelemetryModule } from './modules/telemetry/telemetry.module';
 import { ViolationModule } from './modules/violation/violation.module';
 import { BackgroundModule } from './shared/background/background.module';
 import { NotificationModule } from './shared/notification/notification.module';
+import { ManagerViolationNoticeModule } from './modules/manager-violation-notice/manager-violation-notice.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { NotificationModule } from './shared/notification/notification.module';
     TripModule,
     TelemetryModule,
     ViolationModule,
+    ManagerViolationNoticeModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

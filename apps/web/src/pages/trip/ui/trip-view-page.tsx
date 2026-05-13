@@ -1,5 +1,9 @@
 import {
+  Accordion,
+  ActionIcon,
   Alert,
+  Anchor,
+  Badge,
   Button,
   Container,
   Divider,
@@ -11,15 +15,25 @@ import {
   Text,
   Title,
 } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useAction, useAtom } from "@reatom/react";
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { TripNotificationRead } from "@/entities/manager-violation-notice";
+import type { ReadUser } from "@/entities/user";
+
+import { UserRole } from "@/entities/user/model/user-role";
+import { usersApi } from "@/features/auth/api";
 import {
   CAR_STATUSES_ORDERED,
   carStatusLangKey,
 } from "@/features/cars/lib/car-status-present";
+import { authUserAtom } from "@/features/auth/model/session";
+import { managerViolationNoticeApi } from "@/features/manager-violation-notice/api";
+import { tripNotificationDetailsText, tripNotificationMessagePreview } from "@/features/manager-violation-notice/lib/trip-notification-preview";
+import { SendViolationNoticeModal } from "@/features/manager-violation-notice/ui/send-violation-notice-modal";
 import {
   loadTripGeozoneForMap,
   loadTripHistoryFull,
@@ -31,7 +45,7 @@ import {
   tripHistoryFullStatusAtom,
 } from "@/features/trips/model/trip-history-view";
 import { tripStatusLangKey } from "@/features/trips/lib/trip-status-lang-key";
-import { ViolationSummaryCard } from "@/features/violations/ui/violation-summary-card";
+import { ViolationSummaryCard, PencilGlyph } from "@/features/violations/ui/violation-summary-card";
 import { ROUTES } from "@/shared/config/routes-paths";
 import { getYandexMapsApiKey } from "@/shared/config/env";
 import { LANG_KEYS } from "@/shared/i18n/keys";
@@ -76,8 +90,35 @@ function Row({
   );
 }
 
+function tripEmailNoticeBadgeColor(status: string): string {
+  const s = (status || "").toUpperCase();
+  if (s === "SENT") {
+    return "green";
+  }
+  if (s === "FAILED") {
+    return "red";
+  }
+  if (s === "PENDING") {
+    return "yellow";
+  }
+  return "gray";
+}
+
 const TripViewPage = () => {
   const { t } = useTranslation();
+  const emailNoticeStatusLabel = (status: string): string => {
+    const s = (status || "").toUpperCase();
+    if (s === "SENT") {
+      return t(LANG_KEYS.pages.tripDetailEmailNoticeStatusSENT);
+    }
+    if (s === "FAILED") {
+      return t(LANG_KEYS.pages.tripDetailEmailNoticeStatusFAILED);
+    }
+    if (s === "PENDING") {
+      return t(LANG_KEYS.pages.tripDetailEmailNoticeStatusPENDING);
+    }
+    return status || "—";
+  };
   const navigate = useNavigate();
   /** Родитель — layout с `id: "dashboard-shell"` в router.tsx; см. join id в @tanstack/router-core. */
   const { tripId } = useParams({
@@ -89,6 +130,9 @@ const TripViewPage = () => {
   const [errorState] = useAtom(tripHistoryFullErrorAtom);
   const [tripMapGeozone] = useAtom(tripGeozoneForMapAtom);
   const [tripGeozoneStatus] = useAtom(tripGeozoneForMapStatusAtom);
+  const [authUser] = useAtom(authUserAtom);
+  const [noticeOpened, { open: openViolationNotice, close: closeViolationNotice }] =
+    useDisclosure(false);
 
   const loadFull = useAction(loadTripHistoryFull);
   const loadZone = useAction(loadTripGeozoneForMap);
@@ -129,6 +173,84 @@ const TripViewPage = () => {
   const trip = data?.trip;
   const car = data?.car;
   const violations = data?.violations ?? [];
+  const violationById = useMemo(() => {
+    const m = new Map<string, (typeof violations)[number]>();
+    for (const v of violations) {
+      m.set(v.id, v);
+    }
+    return m;
+  }, [violations]);
+
+  const [emailNotices, setEmailNotices] = useState<TripNotificationRead[]>([]);
+  const [emailNoticesPhase, setEmailNoticesPhase] = useState<
+    "loading" | "ok" | "error"
+  >("loading");
+  const [emailNoticesError, setEmailNoticesError] = useState<string | null>(
+    null,
+  );
+
+  const loadEmailNotices = useCallback(async () => {
+    setEmailNoticesPhase("loading");
+    setEmailNoticesError(null);
+    try {
+      const list = await managerViolationNoticeApi.listTripNotifications(
+        tripId,
+      );
+      setEmailNotices(list);
+      setEmailNoticesPhase("ok");
+    } catch (e) {
+      setEmailNoticesPhase("error");
+      setEmailNoticesError(e instanceof Error ? e.message : String(e));
+      setEmailNotices([]);
+    }
+  }, [tripId]);
+
+  const [userById, setUserById] = useState<Map<string, ReadUser>>(() => new Map());
+
+  useEffect(() => {
+    const ids = new Set<string>();
+    if (trip?.userId?.trim()) {
+      ids.add(trip.userId.trim());
+    }
+    for (const n of emailNotices) {
+      if (n.userId?.trim()) {
+        ids.add(n.userId.trim());
+      }
+    }
+    const list = [...ids];
+    if (list.length === 0) {
+      setUserById(new Map());
+      return;
+    }
+    let cancelled = false;
+    void Promise.all(
+      list.map((id) =>
+        usersApi
+          .findById(id)
+          .then((u) => ({ id, u }))
+          .catch(() => ({ id, u: undefined as ReadUser | undefined })),
+      ),
+    ).then((rows) => {
+      if (cancelled) {
+        return;
+      }
+      const m = new Map<string, ReadUser>();
+      for (const { id, u } of rows) {
+        if (u) {
+          m.set(id, u);
+        }
+      }
+      setUserById(m);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [trip?.userId, emailNotices]);
+
+  useEffect(() => {
+    void loadEmailNotices();
+  }, [loadEmailNotices]);
+
   const routePoints = data?.points ?? [];
   const loading = status === "loading" && !data;
   /** В Alert показываем только сетевые/прочие ошибки, 404/403 уводят на `/error`. */
@@ -137,6 +259,34 @@ const TripViewPage = () => {
       ? errorState.message
       : null;
   const tripMapZoneLoading = tripGeozoneStatus === "loading";
+  const canSendViolationNotice =
+    authUser != null &&
+    (authUser.role === UserRole.MANAGER ||
+      authUser.role === UserRole.SYSTEM_ADMIN);
+
+  const userNameLink = (userId: string | null | undefined) => {
+    const id = userId?.trim() ?? "";
+    if (!id) {
+      return (
+        <Text component="span" size="sm" c="dimmed">
+          —
+        </Text>
+      );
+    }
+    const u = userById.get(id);
+    if (u) {
+      return (
+        <Anchor component={Link} to={ROUTES.dashboard.userView(id)} size="sm" fw={500}>
+          {u.name}
+        </Anchor>
+      );
+    }
+    return (
+      <Text component="span" size="sm" ff="monospace">
+        {id}
+      </Text>
+    );
+  };
 
   return (
     <Container size="md" py="xl">
@@ -174,10 +324,12 @@ const TripViewPage = () => {
                   label={t(LANG_KEYS.pages.tripViewStatus)}
                   value={t(tripStatusLangKey(trip.status))}
                 />
-                <Row
-                  label={t(LANG_KEYS.pages.tripViewUser)}
-                  value={trip.userId}
-                />
+                <Text size="sm">
+                  <Text span fw={600}>
+                    {t(LANG_KEYS.pages.tripViewUser)}
+                  </Text>{" "}
+                  {userNameLink(trip.userId)}
+                </Text>
                 <Row
                   label={t(LANG_KEYS.pages.tripViewCar)}
                   value={trip.carId}
@@ -352,6 +504,17 @@ const TripViewPage = () => {
                   </Text>
                 ) : (
                   <Stack gap="md">
+                    {canSendViolationNotice ? (
+                      <Group justify="flex-end">
+                        <Button
+                          size="xs"
+                          variant="light"
+                          onClick={openViolationNotice}
+                        >
+                          {t(LANG_KEYS.pages.tripDetailViolationsNotifyDriver)}
+                        </Button>
+                      </Group>
+                    ) : null}
                     <ScrollArea h={500}>
                       {violations.map((v) => (
                         <ViolationSummaryCard key={v.id} violation={v} />
@@ -361,6 +524,18 @@ const TripViewPage = () => {
                 )}
               </Stack>
             </Paper>
+
+            {violations.length > 0 ? (
+              <SendViolationNoticeModal
+                opened={noticeOpened}
+                onClose={closeViolationNotice}
+                tripId={trip.id}
+                violations={violations}
+                onSent={() => {
+                  void loadEmailNotices();
+                }}
+              />
+            ) : null}
 
             <Paper p="md" radius="md" withBorder>
               <Stack gap="sm">
@@ -384,13 +559,130 @@ const TripViewPage = () => {
             </Paper>
 
             <Paper p="md" radius="md" withBorder>
-              <Stack gap="xs">
+              <Stack gap="sm">
                 <Text size="sm" fw={700} tt="uppercase" c="dimmed">
                   {t(LANG_KEYS.pages.tripDetailSectionExtra)}
                 </Text>
                 <Text size="sm" c="dimmed">
-                  {t(LANG_KEYS.pages.tripDetailPlaceholderSoon)}
+                  {t(LANG_KEYS.pages.tripDetailEmailNoticesIntro)}
                 </Text>
+                {emailNoticesPhase === "loading" ? (
+                  <Group gap="xs">
+                    <Loader size="sm" />
+                    <Text size="sm" c="dimmed">
+                      {t(LANG_KEYS.pages.tripDetailMapZoneLoading)}
+                    </Text>
+                  </Group>
+                ) : emailNoticesPhase === "error" ? (
+                  <Alert color="red" variant="light">
+                    {emailNoticesError ??
+                      t(LANG_KEYS.pages.tripDetailEmailNoticesLoadError)}
+                  </Alert>
+                ) : emailNotices.length === 0 ? (
+                  <Text size="sm" c="dimmed">
+                    {t(LANG_KEYS.pages.tripDetailEmailNoticesEmpty)}
+                  </Text>
+                ) : (
+                  <Accordion variant="contained" radius="md">
+                    {emailNotices.map((n) => {
+                      const stLabel = emailNoticeStatusLabel(n.status);
+                      return (
+                        <Accordion.Item key={n.id} value={String(n.id)}>
+                          <Accordion.Control>
+                            <Stack gap={4} align="flex-start">
+                              <Group gap="xs" wrap="nowrap">
+                                <Text size="sm" fw={600}>
+                                  {t(LANG_KEYS.pages.tripDetailEmailNoticeId)}
+                                  {n.id}
+                                </Text>
+                                <Badge
+                                  size="sm"
+                                  color={tripEmailNoticeBadgeColor(n.status)}
+                                  variant="light"
+                                >
+                                  {stLabel}
+                                </Badge>
+                              </Group>
+                              <Text size="xs" c="dimmed" lineClamp={2}>
+                                {tripNotificationMessagePreview(n.message) || "—"}
+                              </Text>
+                            </Stack>
+                          </Accordion.Control>
+                          <Accordion.Panel>
+                            <Stack gap="md">
+                              <Paper withBorder p="md" radius="md">
+                                <Stack gap="sm">
+                                  <Text size="xs" c="dimmed">
+                                    <Text span fw={600}>
+                                      {t(LANG_KEYS.pages.tripViewUser)}
+                                    </Text>{" "}
+                                    {userNameLink(n.userId)}
+                                  </Text>
+                                  <Text size="sm" lh={1.55} style={{ whiteSpace: "pre-wrap" }}>
+                                    {tripNotificationDetailsText(n.message) || "—"}
+                                  </Text>
+                                </Stack>
+                              </Paper>
+                              <Divider />
+                              <Text size="sm" fw={600}>
+                                {t(
+                                  LANG_KEYS.pages
+                                    .tripDetailEmailNoticeViolationsInLetter,
+                                )}
+                              </Text>
+                              <Stack gap="md">
+                                {n.violationIds.map((vid) => {
+                                  const v = violationById.get(vid);
+                                  return v ? (
+                                    <ViolationSummaryCard
+                                      key={vid}
+                                      violation={v}
+                                      showEditInNewTab
+                                    />
+                                  ) : (
+                                    <Group
+                                      key={vid}
+                                      justify="space-between"
+                                      wrap="nowrap"
+                                      align="center"
+                                      gap="xs"
+                                    >
+                                      <Text size="sm" c="dimmed" style={{ flex: 1 }}>
+                                        {t(
+                                          LANG_KEYS.pages
+                                            .tripDetailEmailNoticeViolationMissing,
+                                          { id: vid },
+                                        )}
+                                      </Text>
+                                      <ActionIcon
+                                        component={Link}
+                                        to={ROUTES.dashboard.violationsEdit(
+                                          vid,
+                                        )}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        variant="light"
+                                        color="gray"
+                                        size="md"
+                                        radius="md"
+                                        aria-label={t(
+                                          LANG_KEYS.pages
+                                            .tripDetailViolationOpenEditNewTab,
+                                        )}
+                                      >
+                                        <PencilGlyph />
+                                      </ActionIcon>
+                                    </Group>
+                                  );
+                                })}
+                              </Stack>
+                            </Stack>
+                          </Accordion.Panel>
+                        </Accordion.Item>
+                      );
+                    })}
+                  </Accordion>
+                )}
               </Stack>
             </Paper>
           </>

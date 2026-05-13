@@ -17,12 +17,24 @@ import {
 import type { LangKey } from "@/shared/i18n/keys";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 
+function formatCardDateTime(iso: string | null | undefined): string {
+  if (iso == null || iso === "") {
+    return "—";
+  }
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return "—";
+  }
+  return d.toLocaleString();
+}
+
 type Props = {
   car: CarRead;
   t: (key: LangKey) => string;
+  onEdit?: (car: CarRead) => void;
 };
 
-const CarGridCard = ({ car, t }: Props) => {
+const CarGridCard = ({ car, t, onEdit }: Props) => {
   const statusLabel = t(carStatusLangKey(car.carStatus));
 
   return (
@@ -30,9 +42,16 @@ const CarGridCard = ({ car, t }: Props) => {
       <Stack gap="sm">
         <Group justify="space-between" align="flex-start" wrap="nowrap">
           <Stack gap={2} style={{ minWidth: 0 }}>
-            <Text fw={700} size="lg" truncate="end">
-              {car.licensePlate}
-            </Text>
+            <Group gap="xs" wrap="wrap" align="center">
+              <Text fw={700} size="lg" truncate="end">
+                {car.licensePlate}
+              </Text>
+              {car.isDeleted ? (
+                <Badge color="gray" variant="light" size="sm">
+                  {t(LANG_KEYS.pages.carsCardDeleted)}
+                </Badge>
+              ) : null}
+            </Group>
             <Text size="sm" c="dimmed" truncate="end">
               {car.brand} {car.model}
             </Text>
@@ -62,9 +81,22 @@ const CarGridCard = ({ car, t }: Props) => {
               </CopyButton>
             </Group>
           </Stack>
-          <Badge color={carStatusBadgeColor(car.carStatus)} variant="light">
-            {statusLabel}
-          </Badge>
+          <Stack gap={6} align="flex-end">
+            {onEdit ? (
+              <Button
+                variant="light"
+                size="compact-xs"
+                onClick={() => {
+                  onEdit(car);
+                }}
+              >
+                {t(LANG_KEYS.pages.carsEditButton)}
+              </Button>
+            ) : null}
+            <Badge color={carStatusBadgeColor(car.carStatus)} variant="light">
+              {statusLabel}
+            </Badge>
+          </Stack>
         </Group>
 
         <Group gap="lg" wrap="nowrap">
@@ -92,10 +124,36 @@ const CarGridCard = ({ car, t }: Props) => {
           <Stack gap={6} style={{ flex: 1 }}>
             <Text size="sm">
               <Text span c="dimmed">
+                {t(LANG_KEYS.pages.carsColFuel)}
+              </Text>{" "}
+              <Text span fw={500}>
+                {Math.round(car.fuelLevel)}%
+              </Text>
+            </Text>
+            <Text size="sm">
+              <Text span c="dimmed">
                 {t(LANG_KEYS.pages.carsCardMileage)}
               </Text>{" "}
               <Text span fw={500}>
                 {car.mileage.toLocaleString()}
+              </Text>
+            </Text>
+            <Text size="sm" style={{ wordBreak: "break-word" }}>
+              <Text span c="dimmed">
+                {t(LANG_KEYS.pages.carsCardColor)}
+              </Text>{" "}
+              <Text span fw={500}>
+                {car.color}
+              </Text>
+            </Text>
+            <Text size="sm">
+              <Text span c="dimmed">
+                {t(LANG_KEYS.pages.carsAddFieldAvailable)}
+              </Text>{" "}
+              <Text span fw={500}>
+                {car.isAvailable
+                  ? t(LANG_KEYS.pages.carsCardAvailYes)
+                  : t(LANG_KEYS.pages.carsCardAvailNo)}
               </Text>
             </Text>
             <Text size="sm" style={{ wordBreak: "break-word" }}>
@@ -107,6 +165,26 @@ const CarGridCard = ({ car, t }: Props) => {
                   ? `${car.lastKnownLat.toFixed(4)}, ${car.lastKnownLon.toFixed(4)}`
                   : "—"}
               </Text>
+            </Text>
+            <Text size="sm" style={{ wordBreak: "break-word" }}>
+              <Text span c="dimmed">
+                {t(LANG_KEYS.pages.carsCardLastPosAt)}
+              </Text>{" "}
+              <Text span>
+                {formatCardDateTime(car.lastPositionAt)}
+              </Text>
+            </Text>
+            <Text size="sm" style={{ wordBreak: "break-word" }}>
+              <Text span c="dimmed">
+                {t(LANG_KEYS.pages.carsCardCreatedAt)}
+              </Text>{" "}
+              <Text span>{formatCardDateTime(car.createdAt)}</Text>
+            </Text>
+            <Text size="sm" style={{ wordBreak: "break-word" }}>
+              <Text span c="dimmed">
+                {t(LANG_KEYS.pages.carsCardUpdatedAt)}
+              </Text>{" "}
+              <Text span>{formatCardDateTime(car.updatedAt)}</Text>
             </Text>
           </Stack>
         </Group>

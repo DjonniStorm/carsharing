@@ -119,12 +119,25 @@ export const LANG_KEYS = {
     carsAddValidateMaxLen: "pages.carsAddValidateMaxLen",
     carsAddCreatedIdLabel: "pages.carsAddCreatedIdLabel",
     carsAddDone: "pages.carsAddDone",
+    carsEditButton: "pages.carsEditButton",
+    carsEditModalTitle: "pages.carsEditModalTitle",
+    carsEditSubmit: "pages.carsEditSubmit",
+    carsEditSuccessTitle: "pages.carsEditSuccessTitle",
+    carsEditSuccessBody: "pages.carsEditSuccessBody",
+    carsEditErrorTitle: "pages.carsEditErrorTitle",
+    carsEditErrorFallback: "pages.carsEditErrorFallback",
     carsCardFuel: "pages.carsCardFuel",
     carsCardMileage: "pages.carsCardMileage",
     carsCardId: "pages.carsCardId",
     carsCardCopy: "pages.carsCardCopy",
     carsCardCopied: "pages.carsCardCopied",
     carsCardDeleted: "pages.carsCardDeleted",
+    carsCardColor: "pages.carsCardColor",
+    carsCardAvailYes: "pages.carsCardAvailYes",
+    carsCardAvailNo: "pages.carsCardAvailNo",
+    carsCardLastPosAt: "pages.carsCardLastPosAt",
+    carsCardCreatedAt: "pages.carsCardCreatedAt",
+    carsCardUpdatedAt: "pages.carsCardUpdatedAt",
     carsStatusAvailable: "pages.carsStatusAvailable",
     carsStatusUnavailable: "pages.carsStatusUnavailable",
     carsStatusInUse: "pages.carsStatusInUse",
@@ -173,6 +186,8 @@ export const LANG_KEYS = {
     geozonesCreateTariffPresetExplicit:
       "pages.geozonesCreateTariffPresetExplicit",
     geozonesCreateTariffPresetHint: "pages.geozonesCreateTariffPresetHint",
+    geozonesCreateTariffPresetRequired:
+      "pages.geozonesCreateTariffPresetRequired",
     geozonesCreateRulesOptional: "pages.geozonesCreateRulesOptional",
     geozonesCreateRulesPlaceholder: "pages.geozonesCreateRulesPlaceholder",
     geozonesCreateSubmit: "pages.geozonesCreateSubmit",
@@ -192,6 +207,7 @@ export const LANG_KEYS = {
     geozonesEditSave: "pages.geozonesEditSave",
     geozonesEditNothingToSave: "pages.geozonesEditNothingToSave",
     geozonesEditSuccess: "pages.geozonesEditSuccess",
+    geozonesEditTariffPresetRequired: "pages.geozonesEditTariffPresetRequired",
     dashboardGeozonesPanelTitle: "pages.dashboardGeozonesPanelTitle",
     dashboardGeozonesSearchPlaceholder:
       "pages.dashboardGeozonesSearchPlaceholder",
@@ -244,6 +260,20 @@ export const LANG_KEYS = {
     tripDetailSectionTelemetry: "pages.tripDetailSectionTelemetry",
     tripDetailSectionExtra: "pages.tripDetailSectionExtra",
     tripDetailPlaceholderSoon: "pages.tripDetailPlaceholderSoon",
+    tripDetailEmailNoticesIntro: "pages.tripDetailEmailNoticesIntro",
+    tripDetailEmailNoticesEmpty: "pages.tripDetailEmailNoticesEmpty",
+    tripDetailEmailNoticesLoadError: "pages.tripDetailEmailNoticesLoadError",
+    tripDetailEmailNoticeId: "pages.tripDetailEmailNoticeId",
+    tripDetailEmailNoticeViolationsInLetter:
+      "pages.tripDetailEmailNoticeViolationsInLetter",
+    tripDetailEmailNoticeViolationMissing:
+      "pages.tripDetailEmailNoticeViolationMissing",
+    tripDetailViolationOpenEditNewTab: "pages.tripDetailViolationOpenEditNewTab",
+    tripDetailEmailNoticeStatusPENDING:
+      "pages.tripDetailEmailNoticeStatusPENDING",
+    tripDetailEmailNoticeStatusSENT: "pages.tripDetailEmailNoticeStatusSENT",
+    tripDetailEmailNoticeStatusFAILED:
+      "pages.tripDetailEmailNoticeStatusFAILED",
     tripDetailGeoZoneVersionId: "pages.tripDetailGeoZoneVersionId",
     tripDetailTariffVersionId: "pages.tripDetailTariffVersionId",
     tripDetailPauseStarted: "pages.tripDetailPauseStarted",
@@ -274,6 +304,34 @@ export const LANG_KEYS = {
     tripDetailCarDeleted: "pages.tripDetailCarDeleted",
     tripDetailViolationsCount: "pages.tripDetailViolationsCount",
     tripDetailViolationsEmpty: "pages.tripDetailViolationsEmpty",
+    tripDetailViolationsNotifyDriver: "pages.tripDetailViolationsNotifyDriver",
+    tripViolationNoticeModalTitle: "pages.tripViolationNoticeModalTitle",
+    tripViolationNoticeIntro: "pages.tripViolationNoticeIntro",
+    tripViolationNoticeSubjectLabel: "pages.tripViolationNoticeSubjectLabel",
+    tripViolationNoticeSubjectPlaceholder:
+      "pages.tripViolationNoticeSubjectPlaceholder",
+    tripViolationNoticeMessageLabel: "pages.tripViolationNoticeMessageLabel",
+    tripViolationNoticeMessagePlaceholder:
+      "pages.tripViolationNoticeMessagePlaceholder",
+    tripViolationNoticeCancel: "pages.tripViolationNoticeCancel",
+    tripViolationNoticeSubmit: "pages.tripViolationNoticeSubmit",
+    tripViolationNoticeWarnNoViolationsTitle:
+      "pages.tripViolationNoticeWarnNoViolationsTitle",
+    tripViolationNoticeWarnNoViolationsBody:
+      "pages.tripViolationNoticeWarnNoViolationsBody",
+    tripViolationNoticeWarnSubjectTitle:
+      "pages.tripViolationNoticeWarnSubjectTitle",
+    tripViolationNoticeWarnSubjectBody:
+      "pages.tripViolationNoticeWarnSubjectBody",
+    tripViolationNoticeWarnMessageTitle:
+      "pages.tripViolationNoticeWarnMessageTitle",
+    tripViolationNoticeWarnMessageBody:
+      "pages.tripViolationNoticeWarnMessageBody",
+    tripViolationNoticeSuccessTitle: "pages.tripViolationNoticeSuccessTitle",
+    tripViolationNoticeSuccessBody: "pages.tripViolationNoticeSuccessBody",
+    tripViolationNoticeErrorTitle: "pages.tripViolationNoticeErrorTitle",
+    tripViolationNoticeErrorFallback:
+      "pages.tripViolationNoticeErrorFallback",
     tripDetailViolationAt: "pages.tripDetailViolationAt",
     tripDetailLoadError: "pages.tripDetailLoadError",
     tripDetailMapNoRoute: "pages.tripDetailMapNoRoute",

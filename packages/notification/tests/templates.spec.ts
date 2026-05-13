@@ -13,7 +13,7 @@ describe('templates', () => {
   });
 
   it('violation email содержит заголовок и описание', () => {
-    const { subject, html } = buildViolationNoticeEmail({
+    const { subject, html, text } = buildViolationNoticeEmail({
       title: 'Превышение скорости',
       description: '110 км/ч при лимите 90',
       tripId: 'uuid-1',
@@ -22,5 +22,26 @@ describe('templates', () => {
     expect(subject).toContain('Превышение');
     expect(html).toContain('110 км/ч');
     expect(html).toContain('uuid-1');
+    expect(text).toContain('Тема уведомления:');
+  });
+
+  it('violation email: сводка по типам и общее количество', () => {
+    const { text, html } = buildViolationNoticeEmail({
+      title: 'Сообщение менеджера',
+      description: 'Текст',
+      violationSummary: {
+        total: 3,
+        byKind: [
+          { kind: 1, count: 2 },
+          { kind: 4, count: 1 },
+        ],
+      },
+    });
+    expect(text).toContain('Всего нарушений в этом уведомлении: 3');
+    expect(text).toContain('Превышение скорости: 2');
+    expect(text).toContain('Низкий уровень топлива: 1');
+    expect(html).toContain('Всего: <strong>3</strong>');
+    expect(html).toContain('Превышение скорости');
+    expect(html).toContain('Низкий уровень топлива');
   });
 });
