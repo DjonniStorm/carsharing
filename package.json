@@ -1,7 +1,10 @@
 {
   "packageManager": "pnpm@10.33.0",
   "pnpm": {
-    "onlyBuiltDependencies": ["@prisma/engines", "prisma"]
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma"
+    ]
   },
   "scripts": {
     "moon": "moon",
@@ -28,15 +31,19 @@
     "db:reset:backend": "pnpm -F @carsharing/backend db:reset",
     "prisma:generate:backend": "moon run backend:prisma-generate",
     "prisma:migrate:status:backend": "moon run backend:prisma-migrate-status",
-    "prisma:studio:backend": "moon run backend:prisma-studio"
+    "prisma:studio:backend": "moon run backend:prisma-studio",
+    "monitoring:up:backend": "pnpm -F @carsharing/backend monitoring:up",
+    "monitoring:down:backend": "pnpm -F @carsharing/backend monitoring:down"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@moonrepo/cli": "^2.1.3",
     "eslint": "^9.39.1",
-    "globals": "^16.5.0",
-    "@moonrepo/cli": "^2.1.3"
+    "globals": "^16.5.0"
   },
   "dependencies": {
-    "prettier": "^3.8.1"
+    "@willsoto/nestjs-prometheus": "^6.1.0",
+    "prettier": "^3.8.1",
+    "prom-client": "^15.1.3"
   }
 }

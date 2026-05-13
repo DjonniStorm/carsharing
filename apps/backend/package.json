@@ -41,7 +41,10 @@
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
     "db:reset": "docker compose down -v && docker compose up -d",
-    "db:create:test": "docker compose exec -T postgres sh -lc \"psql -U carsharing -d postgres -tA -c \\\"SELECT 1 FROM pg_database WHERE datname = 'carsharing_test'\\\" | grep -q 1 || psql -U carsharing -d postgres -c \\\"CREATE DATABASE carsharing_test\\\"\""
+    "db:create:test": "docker compose exec -T postgres sh -lc \"psql -U carsharing -d postgres -tA -c \\\"SELECT 1 FROM pg_database WHERE datname = 'carsharing_test'\\\" | grep -q 1 || psql -U carsharing -d postgres -c \\\"CREATE DATABASE carsharing_test\\\"\"",
+    "monitoring:up": "docker compose -f monitoring/docker-compose.yml up -d",
+    "monitoring:down": "docker compose -f monitoring/docker-compose.yml down",
+    "monitoring:logs": "docker compose -f monitoring/docker-compose.yml logs -f"
   },
   "dependencies": {
     "@carsharing/notification": "workspace:*",
@@ -58,12 +61,14 @@
     "@nestjs/websockets": "^11.1.19",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
+    "@willsoto/nestjs-prometheus": "^6.1.0",
     "bcryptjs": "^3.0.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.20.0",
+    "prom-client": "^15.1.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.3",

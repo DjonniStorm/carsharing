@@ -23,3 +23,7 @@ tasks:
     command: pnpm prisma:migrate:status
   prisma-studio:
     command: pnpm prisma:studio
+  monitoring-up:
+    command: pnpm monitoring:up
+  monitoring-down:
+    command: pnpm monitoring:down
