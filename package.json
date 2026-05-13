@@ -32,8 +32,12 @@
     "prisma:generate:backend": "moon run backend:prisma-generate",
     "prisma:migrate:status:backend": "moon run backend:prisma-migrate-status",
     "prisma:studio:backend": "moon run backend:prisma-studio",
-    "monitoring:up:backend": "pnpm -F @carsharing/backend monitoring:up",
-    "monitoring:down:backend": "pnpm -F @carsharing/backend monitoring:down"
+    "deploy:backend": "moon run backend:deploy-up",
+    "deploy:backend:down": "moon run backend:deploy-down",
+    "deploy:backend:logs": "moon run backend:deploy-logs",
+    "monitoring:up:backend": "moon run backend:monitoring-up",
+    "monitoring:down:backend": "moon run backend:monitoring-down",
+    "monitoring:logs:backend": "moon run backend:monitoring-logs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

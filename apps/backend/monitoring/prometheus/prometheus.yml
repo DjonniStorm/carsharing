@@ -6,6 +6,6 @@ scrape_configs:
   - job_name: carsharing-backend
     metrics_path: /metrics
     static_configs:
+      # backend живёт в той же docker-сети `carsharing`
       - targets:
-          # host.docker.internal: в compose для prometheus задан extra_hosts (host-gateway).
-          - host.docker.internal:3000
+          - backend:3000
