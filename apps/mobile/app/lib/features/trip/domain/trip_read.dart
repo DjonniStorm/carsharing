@@ -1,3 +1,4 @@
+import 'live_trip_metrics.dart';
 import 'trip_status.dart';
 
 class TripRead {
@@ -69,6 +70,61 @@ class TripRead {
       status == TripStatusCode.started ||
       status == TripStatusCode.active ||
       status == TripStatusCode.paused;
+
+  TripRead copyWith({
+    int? status,
+    DateTime? finishedAt,
+    DateTime? pauseStartedAt,
+    int? totalPausedSec,
+    double? distanceMeters,
+    double? chargedMinutes,
+    double? chargedKm,
+    double? priceTime,
+    double? priceDistance,
+    double? pricePause,
+    double? priceTotal,
+  }) {
+    return TripRead(
+      id: id,
+      userId: userId,
+      carId: carId,
+      geoZoneVersionId: geoZoneVersionId,
+      status: status ?? this.status,
+      startedAt: startedAt,
+      finishedAt: finishedAt ?? this.finishedAt,
+      pauseStartedAt: pauseStartedAt ?? this.pauseStartedAt,
+      totalPausedSec: totalPausedSec ?? this.totalPausedSec,
+      startLat: startLat,
+      startLng: startLng,
+      finishLat: finishLat,
+      finishLng: finishLng,
+      distance: distance,
+      duration: duration,
+      distanceMeters: distanceMeters ?? this.distanceMeters,
+      chargedMinutes: chargedMinutes ?? this.chargedMinutes,
+      chargedKm: chargedKm ?? this.chargedKm,
+      priceTime: priceTime ?? this.priceTime,
+      priceDistance: priceDistance ?? this.priceDistance,
+      pricePause: pricePause ?? this.pricePause,
+      priceTotal: priceTotal ?? this.priceTotal,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      carPlateSnapshot: carPlateSnapshot,
+      carDisplayNameSnapshot: carDisplayNameSnapshot,
+    );
+  }
+
+  TripRead applyLiveMetrics(LiveTripMetrics metrics) {
+    return copyWith(
+      distanceMeters: metrics.distanceMeters ?? distanceMeters,
+      chargedMinutes: metrics.chargedMinutes ?? chargedMinutes,
+      chargedKm: metrics.chargedKm ?? chargedKm,
+      priceTime: metrics.priceTime ?? priceTime,
+      priceDistance: metrics.priceDistance ?? priceDistance,
+      pricePause: metrics.pricePause ?? pricePause,
+      priceTotal: metrics.priceTotal ?? priceTotal,
+    );
+  }
 
   static TripRead fromJson(Map<String, dynamic> json) {
     DateTime? parseDt(Object? v) {

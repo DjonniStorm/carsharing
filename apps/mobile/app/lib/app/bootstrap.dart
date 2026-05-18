@@ -21,6 +21,7 @@ import '../features/profile/cubit/profile_cubit.dart';
 import '../features/profile/data/profile_api.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/settings/cubit/settings_cubit.dart';
+import '../shared/network/connectivity_cubit.dart';
 import '../shared/api/dio_factory.dart';
 import '../shared/realtime/trip_realtime_client.dart';
 import '../shared/storage/secure_token_storage.dart';
@@ -70,6 +71,7 @@ Future<Widget> bootstrap() async {
       ],
       child: MultiBlocProvider(
         providers: [
+          BlocProvider(create: (_) => ConnectivityCubit()),
           BlocProvider(create: (_) => SettingsCubit(settingsStorage)),
           BlocProvider(
             create: (_) => AuthCubit(

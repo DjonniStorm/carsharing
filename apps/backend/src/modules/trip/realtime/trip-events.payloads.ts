@@ -80,6 +80,7 @@ export class TripRoutePointPayload {
   lat: number;
   lng: number;
   speed?: number;
+  fuelLevel?: number;
   recordedAt: string;
 }
 

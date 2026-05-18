@@ -23,14 +23,22 @@ import {
   truncateApplicationTable,
 } from 'src/shared/testing';
 import {
+  TripCarAlreadyInUseException,
   TripNotFoundException,
   TripRelationNotFoundException,
 } from '../common/errors';
+import { ViolationStatus } from '../../violation/entities/violation.status';
 import { TripCreate } from '../entities/dtos/trip.create';
 import { TripUpdate } from '../entities/dtos/trip.update';
 import { TripStatus } from '../entities/trip.status';
 import { InMemoryJobQueue } from 'src/shared/background/in-memory-job-queue';
+import { CarRepository } from '../../car/repositories/car.repository';
+import { CarTripSyncService } from '../../car/services/car-trip-sync.service';
+import { TelemetryCreate } from '../../telemetry/entities/dto/telemetry.create';
+import { TelemetryRepository } from '../../telemetry/repositories/telemetry.repository';
+import { ViolationRepository } from '../../violation/repositories/violation.repository';
 import { TripGateway } from '../gateways/trip.gateway';
+import { TripPricingService } from '../pricing/trip-pricing.service';
 import { LoggerTripRealtimeOutbox } from '../realtime/trip-realtime.outbox.logger';
 import { TripRepository } from '../repositories/trip.repository';
 import { TripRealtimePublisher } from './trip-realtime.publisher';
@@ -41,6 +49,7 @@ describe('TripService (integration)', () => {
   let service: TripService;
   let userId: string;
   let carId: string;
+  let carId2: string;
   let geoZoneVersionId: string;
   let geoZoneVersionIdOther: string;
 
@@ -88,6 +97,22 @@ describe('TripService (integration)', () => {
     });
     carId = car.id;
 
+    const car2 = await prisma.car.create({
+      data: {
+        brand: 'Trip',
+        model: 'Service2',
+        licensePlate: `TS2${suffix.slice(0, 7)}`,
+        color: 'black',
+        mileage: 2_000,
+        fuelLevel: 60,
+        isAvailable: true,
+        carStatus: CarStatus.AVAILABLE,
+        isDeleted: false,
+        createdAt: new Date().toISOString(),
+      },
+    });
+    carId2 = car2.id;
+
     const geozoneRepository = new GeozoneRepository(prisma);
     const firstZone = await geozoneRepository.createWithInitialVersion({
       name: 'Trip service zone',
@@ -117,18 +142,38 @@ describe('TripService (integration)', () => {
     geoZoneVersionId = firstZone.currentVersionId;
     geoZoneVersionIdOther = secondZone.currentVersionId;
 
-    service = new TripService(
-      new TripRepository(prisma),
-      new TripRealtimePublisher(
-        new LoggerTripRealtimeOutbox({
-          publish: () => undefined,
-        } as Pick<TripGateway, 'publish'>),
-      ),
+    const tripRepository = new TripRepository(prisma);
+    const publisher = new TripRealtimePublisher(
+      new LoggerTripRealtimeOutbox({
+        publish: () => undefined,
+      } as Pick<TripGateway, 'publish'>),
+    );
+    const pricingService = new TripPricingService(
+      tripRepository,
+      geozoneRepository,
+      new TelemetryRepository(prisma),
       new InMemoryJobQueue(),
+      publisher,
+    );
+    const carTripSync = new CarTripSyncService(
+      new CarRepository(prisma),
+      tripRepository,
+      new TelemetryRepository(prisma),
+      new ViolationRepository(prisma),
+      publisher,
+    );
+    service = new TripService(
+      tripRepository,
+      publisher,
+      new InMemoryJobQueue(),
+      pricingService,
+      carTripSync,
     );
   });
 
   afterEach(async () => {
+    await truncateApplicationTable(prisma, 'violation');
+    await truncateApplicationTable(prisma, 'telemetry');
     await truncateApplicationTable(prisma, 'trip');
     await truncateApplicationTable(prisma, 'tariff_preset');
     await truncateApplicationTable(prisma, 'geo_zone_version');
@@ -148,6 +193,41 @@ describe('TripService (integration)', () => {
   });
 
   describe('create', () => {
+    it('marks car IN_USE on trip start', async () => {
+      await service.create(
+        createTripInput({
+          userId,
+          carId,
+          geoZoneVersionId,
+          status: TripStatus.ACTIVE,
+        }),
+      );
+      const car = await prisma.car.findUnique({ where: { id: carId } });
+      expect(car?.carStatus).toBe(CarStatus.IN_USE);
+      expect(car?.isAvailable).toBe(false);
+    });
+
+    it('rejects second active trip on the same car (H11)', async () => {
+      await service.create(
+        createTripInput({
+          userId,
+          carId,
+          geoZoneVersionId,
+          status: TripStatus.ACTIVE,
+        }),
+      );
+      await expect(
+        service.create(
+          createTripInput({
+            userId,
+            carId,
+            geoZoneVersionId,
+            status: TripStatus.ACTIVE,
+          }),
+        ),
+      ).rejects.toThrow(TripCarAlreadyInUseException);
+    });
+
     it('creates trip and returns TripRead', async () => {
       const created = await service.create(
         createTripInput({
@@ -191,7 +271,7 @@ describe('TripService (integration)', () => {
       await service.create(
         createTripInput({
           userId,
-          carId,
+          carId: carId2,
           geoZoneVersionId,
           status: TripStatus.PENDING,
         }),
@@ -239,24 +319,87 @@ describe('TripService (integration)', () => {
   });
 
   describe('update', () => {
-    it('updates mutable fields', async () => {
+    it('updates mutable fields and ignores client billing on finish', async () => {
       const created = await service.create(
         createTripInput({
           userId,
           carId,
           geoZoneVersionId,
+          status: TripStatus.ACTIVE,
         }),
       );
+      const startedAt = new Date(Date.now() - 10 * 60 * 1000);
+      await prisma.trip.update({
+        where: { id: created.id },
+        data: { startedAt },
+      });
+
+      const telemetryRepo = new TelemetryRepository(prisma);
+      const pointA = new TelemetryCreate();
+      pointA.tripId = created.id;
+      pointA.timestamp = new Date(startedAt.getTime() + 60_000).toISOString();
+      pointA.lat = 55.75;
+      pointA.lon = 37.61;
+      pointA.speed = 40;
+      pointA.acceleration = 0;
+      pointA.fuelLevel = 42;
+      await telemetryRepo.create(pointA);
+      const pointB = new TelemetryCreate();
+      pointB.tripId = created.id;
+      pointB.timestamp = new Date(startedAt.getTime() + 120_000).toISOString();
+      pointB.lat = 55.85;
+      pointB.lon = 37.71;
+      pointB.speed = 40;
+      pointB.acceleration = 0;
+      pointB.fuelLevel = 38;
+      await telemetryRepo.create(pointB);
+
       const patch = new TripUpdate();
       patch.status = TripStatus.FINISHED;
+      patch.finishedAt = new Date();
       patch.distanceMeters = 12_345;
       patch.priceTotal = 321.5;
-      patch.geoZoneVersionId = geoZoneVersionIdOther;
       const updated = await service.update(created.id, patch);
       expect(updated.status).toBe(TripStatus.FINISHED);
-      expect(updated.distanceMeters).toBe(12_345);
-      expect(updated.priceTotal).toBe(321.5);
-      expect(updated.geoZoneVersionId).toBe(geoZoneVersionIdOther);
+      expect(updated.geoZoneVersionId).toBe(geoZoneVersionId);
+      expect(updated.priceTotal).not.toBe(321.5);
+      expect(updated.chargedMinutes).toBe(10);
+      expect(updated.priceTime).toBe(10);
+
+      const car = await prisma.car.findUnique({ where: { id: carId } });
+      expect(car).not.toBeNull();
+      expect(car!.mileage).toBeGreaterThan(1000);
+      expect(car!.fuelLevel).toBe(38);
+      expect(car!.carStatus).toBe(CarStatus.AVAILABLE);
+      expect(car!.isAvailable).toBe(true);
+    });
+
+    it('sets OUT_OF_SERVICE when open WRONG_PARKING violation exists on finish', async () => {
+      const created = await service.create(
+        createTripInput({
+          userId,
+          carId,
+          geoZoneVersionId,
+          status: TripStatus.ACTIVE,
+        }),
+      );
+      await prisma.violation.create({
+        data: {
+          tripId: created.id,
+          type: ViolationStatus.WRONG_PARKING,
+          description: 'test parking',
+        },
+      });
+
+      const patch = new TripUpdate();
+      patch.status = TripStatus.FINISHED;
+      patch.finishedAt = new Date();
+      patch.distanceMeters = 1000;
+      await service.update(created.id, patch);
+
+      const car = await prisma.car.findUnique({ where: { id: carId } });
+      expect(car?.carStatus).toBe(CarStatus.OUT_OF_SERVICE);
+      expect(car?.isAvailable).toBe(false);
     });
 
     it('throws TripNotFoundException for unknown id', async () => {

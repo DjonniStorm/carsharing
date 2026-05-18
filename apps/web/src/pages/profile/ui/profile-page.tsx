@@ -22,6 +22,7 @@ import {
   setSessionProfile,
 } from "@/features/auth/model/session";
 import { ShellLanguageControl } from "@/widgets/dashboard-shell/ui/shell-language-control";
+import { ShellThemeControl } from "@/widgets/dashboard-shell/ui/shell-theme-control";
 import { ROUTES } from "@/shared/config/routes-paths";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 
@@ -108,6 +109,15 @@ const ProfilePage = () => {
               {t(LANG_KEYS.pages.profileLanguageSection)}
             </Text>
             <ShellLanguageControl />
+          </Stack>
+        </Paper>
+
+        <Paper p="md" radius="md" withBorder>
+          <Stack gap="sm">
+            <Text size="sm" fw={700}>
+              {t(LANG_KEYS.pages.profileThemeSection)}
+            </Text>
+            <ShellThemeControl />
           </Stack>
         </Paper>
       </Stack>

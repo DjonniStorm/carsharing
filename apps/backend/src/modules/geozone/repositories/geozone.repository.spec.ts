@@ -369,6 +369,67 @@ describe('GeozoneRepository', () => {
       expect(ids).toEqual([]);
     });
   });
+
+  describe('isPointInsideVersion', () => {
+    it('true, если точка внутри указанной версии', async () => {
+      const zone = await repository.createWithInitialVersion(
+        buildCreateInput(createdByUserId, { geometry: sampleMultiPolygon(24) }),
+      );
+      const base = 35.24;
+      const inside = await repository.isPointInsideVersion(
+        zone.currentVersionId!,
+        base + 0.05,
+        55.775,
+      );
+      expect(inside).toBe(true);
+    });
+
+    it('false, если точка снаружи версии', async () => {
+      const zone = await repository.createWithInitialVersion(
+        buildCreateInput(createdByUserId, { geometry: sampleMultiPolygon(25) }),
+      );
+      const inside = await repository.isPointInsideVersion(
+        zone.currentVersionId!,
+        0,
+        0,
+      );
+      expect(inside).toBe(false);
+    });
+
+    it('не путает старую версию с current после publish', async () => {
+      const zone = await repository.createWithInitialVersion(
+        buildCreateInput(createdByUserId, { geometry: sampleMultiPolygon(26) }),
+      );
+      const v1Id = zone.currentVersionId!;
+      const base = 35.26;
+      const testLon = base + 0.05;
+      const testLat = 55.775;
+
+      expect(await repository.isPointInsideVersion(v1Id, testLon, testLat)).toBe(
+        true,
+      );
+
+      const afterPublish = await repository.publishNewVersion(zone.id, {
+        geometry: sampleMultiPolygon(260),
+        rules: null,
+        pricePerMinute: 1,
+        pricePerKm: 2,
+        pausePricePerMinute: 0.5,
+      });
+
+      expect(afterPublish.currentVersionId).not.toBe(v1Id);
+      expect(
+        await repository.isPointInsideVersion(v1Id, testLon, testLat),
+      ).toBe(true);
+      expect(
+        await repository.findIdsContainingPoint({
+          lon: testLon,
+          lat: testLat,
+          types: [GeozoneType.RENTAL],
+        }),
+      ).not.toContain(zone.id);
+    });
+  });
 });
 
 const sampleMultiPolygon = (seed: number): GeoJSONMultiPolygon => {

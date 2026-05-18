@@ -10,9 +10,10 @@ import {
 import { Link } from "@tanstack/react-router";
 
 import type { TariffRead } from "@/entities/tariff";
+import { ROUTES } from "@/shared/config/routes-paths";
 import type { LangKey } from "@/shared/i18n/keys";
 import { LANG_KEYS } from "@/shared/i18n/keys";
-import { ROUTES } from "@/shared/config/routes-paths";
+import { formatCardDateTime } from "@/shared/lib/format";
 
 type Props = {
   tariff: TariffRead;
@@ -55,19 +56,15 @@ const TariffGridCard = ({ tariff, t }: Props) => {
             </Text>
           </Stack>
           <Tooltip label={t(LANG_KEYS.pages.tariffsEditAria)}>
-            <Link
+            <ActionIcon
+              component={Link}
               to={ROUTES.dashboard.tariffsEdit(tariff.id)}
-              style={{ textDecoration: "none", color: "inherit" }}
+              variant="light"
+              size="lg"
+              aria-label={t(LANG_KEYS.pages.tariffsEditAria)}
             >
-              <ActionIcon
-                component="span"
-                variant="light"
-                size="lg"
-                aria-label={t(LANG_KEYS.pages.tariffsEditAria)}
-              >
-                <PencilIcon />
-              </ActionIcon>
-            </Link>
+              <PencilIcon />
+            </ActionIcon>
           </Tooltip>
         </Group>
 
@@ -106,7 +103,8 @@ const TariffGridCard = ({ tariff, t }: Props) => {
         </Group>
 
         <Text size="xs" c="dimmed">
-          {t(LANG_KEYS.pages.tariffsColUpdated)}: {tariff.updatedAt}
+          {t(LANG_KEYS.pages.tariffsColUpdated)}:{" "}
+          {formatCardDateTime(tariff.updatedAt)}
         </Text>
       </Stack>
     </Paper>

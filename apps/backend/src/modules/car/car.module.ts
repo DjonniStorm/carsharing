@@ -9,7 +9,7 @@ import { CarController } from './controllers/car.controller';
     CarService,
     { provide: ICarRepositoryToken, useClass: CarRepository },
   ],
-  exports: [CarService],
+  exports: [CarService, ICarRepositoryToken],
   controllers: [CarController],
 })
 export class CarModule {}

@@ -4,6 +4,7 @@ import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../shared/realtime/parse_trip_route_point.dart';
 import '../../../shared/realtime/trip_realtime_client.dart';
 import '../../../shared/realtime/trip_realtime_contract.dart';
 import '../data/cars_repository.dart';
@@ -65,7 +66,7 @@ class MapCubit extends Cubit<MapState> {
       final prevCars = state.cars;
       final merged = <String, CarPosition>{
         for (final fresh in cars)
-          fresh.id: _preferLiveCoords(fresh, prevCars[fresh.id]),
+          fresh.id: mergeRestWithLive(fresh, prevCars[fresh.id]),
       };
 
       emit(state.copyWith(cars: merged, loading: false));
@@ -88,14 +89,16 @@ class MapCubit extends Cubit<MapState> {
     }
   }
 
-  /// Если в локальном state уже есть live-координаты (из WS), используем их —
-  /// REST может вернуть устаревший `lastKnownLat/Lon` (особенно сразу после finish,
-  /// когда бэкенд ещё не успел зафиксировать последнюю телеметрию в БД).
-  static CarPosition _preferLiveCoords(CarPosition fresh, CarPosition? prev) {
+  /// Если в локальном state уже есть live-данные (из WS), сохраняем их при REST refresh.
+  static CarPosition mergeRestWithLive(CarPosition fresh, CarPosition? prev) {
     if (prev == null) return fresh;
-    final hasLive = prev.lat != null && prev.lon != null;
-    if (!hasLive) return fresh;
-    return fresh.copyWith(lat: prev.lat, lon: prev.lon);
+    final hasLiveCoords = prev.lat != null && prev.lon != null;
+    return fresh.copyWith(
+      lat: hasLiveCoords ? prev.lat : fresh.lat,
+      lon: hasLiveCoords ? prev.lon : fresh.lon,
+      fuelLevel: prev.fuelLevel ?? fresh.fuelLevel,
+      speedKmh: prev.speedKmh ?? fresh.speedKmh,
+    );
   }
 
   void _onRealtimeEvent(Map<String, dynamic> e) {
@@ -122,32 +125,28 @@ class MapCubit extends Cubit<MapState> {
   }
 
   void _applyCarLocationEvent(Map<String, dynamic> e) {
-    final data = _payloadMap(e);
+    final update = parseTripRoutePoint(e);
+    if (update == null) return;
 
-    final carId = (data['carId'] as String?) ?? '';
-    if (carId.isEmpty) return;
-    final latRaw = data['lat'];
-    final lonRaw = data['lng'] ?? data['lon'];
-
-    double? toDouble(dynamic v) {
-      if (v is num) return v.toDouble();
-      return double.tryParse(v?.toString() ?? '');
+    final carId = update.carId;
+    final prev = state.cars[carId];
+    if (prev == null) {
+      if (update.lat == null || update.lon == null) return;
+      final created = CarPosition(
+        id: carId,
+        isAvailable: true,
+        lat: update.lat,
+        lon: update.lon,
+        speedKmh: update.speedKmh,
+        fuelLevel: update.fuelLevel,
+      );
+      final next = Map<String, CarPosition>.from(state.cars);
+      next[carId] = created;
+      emit(state.copyWith(cars: next));
+      return;
     }
 
-    final lat = toDouble(latRaw);
-    final lon = toDouble(lonRaw);
-    if (lat == null || lon == null) return;
-
-    final prev = state.cars[carId];
-    final updated = prev != null
-        ? prev.copyWith(lat: lat, lon: lon)
-        : CarPosition(
-            id: carId,
-            isAvailable: true,
-            lat: lat,
-            lon: lon,
-          );
-
+    final updated = applyTripRoutePointUpdate(prev, update);
     final next = Map<String, CarPosition>.from(state.cars);
     next[carId] = updated;
     emit(state.copyWith(cars: next));
@@ -169,8 +168,19 @@ class MapCubit extends Cubit<MapState> {
                 ? false
                 : prev.isAvailable;
 
+    double? fuelLevel;
+    final fuelRaw = data['fuelLevel'];
+    if (fuelRaw is num) {
+      fuelLevel = fuelRaw.toDouble();
+    } else if (fuelRaw != null) {
+      fuelLevel = double.tryParse(fuelRaw.toString());
+    }
+
     final next = Map<String, CarPosition>.from(state.cars);
-    next[carId] = prev.copyWith(isAvailable: nextAvail);
+    next[carId] = prev.copyWith(
+      isAvailable: nextAvail,
+      fuelLevel: fuelLevel ?? prev.fuelLevel,
+    );
     emit(state.copyWith(cars: next));
   }
 

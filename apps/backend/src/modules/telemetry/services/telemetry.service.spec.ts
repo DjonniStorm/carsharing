@@ -20,6 +20,10 @@ import { TripRepository } from '../../trip/repositories/trip.repository';
 import type { ITripRealtimeOutbox } from '../../trip/realtime/trip-realtime.outbox.interface';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { InMemoryJobQueue } from 'src/shared/background/in-memory-job-queue';
+import { getTelemetryConfig } from '../common/telemetry.config';
+import { TripPricingService } from '../../trip/pricing/trip-pricing.service';
+import { TripPricingJobName } from '../../trip/pricing/trip-pricing-jobs';
+import { TripRealtimePublisher } from '../../trip/services/trip-realtime.publisher';
 import {
   createTestPrismaService,
   loadBackendDevEnv,
@@ -29,6 +33,15 @@ import { TelemetryNotFoundException } from '../common/errors';
 import { TelemetryCreate } from '../entities/dto/telemetry.create';
 import { TelemetryRepository } from '../repositories/telemetry.repository';
 import { TelemetryService } from './telemetry.service';
+
+const carTripSyncStub = {
+  assertCarAvailableForNewTrip: async () => undefined,
+  onTripStarted: async () => undefined,
+  onTripFinished: async () => undefined,
+  onTripCancelled: async () => undefined,
+  recalcAvailabilityForTrip: async () => undefined,
+  syncLiveFuel: async () => undefined,
+};
 
 describe('TelemetryService (integration)', () => {
   let prisma: PrismaService;
@@ -117,12 +130,24 @@ describe('TelemetryService (integration)', () => {
     const tripOutbox: ITripRealtimeOutbox = {
       publish: async () => undefined,
     };
+    const tripRepository = new TripRepository(prisma);
+    const publisher = new TripRealtimePublisher(tripOutbox);
+    const pricingQueue = new InMemoryJobQueue();
+    const pricingService = new TripPricingService(
+      tripRepository,
+      geozoneRepository,
+      new TelemetryRepository(prisma),
+      pricingQueue,
+      publisher,
+    );
 
     service = new TelemetryService(
       new TelemetryRepository(prisma),
       new InMemoryJobQueue(),
       tripOutbox,
-      new TripRepository(prisma),
+      tripRepository,
+      pricingService,
+      carTripSyncStub,
     );
   });
 
@@ -149,6 +174,60 @@ describe('TelemetryService (integration)', () => {
       expect(created.tripId).toBe(tripId);
       expect(created.lat).toBe(55.75);
     });
+
+    it('ставит pricing job после persist, но не при ingest throttle', async () => {
+      const pricingQueue = new InMemoryJobQueue();
+      const tripRepository = new TripRepository(prisma);
+      const tripOutbox: ITripRealtimeOutbox = {
+        publish: async () => undefined,
+      };
+      const publisher = new TripRealtimePublisher(tripOutbox);
+      const pricingService = new TripPricingService(
+        tripRepository,
+        new GeozoneRepository(prisma),
+        new TelemetryRepository(prisma),
+        pricingQueue,
+        publisher,
+      );
+      const localService = new TelemetryService(
+        new TelemetryRepository(prisma),
+        new InMemoryJobQueue(),
+        tripOutbox,
+        tripRepository,
+        pricingService,
+        carTripSyncStub,
+      );
+
+      await localService.create(
+        buildTelemetryCreate(tripId, '2026-04-21T12:03:00.000Z'),
+      );
+      const first = pricingQueue.dequeue();
+      expect(first?.name).toBe(TripPricingJobName.Recalc);
+      expect(first?.payload).toMatchObject({
+        tripId,
+        trigger: 'telemetry',
+      });
+
+      await localService.create(
+        buildTelemetryCreate(tripId, '2026-04-21T12:03:01.000Z'),
+      );
+      expect(pricingQueue.dequeue()).toBeNull();
+
+      const prevPeriod = process.env.TELEMETRY_PERIOD_SEC;
+      process.env.TELEMETRY_PERIOD_SEC = '1';
+      await new Promise((resolve) =>
+        setTimeout(resolve, getTelemetryConfig().periodSec * 1000 + 50),
+      );
+      await localService.create(
+        buildTelemetryCreate(tripId, '2026-04-21T12:03:02.000Z'),
+      );
+      if (prevPeriod === undefined) {
+        delete process.env.TELEMETRY_PERIOD_SEC;
+      } else {
+        process.env.TELEMETRY_PERIOD_SEC = prevPeriod;
+      }
+      expect(pricingQueue.dequeue()?.name).toBe(TripPricingJobName.Recalc);
+    });
   });
 
   describe('findById', () => {
@@ -169,12 +248,20 @@ describe('TelemetryService (integration)', () => {
 
   describe('findManyByTripId', () => {
     it('возвращает список записей по tripId', async () => {
+      const prevPeriod = process.env.TELEMETRY_PERIOD_SEC;
+      process.env.TELEMETRY_PERIOD_SEC = '1';
       await service.create(
         buildTelemetryCreate(tripId, '2026-04-21T12:00:00.000Z'),
       );
+      await new Promise((resolve) => setTimeout(resolve, 1_100));
       await service.create(
         buildTelemetryCreate(tripId, '2026-04-21T12:01:00.000Z'),
       );
+      if (prevPeriod === undefined) {
+        delete process.env.TELEMETRY_PERIOD_SEC;
+      } else {
+        process.env.TELEMETRY_PERIOD_SEC = prevPeriod;
+      }
 
       const list = await service.findManyByTripId(tripId);
       expect(list).toHaveLength(2);

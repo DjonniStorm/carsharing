@@ -86,6 +86,16 @@ export interface IGeozoneRepository {
   findIdsContainingPoint(
     params: GeozoneContainingPointParams,
   ): Promise<string[]>;
+
+  /**
+   * Точка внутри геометрии конкретной версии (`geo_zone_version.id`).
+   * Для проверок по контракту поездки; не использует `current_version_id`.
+   */
+  isPointInsideVersion(
+    versionId: string,
+    lon: number,
+    lat: number,
+  ): Promise<boolean>;
 }
 
 export const IGeozoneRepositoryToken = Symbol('IGeozoneRepository');

@@ -58,7 +58,9 @@ export class TripHistoryMapper {
     const dto = new TripHistoryShortInfoRead();
     dto.trip = TripHistoryMapper.tripReadFromJson(row.trip_json);
     dto.car = TripHistoryMapper.carReadFromJson(row.car_json);
-    dto.violations = TripHistoryMapper.violationsReadFromJson(row.violations_json);
+    dto.violations = TripHistoryMapper.violationsReadFromJson(
+      row.violations_json,
+    );
     return dto;
   }
 

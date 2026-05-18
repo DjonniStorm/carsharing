@@ -70,17 +70,25 @@ export type SendVerificationCodeInput = {
   email?: string;
 };
 
-export type ViolationNoticeInput = ViolationNoticeFields & {
-  /** Получатель — только email (уведомления о нарушениях пока через почту). */
-  to: string;
-};
-
 /** Поля письма о нарушении (без адреса). */
 export type ViolationNoticeFields = {
   title: string;
   description: string;
   tripId?: string;
   occurredAt?: Date;
+  /**
+   * Сводка по нарушениям в этом письме: всего штук и сколько по каждому типу (`kind` как в БД).
+   * Если задано — в шаблоне показывается отдельный блок с агрегацией.
+   */
+  violationSummary?: {
+    total: number;
+    byKind: Array<{ kind: number; count: number }>;
+  };
+};
+
+export type ViolationNoticeInput = ViolationNoticeFields & {
+  /** Получатель — только email (уведомления о нарушениях пока через почту). */
+  to: string;
 };
 
 /**

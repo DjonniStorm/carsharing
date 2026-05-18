@@ -38,30 +38,32 @@ export const ROUTES = {
 
     /** Путь редактирования: подставьте id геозоны. */
 
-    geozonesEdit: (geozoneId: string) =>
-      `/dashboard/geozones/${encodeURIComponent(geozoneId)}/edit` as const,
+    geozonesEdit: (geozoneId: string): string =>
+      `/dashboard/geozones/${encodeURIComponent(geozoneId)}/edit`,
 
     violations: "/dashboard/violations",
 
     violationsNew: "/dashboard/violations/new",
 
-    violationsEdit: (violationId: string) =>
-      `/dashboard/violations/${encodeURIComponent(violationId)}/edit` as const,
+    violationsEdit: (violationId: string): string =>
+      `/dashboard/violations/${encodeURIComponent(violationId)}/edit`,
 
     tariffs: "/dashboard/tariffs",
 
     tariffsNew: "/dashboard/tariffs/new",
 
-    tariffsEdit: (tariffId: string) =>
-      `/dashboard/tariffs/${encodeURIComponent(tariffId)}/edit` as const,
+    tariffsEdit: (tariffId: string): string =>
+      `/dashboard/tariffs/${encodeURIComponent(tariffId)}/edit`,
 
-    tripView: (tripId: string) =>
-      `/dashboard/trips/${encodeURIComponent(tripId)}` as const,
+    trips: "/dashboard/trips",
+
+    tripView: (tripId: string): string =>
+      `/dashboard/trips/${encodeURIComponent(tripId)}`,
 
     /** Список пользователей (статический сегмент до `/dashboard/users/:userId`). */
     users: "/dashboard/users",
 
-    userView: (userId: string) =>
-      `/dashboard/users/${encodeURIComponent(userId)}` as const,
+    userView: (userId: string): string =>
+      `/dashboard/users/${encodeURIComponent(userId)}`,
   },
 } as const;

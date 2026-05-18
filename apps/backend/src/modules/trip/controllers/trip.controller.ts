@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Body,
+  ConflictException,
   Controller,
   ForbiddenException,
   Get,
@@ -26,6 +27,7 @@ import type { AuthenticatedUser } from 'src/modules/auth/types/authenticated-use
 import { UserRole } from 'src/modules/user/entities/user.role';
 import {
   DatabaseTripErrorException,
+  TripCarAlreadyInUseException,
   TripNotFoundException,
   TripRelationNotFoundException,
 } from '../common/errors';
@@ -216,6 +218,9 @@ export class TripController implements ITripController {
     try {
       return await this.tripService.create(trip);
     } catch (error) {
+      if (error instanceof TripCarAlreadyInUseException) {
+        throw new ConflictException(error.message);
+      }
       if (error instanceof TripRelationNotFoundException) {
         throw new BadRequestException(error.message);
       }

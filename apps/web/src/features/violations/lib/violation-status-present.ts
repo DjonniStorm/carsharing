@@ -1,6 +1,10 @@
+import type { TFunction } from "i18next";
+
 import { ViolationStatus } from "@/entities/violation";
 import type { LangKey } from "@/shared/i18n/keys";
 import { LANG_KEYS } from "@/shared/i18n/keys";
+
+export type ViolationSelectOption = { value: string; label: string };
 
 /** Все значения для фильтров и отображения. */
 export const VIOLATION_STATUSES_ORDERED: ViolationStatus[] = [
@@ -47,4 +51,20 @@ export function isViolationTerminal(status: ViolationStatus): boolean {
   return (
     status === ViolationStatus.RESOLVED || status === ViolationStatus.IGNORED
   );
+}
+
+export function buildViolationStatusSelectData(
+  t: TFunction,
+  statuses: ViolationStatus[] = VIOLATION_STATUSES_ORDERED,
+): ViolationSelectOption[] {
+  return statuses.map((s) => ({
+    value: String(s),
+    label: t(violationStatusLangKey(s)),
+  }));
+}
+
+export function buildViolationCreatableStatusSelectData(
+  t: TFunction,
+): ViolationSelectOption[] {
+  return buildViolationStatusSelectData(t, VIOLATION_CREATABLE_STATUSES_ORDERED);
 }

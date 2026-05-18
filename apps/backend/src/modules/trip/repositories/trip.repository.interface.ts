@@ -56,6 +56,12 @@ export interface ITripRepository {
     options?: TripFindByIdOptions,
   ): Promise<TripEntity | null>;
 
+  /** Активная поездка на машине (PENDING/STARTED/ACTIVE/PAUSED), для H11. */
+  findActiveByCarId(
+    carId: string,
+    excludeTripId?: string,
+  ): Promise<TripEntity | null>;
+
   create(input: TripRepositoryCreateInput): Promise<TripEntity>;
 
   update(id: string, patch: TripRepositoryUpdatePatch): Promise<TripEntity>;

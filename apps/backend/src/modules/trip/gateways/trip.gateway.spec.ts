@@ -120,6 +120,60 @@ describe('TripGateway', () => {
       expect(emit).toHaveBeenCalledWith(TripWsEvent.TripStateChanged, event);
     });
 
+    it('публикует trip.metrics.updated в room trip:{tripId}', () => {
+      const tripId = uuidv4();
+      const event = createTripWsEvent(
+        TripWsEvent.TripMetricsUpdated,
+        {
+          tripId,
+          carId: 'car-1',
+          distanceMeters: 1500,
+          chargedMinutes: 12,
+          chargedKm: 1.5,
+          priceTime: 24,
+          priceDistance: 15,
+          pricePause: 0,
+          priceTotal: 39,
+          ts: '2026-04-21T10:00:30.000Z',
+        },
+        {
+          eventId: 'event-metrics',
+          ts: '2026-04-21T10:00:30.000Z',
+        },
+      );
+
+      gateway.publish(event);
+
+      expect(to).toHaveBeenCalledWith(`trip:${tripId}`);
+      expect(emit).toHaveBeenCalledWith(TripWsEvent.TripMetricsUpdated, event);
+    });
+
+    it('публикует trip.finished в room trip:{tripId}', () => {
+      const tripId = uuidv4();
+      const event = createTripWsEvent(
+        TripWsEvent.TripFinished,
+        {
+          tripId,
+          carId: 'car-1',
+          finishedAt: '2026-04-21T11:00:00.000Z',
+          distanceMeters: 5000,
+          chargedMinutes: 45,
+          chargedKm: 5,
+          priceTotal: 120,
+          ts: '2026-04-21T11:00:00.000Z',
+        },
+        {
+          eventId: 'event-finished',
+          ts: '2026-04-21T11:00:00.000Z',
+        },
+      );
+
+      gateway.publish(event);
+
+      expect(to).toHaveBeenCalledWith(`trip:${tripId}`);
+      expect(emit).toHaveBeenCalledWith(TripWsEvent.TripFinished, event);
+    });
+
     it('публикует событие машины в room car:{carId}', () => {
       const event = createTripWsEvent(
         TripWsEvent.CarLocationUpdated,

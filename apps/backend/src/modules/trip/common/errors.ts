@@ -28,3 +28,15 @@ export class TripPublishFailedException extends Error {
     this.name = 'TripPublishFailedException';
   }
 }
+
+/** H11: на машине уже есть незавершённая поездка. */
+export class TripCarAlreadyInUseException extends Error {
+  constructor(
+    message: string,
+    public readonly carId: string,
+    public readonly activeTripId: string,
+  ) {
+    super(message);
+    this.name = 'TripCarAlreadyInUseException';
+  }
+}

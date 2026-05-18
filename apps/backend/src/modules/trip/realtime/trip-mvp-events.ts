@@ -15,6 +15,7 @@ import { TripWsEvent } from '../entities/realtime/trip-event';
  */
 export const DRIVER_MVP_EVENTS = [
   TripWsEvent.TripStateChanged,
+  TripWsEvent.TripMetricsUpdated,
   TripWsEvent.TripRoutePoint,
   TripWsEvent.TripFinished,
 ] as const;

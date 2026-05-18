@@ -13,6 +13,9 @@ class RentalZone {
     required this.geoZoneVersionId,
     required this.geometry,
     required this.kind,
+    this.pricePerMinute,
+    this.pricePerKm,
+    this.pausePricePerMinute,
   });
 
   final String id;
@@ -21,6 +24,12 @@ class RentalZone {
   final String geoZoneVersionId;
   final MultiPolygonCoords geometry;
   final GeozoneKind kind;
+  final double? pricePerMinute;
+  final double? pricePerKm;
+  final double? pausePricePerMinute;
+
+  bool get hasTariff =>
+      pricePerMinute != null || pricePerKm != null || pausePricePerMinute != null;
 
   bool containsLonLat(double lon, double lat) =>
       pointInMultiPolygonCoords(lon, lat, geometry);
@@ -28,13 +37,16 @@ class RentalZone {
   List<PolygonMapObject> buildPolygons({
     required bool selected,
     required void Function(RentalZone zone)? onTripZoneTap,
+    bool isTripContract = false,
   }) {
     final stroke = parseZoneColor(colorHex);
     final muted = kind == GeozoneKind.parking;
     final strokeUse =
         muted ? Color.lerp(stroke, Colors.grey, 0.35)! : stroke;
-    final fill = strokeUse.withAlpha(muted ? 45 : 70);
-    final sw = selected ? 3.0 : 1.5;
+    final fill = strokeUse.withAlpha(
+      isTripContract ? 90 : (muted ? 45 : 70),
+    );
+    final sw = isTripContract ? 3.5 : (selected ? 3.0 : 1.5);
     final baseZ = kind == GeozoneKind.rental ? 2.0 : 0.5;
     final z = selected ? baseZ + 1.0 : baseZ;
     final tripTap = onTripZoneTap;

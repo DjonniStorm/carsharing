@@ -53,13 +53,20 @@ export type TripUpdateBody = Partial<{
   finishLng: number | null;
   distance: number;
   duration: number;
-  distanceMeters: number | null;
-  chargedMinutes: number | null;
-  chargedKm: number | null;
-  priceTime: number | null;
-  priceDistance: number | null;
-  pricePause: number | null;
-  priceTotal: number | null;
+  /** @deprecated Сервер пересчитывает сам; в PATCH игнорируется. */
+  distanceMeters?: number | null;
+  /** @deprecated Сервер пересчитывает сам; в PATCH игнорируется. */
+  chargedMinutes?: number | null;
+  /** @deprecated Сервер пересчитывает сам; в PATCH игнорируется. */
+  chargedKm?: number | null;
+  /** @deprecated Сервер пересчитывает сам; в PATCH игнорируется. */
+  priceTime?: number | null;
+  /** @deprecated Сервер пересчитывает сам; в PATCH игнорируется. */
+  priceDistance?: number | null;
+  /** @deprecated Сервер пересчитывает сам; в PATCH игнорируется. */
+  pricePause?: number | null;
+  /** @deprecated Сервер пересчитывает сам; в PATCH игнорируется. */
+  priceTotal?: number | null;
   tariffVersionId: string;
   carPlateSnapshot: string | null;
   carDisplayNameSnapshot: string | null;

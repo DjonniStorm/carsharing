@@ -1,4 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import type { AuthenticatedUser } from 'src/modules/auth/types/authenticated-user';
+import { UserRole } from 'src/modules/user/entities/user.role';
 import { Test, type TestingModule } from '@nestjs/testing';
 import {
   afterAll,
@@ -27,6 +29,8 @@ import {
 } from 'src/shared/testing';
 import { InMemoryJobQueue } from 'src/shared/background/in-memory-job-queue';
 import { IJobQueueToken } from 'src/shared/background/job-queue.interface';
+import { ICarTripSyncServiceToken } from '../../car/services/car-trip-sync.service.interface';
+import { ITripPricingServiceToken } from '../pricing/trip-pricing.service.interface';
 import { ITripRepositoryToken } from '../repositories/trip.repository.interface';
 import { TripRepository } from '../repositories/trip.repository';
 import {
@@ -40,8 +44,28 @@ import { TripController } from './trip.controller';
 
 @Injectable()
 class FailingTripRealtimePublisher implements ITripRealtimePublisher {
-  async publishTripStarted(trip: TripRead): Promise<void> {
+  private fail(trip: TripRead): never {
     throw new TripPublishFailedException(`publish failed for trip ${trip.id}`);
+  }
+
+  async publishTripStarted(trip: TripRead): Promise<void> {
+    this.fail(trip);
+  }
+
+  async publishTripStateChanged(trip: TripRead): Promise<void> {
+    this.fail(trip);
+  }
+
+  async publishTripMetricsUpdated(trip: TripRead): Promise<void> {
+    this.fail(trip);
+  }
+
+  async publishTripFinished(trip: TripRead): Promise<void> {
+    this.fail(trip);
+  }
+
+  async publishCarStateChanged(): Promise<void> {
+    return;
   }
 }
 
@@ -125,6 +149,24 @@ describe('TripController: ошибки публикации (интеграци�
           useClass: FailingTripRealtimePublisher,
         },
         { provide: IJobQueueToken, useValue: new InMemoryJobQueue() },
+        {
+          provide: ITripPricingServiceToken,
+          useValue: {
+            enqueueRecalc: () => undefined,
+            recalcAndPersist: async () => null,
+          },
+        },
+        {
+          provide: ICarTripSyncServiceToken,
+          useValue: {
+            assertCarAvailableForNewTrip: async () => undefined,
+            onTripStarted: async () => undefined,
+            onTripFinished: async () => undefined,
+            onTripCancelled: async () => undefined,
+            recalcAvailabilityForTrip: async () => undefined,
+            syncLiveFuel: async () => undefined,
+          },
+        },
       ],
     }).compile();
 
@@ -150,8 +192,11 @@ describe('TripController: ошибки публикации (интеграци�
     dto.userId = userId;
     dto.carId = carId;
     dto.geoZoneVersionId = geoZoneVersionId;
+    const driver: AuthenticatedUser = { id: userId, role: UserRole.DRIVER };
 
-    await expect(controller.create(dto)).rejects.toThrow(BadRequestException);
+    await expect(controller.create(driver, dto)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('пробрасывает сообщение об ошибке публикации через маппинг контроллера', async () => {
@@ -159,8 +204,9 @@ describe('TripController: ошибки публикации (интеграци�
     dto.userId = userId;
     dto.carId = carId;
     dto.geoZoneVersionId = geoZoneVersionId;
+    const driver: AuthenticatedUser = { id: userId, role: UserRole.DRIVER };
 
-    await expect(controller.create(dto)).rejects.toMatchObject({
+    await expect(controller.create(driver, dto)).rejects.toMatchObject({
       message: expect.any(String),
     });
   });

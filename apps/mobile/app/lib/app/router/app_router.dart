@@ -25,12 +25,13 @@ class AppRouter {
         final isAuthed = token != null && token.isNotEmpty;
 
         final loc = state.matchedLocation;
-        final isAuthRoute = loc == AppRoutes.login ||
+        final isGuestOnlyRoute = loc == AppRoutes.login ||
             loc == AppRoutes.register ||
             loc == AppRoutes.verifyEmail;
+        final isPublicRoute = isGuestOnlyRoute || loc == AppRoutes.support;
 
-        if (!isAuthed && !isAuthRoute) return AppRoutes.login;
-        if (isAuthed && isAuthRoute) return AppRoutes.map;
+        if (!isAuthed && !isPublicRoute) return AppRoutes.login;
+        if (isAuthed && isGuestOnlyRoute) return AppRoutes.map;
         return null;
       },
       routes: [

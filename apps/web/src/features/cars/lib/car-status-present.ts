@@ -43,7 +43,7 @@ export function carStatusBadgeColor(status: CarStatus): MantineColor {
     case CarStatus.MAINTENANCE:
       return "yellow";
     case CarStatus.UNAVAILABLE:
-      return "gray";
+      return "orange";
     case CarStatus.OUT_OF_SERVICE:
       return "red";
     case CarStatus.CREATED:
@@ -63,7 +63,7 @@ export function carStatusChartColor(status: CarStatus): MantineColor {
     case CarStatus.MAINTENANCE:
       return "yellow.6";
     case CarStatus.UNAVAILABLE:
-      return "gray.6";
+      return "orange.6";
     case CarStatus.OUT_OF_SERVICE:
       return "red.6";
     case CarStatus.CREATED:

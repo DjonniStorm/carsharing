@@ -104,7 +104,37 @@ class TripHistoryDetailScreen extends StatelessWidget {
                       'trip_history.finished_at'.tr(),
                       DateFormat.yMMMd().add_Hm().format(t.finishedAt!.toLocal()),
                     ),
-                  _kv(context, 'trip.distance_km'.tr(), t.distance.toStringAsFixed(2)),
+                  _kv(
+                    context,
+                    'trip.distance_km'.tr(),
+                    t.distanceMeters != null
+                        ? (t.distanceMeters! / 1000).toStringAsFixed(2)
+                        : t.distance.toStringAsFixed(2),
+                  ),
+                  if (t.chargedMinutes != null)
+                    _kv(
+                      context,
+                      'trip_history.charged_minutes'.tr(),
+                      t.chargedMinutes!.toStringAsFixed(0),
+                    ),
+                  if (t.priceTime != null && t.priceTime! > 0)
+                    _kv(
+                      context,
+                      'trip_history.price_time'.tr(),
+                      t.priceTime!.toStringAsFixed(0),
+                    ),
+                  if (t.priceDistance != null && t.priceDistance! > 0)
+                    _kv(
+                      context,
+                      'trip_history.price_distance'.tr(),
+                      t.priceDistance!.toStringAsFixed(0),
+                    ),
+                  if (t.pricePause != null && t.pricePause! > 0)
+                    _kv(
+                      context,
+                      'trip_history.price_pause'.tr(),
+                      t.pricePause!.toStringAsFixed(0),
+                    ),
                   if (t.priceTotal != null)
                     _kv(
                       context,

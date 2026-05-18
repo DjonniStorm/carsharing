@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
@@ -16,6 +16,9 @@ import { TelemetryModule } from './modules/telemetry/telemetry.module';
 import { ViolationModule } from './modules/violation/violation.module';
 import { BackgroundModule } from './shared/background/background.module';
 import { NotificationModule } from './shared/notification/notification.module';
+import { ManagerViolationNoticeModule } from './modules/manager-violation-notice/manager-violation-notice.module';
+import { HttpMetricsInterceptor } from './modules/metrics/http-metrics.interceptor';
+import { MetricsModule } from './modules/metrics/metrics.module';
 
 @Module({
   imports: [
@@ -27,6 +30,7 @@ import { NotificationModule } from './shared/notification/notification.module';
           : ['.env', '.env.local'],
     }),
     EventEmitterModule.forRoot(),
+    MetricsModule,
     AuthModule,
     PrismaModule,
     NotificationModule,
@@ -39,8 +43,10 @@ import { NotificationModule } from './shared/notification/notification.module';
     TripModule,
     TelemetryModule,
     ViolationModule,
+    ManagerViolationNoticeModule,
   ],
   providers: [
+    { provide: APP_INTERCEPTOR, useClass: HttpMetricsInterceptor },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],

@@ -5,6 +5,7 @@ import {
   Divider,
   Group,
   Loader,
+  MultiSelect,
   Paper,
   ScrollArea,
   Stack,
@@ -13,10 +14,10 @@ import {
 } from "@mantine/core";
 import { Link, useParams } from "@tanstack/react-router";
 import { useAction, useAtom } from "@reatom/react";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { UserRole } from "@/entities/user";
+import { ViolationStatus } from "@/entities/violation";
 import {
   loadUserViewPage,
   resetUserView,
@@ -27,23 +28,12 @@ import {
   userViewViolationsErrorAtom,
   userViewViolationsStatusAtom,
 } from "@/features/users/model/user-view";
+import { userRoleLangKey } from "@/features/users/lib/user-present";
+import { filterViolationsList } from "@/features/violations/lib/violations-list-filters";
+import { buildViolationStatusSelectData } from "@/features/violations/lib/violation-status-present";
 import { ViolationSummaryCard } from "@/features/violations/ui/violation-summary-card";
 import { ROUTES } from "@/shared/config/routes-paths";
-import { LANG_KEYS, type LangKey } from "@/shared/i18n/keys";
-
-function roleLangKey(role: UserRole): LangKey {
-  const r = Number(role);
-  switch (r) {
-    case UserRole.MANAGER:
-      return LANG_KEYS.auth.roleManager;
-    case UserRole.DRIVER:
-      return LANG_KEYS.auth.roleDriver;
-    case UserRole.SYSTEM_ADMIN:
-      return LANG_KEYS.auth.roleSystemAdmin;
-    default:
-      return LANG_KEYS.auth.roleDriver;
-  }
-}
+import { LANG_KEYS } from "@/shared/i18n/keys";
 
 function Row({
   label,
@@ -79,17 +69,39 @@ const UserViewPage = () => {
 
   const loadPage = useAction(loadUserViewPage);
   const reset = useAction(resetUserView);
+  const [typeFilter, setTypeFilter] = useState<ViolationStatus[]>([]);
 
   useEffect(() => {
     reset();
+    setTypeFilter([]);
     void loadPage(userId);
     return () => {
       reset();
     };
   }, [userId, loadPage, reset]);
 
+  const typeSelectData = useMemo(
+    () => buildViolationStatusSelectData(t),
+    [t],
+  );
+
+  const filteredViolations = useMemo(() => {
+    return filterViolationsList(driverViolations, {
+      debouncedSearch: "",
+      typeFilter,
+    });
+  }, [driverViolations, typeFilter]);
+
   const loading = profileStatus === "loading" && !user;
   const violationsLoading = violationsStatus === "loading";
+  const violationsCountLabel =
+    typeFilter.length > 0
+      ? t(LANG_KEYS.pages.userViewViolationsCountFiltered)
+      : t(LANG_KEYS.pages.userViewViolationsCount);
+  const violationsCountValue =
+    typeFilter.length > 0
+      ? `${filteredViolations.length} / ${driverViolations.length}`
+      : driverViolations.length;
 
   return (
     <Container size="md" py="xl">
@@ -133,7 +145,7 @@ const UserViewPage = () => {
                 />
                 <Row
                   label={t(LANG_KEYS.pages.userViewRole)}
-                  value={t(roleLangKey(user.role))}
+                  value={t(userRoleLangKey(user.role))}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.userViewAccountStatus)}
@@ -167,20 +179,38 @@ const UserViewPage = () => {
                   </Alert>
                 ) : (
                   <>
+                    <MultiSelect
+                      label={t(LANG_KEYS.pages.violationsFilterTypesLabel)}
+                      placeholder={t(
+                        LANG_KEYS.pages.violationsFilterTypesPlaceholder,
+                      )}
+                      clearable
+                      data={typeSelectData}
+                      value={typeFilter.map(String)}
+                      onChange={(value) => {
+                        setTypeFilter(
+                          value.map((item) => Number(item) as ViolationStatus),
+                        );
+                      }}
+                    />
                     <Row
-                      label={t(LANG_KEYS.pages.userViewViolationsCount)}
-                      value={driverViolations.length}
+                      label={violationsCountLabel}
+                      value={violationsCountValue}
                     />
                     {driverViolations.length === 0 ? (
                       <Text size="sm" c="dimmed">
                         {t(LANG_KEYS.pages.userViewViolationsEmpty)}
                       </Text>
+                    ) : filteredViolations.length === 0 ? (
+                      <Text size="sm" c="dimmed">
+                        {t(LANG_KEYS.pages.violationsEmptyFiltered)}
+                      </Text>
                     ) : (
                       <ScrollArea h={480}>
-                        {driverViolations.map((v) => (
+                        {filteredViolations.map((violation) => (
                           <ViolationSummaryCard
-                            key={v.id}
-                            violation={v}
+                            key={violation.id}
+                            violation={violation}
                             showTripLink
                           />
                         ))}

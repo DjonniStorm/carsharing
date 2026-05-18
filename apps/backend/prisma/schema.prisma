@@ -179,6 +179,7 @@ model Trip {
   carSessionInfo CarSessionInfo?
   telemetries    Telemetry[]
   violations     Violation[]
+  notifications  Notification[]
 
   @@index([userId])
   @@index([carId])
@@ -220,10 +221,14 @@ model Notification {
   message    String                  @db.Text()
   status     String                  @db.VarChar(50)
   userId     String                  @map("user_id") @db.Uuid()
+  /// Поездка, к которой относится уведомление (напр. рассылка менеджера по нарушениям); для старых записей может быть null.
+  tripId     String?                 @map("trip_id") @db.Uuid()
   user       User                    @relation(fields: [userId], references: [id])
+  trip       Trip?                   @relation(fields: [tripId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   violations ViolationNotification[]
 
   @@index([userId])
+  @@index([tripId])
   @@map("notification")
 }
 

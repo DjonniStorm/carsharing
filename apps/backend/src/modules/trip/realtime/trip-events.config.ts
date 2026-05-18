@@ -77,7 +77,15 @@ export const TRIP_WS_EVENTS: readonly TripEventConfigItem[] = [
     audience: TripRealtimeAudienceGroup.DRIVER_AND_MANAGER,
     channelScope: TripEventChannelScope.DriverTrip,
     description: 'Новая точка трека активной поездки.',
-    payloadShape: ['tripId', 'carId', 'lat', 'lng', 'speed?', 'recordedAt'],
+    payloadShape: [
+      'tripId',
+      'carId',
+      'lat',
+      'lng',
+      'speed?',
+      'fuelLevel?',
+      'recordedAt',
+    ],
   },
   {
     event: TripWsEvent.TripFinished,

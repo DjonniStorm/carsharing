@@ -17,12 +17,15 @@ import { rootFrame } from "@/app/store";
 import { SessionBootstrap } from "@/features/auth/ui/session-bootstrap";
 
 import i18n from "@/shared/i18n/i18n";
+import { getStoredColorSchemeOrFallback } from "@/shared/lib/color-scheme";
+
+const initialColorScheme = getStoredColorSchemeOrFallback();
 
 const AppProviders = () => {
   return (
     <I18nextProvider i18n={i18n}>
       <reatomContext.Provider value={rootFrame}>
-        <MantineProvider defaultColorScheme="auto">
+        <MantineProvider defaultColorScheme={initialColorScheme}>
           <Notifications position="top-right" zIndex={4000} />
 
           <SessionBootstrap />

@@ -6,9 +6,7 @@ describe('substitutePlaceholders', () => {
   const vars = { to: '+7999', body: 'Привет' };
 
   it('заменяет плейсхолдеры в строке', () => {
-    expect(substitutePlaceholders('to={{to}} msg={{body}}', vars)).toBe(
-      'to=+7999 msg=Привет',
-    );
+    expect(substitutePlaceholders('to={{to}} msg={{body}}', vars)).toBe('to=+7999 msg=Привет');
   });
 
   it('обходит вложенные объекты и массивы', () => {

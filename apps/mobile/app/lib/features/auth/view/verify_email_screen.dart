@@ -1,10 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/router/app_routes.dart';
+import '../../../shared/validation/input_validators.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
@@ -44,10 +46,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       child: Scaffold(
         appBar: AppBar(title: Text('auth.verify_email'.tr())),
         body: SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Form(
               key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -55,15 +58,19 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   const Gap(12),
                   TextFormField(
                     controller: _codeCtrl,
-                    decoration: InputDecoration(labelText: 'auth.code'.tr()),
+                    decoration: InputDecoration(
+                      labelText: 'auth.code'.tr(),
+                      hintText: '000000',
+                      counterText: '',
+                    ),
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.done,
-                    validator: (v) {
-                      final s = v?.trim() ?? '';
-                      if (s.length != 6) return 'required';
-                      final ok = RegExp(r'^\d{6}$').hasMatch(s);
-                      return ok ? null : 'invalid';
-                    },
+                    maxLength: 6,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(6),
+                    ],
+                    validator: validateEmailCode,
                   ),
                   const Gap(16),
                   BlocBuilder<AuthCubit, AuthState>(
@@ -98,4 +105,3 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     );
   }
 }
-

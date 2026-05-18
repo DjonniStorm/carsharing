@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
 
 import '../../../app/router/app_routes.dart';
+import '../../../shared/validation/input_validators.dart';
+import '../../../shared/widgets/password_text_field.dart';
+import '../../profile/cubit/profile_cubit.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import '../domain/auth_result.dart';
@@ -23,6 +26,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _phoneCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
 
+  String? _emailServerError;
+  String? _phoneServerError;
+
   @override
   void dispose() {
     _nameCtrl.dispose();
@@ -32,27 +38,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  void _clearServerErrors() {
+    if (_emailServerError == null && _phoneServerError == null) return;
+    setState(() {
+      _emailServerError = null;
+      _phoneServerError = null;
+    });
+  }
+
+  void _applyServerError(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('телефон') || lower.contains('phone')) {
+      setState(() {
+        _phoneServerError = message;
+        _emailServerError = null;
+      });
+      return;
+    }
+    if (lower.contains('email')) {
+      setState(() {
+        _emailServerError = message;
+        _phoneServerError = null;
+      });
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listenWhen: (p, n) => n is AuthAuthorized || n is AuthError,
       listener: (context, state) {
         if (state is AuthAuthorized) {
+          // ignore: discarded_futures
+          context.read<ProfileCubit>().load();
           context.go(AppRoutes.map);
         }
         if (state is AuthError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
+          _applyServerError(state.message);
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: Text('auth.register'.tr())),
+        appBar: AppBar(
+          title: Text('auth.register'.tr()),
+          actions: [
+            IconButton(
+              tooltip: 'support.title'.tr(),
+              icon: const Icon(Icons.help_outline),
+              onPressed: () => context.push(AppRoutes.support),
+            ),
+          ],
+        ),
         body: SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Form(
               key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -60,36 +105,51 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _nameCtrl,
                     decoration: InputDecoration(labelText: 'auth.name'.tr()),
                     textInputAction: TextInputAction.next,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'required' : null,
+                    onChanged: (_) => _clearServerErrors(),
+                    validator: validateRegisterName,
                   ),
                   const Gap(12),
                   TextFormField(
                     controller: _emailCtrl,
-                    decoration: InputDecoration(labelText: 'auth.email'.tr()),
+                    decoration: InputDecoration(
+                      labelText: 'auth.email'.tr(),
+                      errorText: _emailServerError,
+                    ),
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'required' : null,
+                    autocorrect: false,
+                    onChanged: (_) => _clearServerErrors(),
+                    validator: (v) {
+                      if (_emailServerError != null) return _emailServerError;
+                      return validateRegisterEmail(v);
+                    },
                   ),
                   const Gap(12),
                   TextFormField(
                     controller: _phoneCtrl,
-                    decoration: InputDecoration(labelText: 'auth.phone'.tr()),
+                    decoration: InputDecoration(
+                      labelText: 'auth.phone'.tr(),
+                      helperText: 'auth.phone_hint'.tr(),
+                      helperMaxLines: 2,
+                      errorText: _phoneServerError,
+                    ),
                     keyboardType: TextInputType.phone,
                     textInputAction: TextInputAction.next,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'required' : null,
+                    autocorrect: false,
+                    onChanged: (_) => _clearServerErrors(),
+                    validator: (v) {
+                      if (_phoneServerError != null) return _phoneServerError;
+                      return validateRegisterPhone(v);
+                    },
                   ),
                   const Gap(12),
-                  TextFormField(
+                  PasswordTextField(
                     controller: _passwordCtrl,
-                    decoration:
-                        InputDecoration(labelText: 'auth.password'.tr()),
-                    obscureText: true,
+                    labelText: 'auth.password'.tr(),
+                    helperText: 'auth.password_rules'.tr(),
+                    helperMaxLines: 2,
                     textInputAction: TextInputAction.done,
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? 'required' : null,
+                    validator: validateRegisterPassword,
                   ),
                   const Gap(16),
                   BlocBuilder<AuthCubit, AuthState>(
@@ -99,6 +159,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         onPressed: loading
                             ? null
                             : () async {
+                                _clearServerErrors();
                                 if (!_formKey.currentState!.validate()) return;
                                 final cubit = context.read<AuthCubit>();
                                 final res = await cubit.register(
@@ -135,6 +196,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onPressed: () => context.go(AppRoutes.login),
                     child: Text('auth.have_account'.tr()),
                   ),
+                  TextButton(
+                    onPressed: () => context.push(AppRoutes.support),
+                    child: Text('auth.help'.tr()),
+                  ),
                 ],
               ),
             ),
@@ -144,4 +209,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-

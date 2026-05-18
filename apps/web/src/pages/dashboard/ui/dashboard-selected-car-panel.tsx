@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Box,
-  Button,
   Divider,
   Group,
   Loader,
@@ -10,25 +9,13 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { CarRead } from "@/entities/car";
-import type { ReadUser } from "@/entities/user";
-import { carsApi } from "@/features/cars/api";
-import { pickOngoingTrip } from "@/features/dashboard/lib/pick-ongoing-trip";
-import { tripStatusLangKey } from "@/features/trips/lib/trip-status-lang-key";
-import { tripsApi } from "@/features/trips/api";
-import { usersApi } from "@/features/auth/api";
-import {
-  CAR_STATUSES_ORDERED,
-  carStatusLangKey,
-} from "@/features/cars/lib/car-status-present";
-import { violationsApi } from "@/features/violations/api";
-import type { TripRead } from "@/entities/trip";
 import { LANG_KEYS } from "@/shared/i18n/keys";
-import { ROUTES } from "@/shared/config/routes-paths";
+
+import { useDashboardSelectedCarLoad } from "@/pages/dashboard/hooks/use-dashboard-selected-car-load";
+import { DashboardCarMetrics } from "@/pages/dashboard/ui/dashboard-car-metrics";
+import { DashboardCarTripBlock } from "@/pages/dashboard/ui/dashboard-car-trip-block";
 
 type Props = {
   carId: string | null;
@@ -36,13 +23,6 @@ type Props = {
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
   onClearSelection: () => void;
-};
-
-type PanelState = {
-  car: CarRead | null;
-  ongoingTrip: TripRead | null;
-  driver: ReadUser | null;
-  violationsCount: number | null;
 };
 
 const stripWidth = 40;
@@ -55,78 +35,8 @@ const DashboardSelectedCarPanel = ({
   onClearSelection,
 }: Props) => {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<PanelState>({
-    car: null,
-    ongoingTrip: null,
-    driver: null,
-    violationsCount: null,
-  });
-
-  useEffect(() => {
-    if (!carId) {
-      setData({
-        car: null,
-        ongoingTrip: null,
-        driver: null,
-        violationsCount: null,
-      });
-      setError(null);
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    void (async () => {
-      try {
-        const car = await carsApi.findById(carId);
-        const trips = await tripsApi.findAll({ carId });
-        const ongoingTrip = pickOngoingTrip(trips);
-
-        let driver: ReadUser | null = null;
-        let violationsCount: number | null = null;
-        if (ongoingTrip) {
-          try {
-            driver = await usersApi.findById(ongoingTrip.userId);
-          } catch {
-            driver = null;
-          }
-          try {
-            const viol = await violationsApi.findByTripId(ongoingTrip.id);
-            violationsCount = viol.length;
-          } catch {
-            violationsCount = null;
-          }
-        }
-
-        if (!cancelled) {
-          setData({ car, ongoingTrip, driver, violationsCount });
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : String(e));
-          setData({
-            car: null,
-            ongoingTrip: null,
-            driver: null,
-            violationsCount: null,
-          });
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [carId]);
+  const { data, loading, error, liveOngoingTrip } =
+    useDashboardSelectedCarLoad(carId);
 
   if (!carId) {
     return null;
@@ -233,135 +143,12 @@ const DashboardSelectedCarPanel = ({
                 </Text>
               ) : data.car ? (
                 <>
-                  <Stack gap={4}>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
-                      {t(LANG_KEYS.pages.dashboardCarPanelSectionCar)}
-                    </Text>
-                    <Text size="sm">
-                      {data.car.brand} {data.car.model}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {t(LANG_KEYS.pages.dashboardCarPanelPlate)}{" "}
-                      <Text span fw={600} c="var(--mantine-color-text)">
-                        {data.car.licensePlate}
-                      </Text>
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {t(LANG_KEYS.pages.dashboardCarPanelStatus)}{" "}
-                      <Text span fw={600} c="var(--mantine-color-text)">
-                        {CAR_STATUSES_ORDERED.includes(data.car.carStatus)
-                          ? t(carStatusLangKey(data.car.carStatus))
-                          : String(data.car.carStatus)}
-                      </Text>
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {t(LANG_KEYS.pages.dashboardCarPanelFuel)}{" "}
-                      <Text span fw={600} c="var(--mantine-color-text)">
-                        {data.car.fuelLevel}%
-                      </Text>
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {t(LANG_KEYS.pages.dashboardCarPanelMileage)}{" "}
-                      <Text span fw={600} c="var(--mantine-color-text)">
-                        {data.car.mileage}
-                      </Text>
-                    </Text>
-                  </Stack>
-
-                  <Divider />
-
-                  <Stack gap={4}>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
-                      {t(LANG_KEYS.pages.dashboardCarPanelSectionTrip)}
-                    </Text>
-                    {data.ongoingTrip ? (
-                      <>
-                        <Text size="xs" c="dimmed">
-                          {t(LANG_KEYS.pages.dashboardCarPanelTripStatus)}{" "}
-                          <Text span fw={600} c="var(--mantine-color-text)">
-                            {t(tripStatusLangKey(data.ongoingTrip.status))}
-                          </Text>
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                          {t(LANG_KEYS.pages.dashboardCarPanelTripStarted)}{" "}
-                          <Text span fw={600} c="var(--mantine-color-text)">
-                            {new Date(
-                              data.ongoingTrip.startedAt,
-                            ).toLocaleString()}
-                          </Text>
-                        </Text>
-                        {data.violationsCount !== null ? (
-                          <Text size="xs" c="dimmed">
-                            {t(LANG_KEYS.pages.dashboardCarPanelViolations)}{" "}
-                            <Text span fw={600} c="var(--mantine-color-text)">
-                              {data.violationsCount}
-                            </Text>
-                          </Text>
-                        ) : null}
-                      </>
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        {t(LANG_KEYS.pages.dashboardCarPanelNoTrip)}
-                      </Text>
-                    )}
-                  </Stack>
-
-                  <Divider />
-
-                  <Stack gap={4}>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
-                      {t(LANG_KEYS.pages.dashboardCarPanelSectionDriver)}
-                    </Text>
-                    {data.driver ? (
-                      <Text size="sm" fw={600}>
-                        {data.driver.name}
-                      </Text>
-                    ) : data.ongoingTrip ? (
-                      <Text size="xs" c="dimmed">
-                        {t(LANG_KEYS.pages.dashboardCarPanelDriverFallback)}
-                      </Text>
-                    ) : (
-                      <Text size="xs" c="dimmed">
-                        {t(LANG_KEYS.pages.dashboardCarPanelNoDriverTrip)}
-                      </Text>
-                    )}
-                  </Stack>
-
-                  <Stack gap="xs" mt="xs">
-                    <Button
-                      component={Link}
-                      to={ROUTES.dashboard.cars}
-                      size="xs"
-                      variant="light"
-                      fullWidth
-                    >
-                      {t(LANG_KEYS.pages.dashboardCarPanelGoCars)}
-                    </Button>
-                    {data.ongoingTrip ? (
-                      <>
-                        <Button
-                          component={Link}
-                          to={ROUTES.dashboard.tripView(data.ongoingTrip.id)}
-                          size="xs"
-                          variant="light"
-                          fullWidth
-                        >
-                          {t(LANG_KEYS.pages.dashboardCarPanelGoTrip)}
-                        </Button>
-                        <Button
-                          component={Link}
-                          to={ROUTES.dashboard.userView(
-                            data.ongoingTrip.userId,
-                          )}
-                          size="xs"
-                          variant="light"
-                          fullWidth
-                        >
-                          {t(LANG_KEYS.pages.dashboardCarPanelGoUser)}
-                        </Button>
-                      </>
-                    ) : null}
-                  </Stack>
+                  <DashboardCarMetrics car={data.car} />
+                  <DashboardCarTripBlock
+                    liveOngoingTrip={liveOngoingTrip}
+                    driver={data.driver}
+                    violationsCount={data.violationsCount}
+                  />
                 </>
               ) : null}
             </Stack>

@@ -1,27 +1,23 @@
 import type { IGeozoneRepository } from '../../../geozone/repositories/geozone.repository.interface';
-import { GeozoneType } from '../../../geozone/entities/geozone.type';
 import type { ViolationConfig } from '../../common/violation.config';
 import { ViolationStatus } from '../../entities/violation.status';
 import type { RentalMovementZoneCheckJob } from '../violation-jobs';
 
+export type TripGeoZoneVersionLookup = {
+  geoZoneVersionId: string;
+} | null;
+
 /**
  * Зависимости хендлера — всё инжектится снаружи (воркер подставляет throttle и сервисы).
- *
- * Пример вызова из воркера:
- * ```ts
- * await executeRentalMovementZoneCheck(payload, {
- *   config: getViolationConfig(),
- *   dedupeAllow: (scope) => this.dedupThrottle.allow(scope, config.dedupWindowMs),
- *   geozoneRepository: this.geozoneRepository,
- *   createViolation: (dto) => this.violationService.create(dto),
- * });
- * ```
  */
 export type RentalMovementZoneCheckHandlerDeps = {
   config: ViolationConfig;
   /** Дедуп по ключу вида `speeding:${tripId}` — см. `Throttle`. */
   dedupeAllow: (scope: string) => boolean;
-  geozoneRepository: Pick<IGeozoneRepository, 'findIdsContainingPoint'>;
+  geozoneRepository: Pick<IGeozoneRepository, 'isPointInsideVersion'>;
+  findTripGeoZoneVersion: (
+    tripId: string,
+  ) => Promise<TripGeoZoneVersionLookup>;
   createViolation: (input: {
     tripId: string;
     type: ViolationStatus;
@@ -30,7 +26,7 @@ export type RentalMovementZoneCheckHandlerDeps = {
 };
 
 /**
- * Обработка телеметрии в поездке: скорость, топливо, попадание точки в RENTAL-геозону.
+ * Обработка телеметрии в поездке: скорость, топливо, выезд за контур версии геозоны поездки.
  */
 export async function executeRentalMovementZoneCheck(
   input: RentalMovementZoneCheckJob,
@@ -64,19 +60,23 @@ export async function executeRentalMovementZoneCheck(
     return;
   }
 
-  const zoneIds = await deps.geozoneRepository.findIdsContainingPoint({
-    lon: input.lon,
-    lat: input.lat,
-    includeDeleted: false,
-    types: [GeozoneType.RENTAL],
-  });
-  if (zoneIds.length > 0) {
+  const trip = await deps.findTripGeoZoneVersion(input.tripId);
+  if (!trip?.geoZoneVersionId) {
+    return;
+  }
+
+  const inside = await deps.geozoneRepository.isPointInsideVersion(
+    trip.geoZoneVersionId,
+    input.lon,
+    input.lat,
+  );
+  if (inside) {
     return;
   }
 
   await deps.createViolation({
     tripId: input.tripId,
     type: ViolationStatus.OUT_OF_GEOZONE,
-    description: `Точка вне RENTAL-зоны: lat=${input.lat}, lon=${input.lon}, at=${input.recordedAt}`,
+    description: `Точка вне геозоны поездки (version=${trip.geoZoneVersionId}): lat=${input.lat}, lon=${input.lon}, at=${input.recordedAt}`,
   });
 }

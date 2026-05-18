@@ -23,3 +23,19 @@ tasks:
     command: pnpm prisma:migrate:status
   prisma-studio:
     command: pnpm prisma:studio
+  deploy-build:
+    command: pnpm deploy:build
+  deploy-up:
+    command: pnpm deploy:up
+  deploy-down:
+    command: pnpm deploy:down
+  deploy-restart:
+    command: pnpm deploy:restart
+  deploy-logs:
+    command: pnpm deploy:logs
+  monitoring-up:
+    command: pnpm monitoring:up
+  monitoring-down:
+    command: pnpm monitoring:down
+  monitoring-logs:
+    command: pnpm monitoring:logs

@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: carsharing-backend
+    metrics_path: /metrics
+    static_configs:
+      # backend живёт в той же docker-сети `carsharing`
+      - targets:
+          - backend:3000

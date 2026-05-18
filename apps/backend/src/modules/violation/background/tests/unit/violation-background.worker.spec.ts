@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type { IJobQueue } from 'src/shared/background/job-queue.interface';
 import type { IGeozoneRepository } from '../../../../geozone/repositories/geozone.repository.interface';
 import type { IViolationService } from '../../../services/violation.service.interface';
+import type { ICarTripSyncService } from '../../../../car/services/car-trip-sync.service.interface';
+import type { ITripRepository } from '../../../../trip/repositories/trip.repository.interface';
 import { ViolationBackgroundWorker } from '../../violation-background.worker';
 import { ViolationJobName } from '../../violation-jobs';
 
@@ -32,6 +34,8 @@ describe('ViolationBackgroundWorker (очередь → tick)', () => {
       queue,
       { findIdsContainingPoint: vi.fn() } as unknown as IGeozoneRepository,
       violationService as IViolationService,
+      { recalcAvailabilityForTrip: vi.fn() } as unknown as ICarTripSyncService,
+      { findById: vi.fn() } as unknown as ITripRepository,
     );
 
     await (worker as unknown as WorkerInternals).tick();
@@ -39,9 +43,10 @@ describe('ViolationBackgroundWorker (очередь → tick)', () => {
     expect(violationService.create).not.toHaveBeenCalled();
   });
 
-  it('для RentalMovementZoneCheck вызывает геозону (точка вне зоны → create)', async () => {
-    const findIdsContainingPoint = vi.fn().mockResolvedValue([]);
+  it('для RentalMovementZoneCheck вызывает isPointInsideVersion (точка вне → create)', async () => {
+    const isPointInsideVersion = vi.fn().mockResolvedValue(false);
     const create = vi.fn().mockResolvedValue(undefined);
+    const geoZoneVersionId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
     const queue: IJobQueue = {
       dequeue: vi.fn().mockReturnValue({
@@ -61,13 +66,17 @@ describe('ViolationBackgroundWorker (очередь → tick)', () => {
 
     const worker = new ViolationBackgroundWorker(
       queue,
-      { findIdsContainingPoint } as unknown as IGeozoneRepository,
+      { isPointInsideVersion } as unknown as IGeozoneRepository,
       { create } as unknown as IViolationService,
+      { recalcAvailabilityForTrip: vi.fn() } as unknown as ICarTripSyncService,
+      {
+        findById: vi.fn().mockResolvedValue({ geoZoneVersionId }),
+      } as unknown as ITripRepository,
     );
 
     await (worker as unknown as WorkerInternals).tick();
 
-    expect(findIdsContainingPoint).toHaveBeenCalled();
+    expect(isPointInsideVersion).toHaveBeenCalled();
     expect(create).toHaveBeenCalled();
   });
 });

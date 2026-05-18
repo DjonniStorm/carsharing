@@ -7,7 +7,14 @@
     "save": "Save",
     "cancel": "Cancel",
     "continue": "Continue",
-    "logout": "Logout"
+    "logout": "Logout",
+    "retry": "Retry"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "No connection to the server. Check your network.",
+    "timeout": "The server is not responding. Try again later.",
+    "offline_banner": "No internet. Some actions are unavailable."
   },
   "auth": {
     "login": "Login",
@@ -19,8 +26,28 @@
     "name": "Name",
     "password": "Password",
     "code": "Code (6 digits)",
+    "login_hint": "Email or phone in +… format (E.164)",
+    "phone_hint": "Example: +79001234567 (only + and digits)",
+    "password_rules": "At least 8 characters (max 255)",
+    "show_password": "Show password",
+    "hide_password": "Hide password",
     "have_account": "Already have an account? Login",
-    "no_account": "No account? Register"
+    "no_account": "No account? Register",
+    "help": "Help"
+  },
+  "validation": {
+    "required": "Fill in this field",
+    "login_min": "At least 3 characters",
+    "login_format": "Enter your email (e.g. user@mail.com) or phone in international format starting with + (e.g. +79001234567)",
+    "email_invalid": "Invalid email format",
+    "phone_invalid": "Phone must be in E.164: + and country code, digits only (e.g. +79001234567)",
+    "password_required": "Enter your password",
+    "name_register_min": "Name must be at least 3 characters",
+    "name_register_max": "Name is too long (max 255 characters)",
+    "password_register_min": "Password must be at least 8 characters",
+    "password_register_max": "Password is too long (max 255 characters)",
+    "code_length": "The code must be exactly 6 digits",
+    "code_digits": "Only digits, no spaces or other characters"
   },
   "map": {
     "title": "Map",
@@ -39,7 +66,11 @@
     "car_not_available": "This car is not available for rental.",
     "car_outside_zone": "The car is outside the selected rental zone.",
     "select_this_car": "Select",
-    "trip_history": "Trip history"
+    "trip_history": "Trip history",
+    "zone_tariff_title": "Zone tariff",
+    "tariff_per_minute": "{} ₽/min",
+    "tariff_per_km": "{} ₽/km",
+    "tariff_pause": "Pause: {} ₽/min"
   },
   "car": {
     "brand": "Brand",
@@ -50,7 +81,9 @@
     "status": "Status",
     "status_available": "Available",
     "status_unavailable": "Unavailable",
-    "km": "km"
+    "km": "km",
+    "current_speed": "{} km/h",
+    "odometer_km": "{} km"
   },
   "trip": {
     "status_label": "Status",
@@ -70,8 +103,13 @@
     },
     "error": {
       "active_exists": "You already have an active trip.",
-      "transition_failed": "Failed to update the trip. Please try again."
-    }
+      "transition_failed": "Failed to update the trip. Please try again.",
+      "network_retry": "No connection. Check your network and tap Retry."
+    },
+    "finish_summary": "Trip finished. {km} km, total {price} ₽",
+    "charged_minutes": "{} min",
+    "charged_km": "{} km billed",
+    "price_pause": "pause {} ₽"
   },
   "profile": {
     "title": "Profile",
@@ -91,8 +129,23 @@
   },
   "support": {
     "title": "Support",
-    "phone": "Support phone",
-    "faq": "FAQ"
+    "contacts": "Contacts",
+    "phone": "Phone",
+    "email": "Email",
+    "hours": "Mon–Sun 08:00–22:00 (MSK)",
+    "faq": "FAQ",
+    "faq_register_q": "How do I register?",
+    "faq_register_a": "Tap «No account?», fill in name, email, phone and password (at least 8 characters). Then confirm your email with the code from the message.",
+    "faq_verify_q": "I did not receive the verification code",
+    "faq_verify_a": "Check your spam folder. The code expires — request a new one on the verification screen. Make sure the email address is correct.",
+    "faq_zone_q": "How do I pick a zone and see the tariff?",
+    "faq_zone_a": "On the map enable «Rental zones», tap the zone you need — the bottom panel shows the name and rates (₽/min, ₽/km, pause). Then choose an available car inside the zone.",
+    "faq_start_q": "How do I start and finish a trip?",
+    "faq_start_a": "Select a zone → car → confirm start. After booking tap «Start driving». To finish use «Finish» on the active trip panel. History is in your profile.",
+    "faq_network_q": "I lost internet during a trip",
+    "faq_network_a": "A warning appears at the top. Wait for connectivity and tap «Retry» on the error message. The server recalculates the price after a successful finish.",
+    "faq_contact_q": "I need an operator",
+    "faq_contact_a": "Call or email us below. Include your account email and when the issue happened — we will respond faster."
   },
   "trip_history": {
     "title": "Trip history",
@@ -108,6 +161,10 @@
     "started_at": "Started",
     "finished_at": "Finished",
     "violations": "Violations",
+    "charged_minutes": "Billed minutes",
+    "price_time": "Time charge (₽)",
+    "price_distance": "Distance charge (₽)",
+    "price_pause": "Pause charge (₽)",
     "map_no_route": "Not enough telemetry to draw a route.",
     "map_legend": "A — start, B — finish",
     "status": {

@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../shared/api/dio_error_message.dart';
+import '../../../shared/network/retry.dart';
+import '../../../shared/realtime/parse_trip_ws.dart';
 import '../../../shared/realtime/trip_realtime_client.dart';
 import '../../../shared/realtime/trip_realtime_contract.dart';
 import '../../geozone/data/geozones_repository.dart';
@@ -10,6 +13,8 @@ import '../../geozone/domain/geozone_kind.dart';
 import '../../geozone/domain/rental_zone.dart';
 import '../../map/domain/car_position.dart';
 import '../data/trips_repository.dart';
+import '../domain/live_trip_metrics.dart';
+import '../domain/trip_pending_action.dart';
 import '../domain/trip_status.dart';
 import 'trip_state.dart';
 
@@ -23,6 +28,8 @@ class TripCubit extends Cubit<TripState> {
         _realtime = realtime,
         super(const TripState(zonesInView: []));
 
+  static const _metricsUiThrottleMs = 150;
+
   final TripsRepository _trips;
   final GeozonesRepository _geozones;
   final TripRealtimeClient _realtime;
@@ -30,6 +37,7 @@ class TripCubit extends Cubit<TripState> {
   StreamSubscription<Map<String, dynamic>>? _wsSub;
   String? _subscribedTripId;
   var _wsStarted = false;
+  final Map<String, int> _lastMetricsUiMsByTrip = {};
 
   Future<void> bootstrap() async {
     await _realtime.connect();
@@ -68,7 +76,7 @@ class TripCubit extends Cubit<TripState> {
       emit(
         state.copyWith(
           loadingZones: false,
-          errorMessage: e.message ?? 'Network error',
+          errorMessage: dioErrorMessage(e),
         ),
       );
     } catch (e) {
@@ -100,6 +108,10 @@ class TripCubit extends Cubit<TripState> {
     emit(state.copyWith(showParkingZones: value));
   }
 
+  void clearFinishSummary() {
+    emit(state.copyWith(finishSummary: null));
+  }
+
   RentalZone? _zoneById(String id) {
     for (final z in state.zonesInView) {
       if (z.id == id) return z;
@@ -107,21 +119,57 @@ class TripCubit extends Cubit<TripState> {
     return null;
   }
 
+  RentalZone? _styleHintForVersion(String versionId) {
+    for (final z in state.zonesInView) {
+      if (z.geoZoneVersionId == versionId) return z;
+    }
+    for (final z in state.zonesInView) {
+      if (z.kind == GeozoneKind.rental) return z;
+    }
+    return state.tripBoundZone;
+  }
+
+  Future<RentalZone?> _loadTripBoundZone(String versionId) async {
+    if (versionId.isEmpty) return null;
+    return _geozones.rentalZoneForTripVersion(
+      versionId,
+      styleFrom: _styleHintForVersion(versionId),
+    );
+  }
+
   Future<void> refreshActiveTrip() async {
     emit(state.copyWith(tripBusy: true, errorMessage: null));
     try {
       final prevId = state.activeTrip?.id;
       final trip = await _trips.findActiveForDriver();
-      emit(state.copyWith(activeTrip: trip, tripBusy: false));
+      emit(
+        state.copyWith(
+          activeTrip: trip,
+          tripBoundZone: null,
+          liveMetrics: null,
+          tripBusy: false,
+        ),
+      );
       _syncSubscription(prevId, trip?.id);
-      if (trip != null) {
+      if (trip != null && trip.isOngoing) {
         try {
           final fresh = await _trips.getById(trip.id);
-          emit(state.copyWith(activeTrip: fresh));
-        } catch (_) {}
+          final bound = await _loadTripBoundZone(fresh.geoZoneVersionId);
+          emit(state.copyWith(activeTrip: fresh, tripBoundZone: bound));
+        } catch (_) {
+          final bound = await _loadTripBoundZone(trip.geoZoneVersionId);
+          emit(state.copyWith(tripBoundZone: bound));
+        }
+      } else {
+        emit(state.copyWith(tripBoundZone: null));
       }
     } on DioException catch (e) {
-      emit(state.copyWith(tripBusy: false, errorMessage: e.message ?? 'Network error'));
+      emit(
+        state.copyWith(
+          tripBusy: false,
+          errorMessage: dioErrorMessage(e),
+        ),
+      );
     } catch (e) {
       emit(state.copyWith(tripBusy: false, errorMessage: e.toString()));
     }
@@ -139,11 +187,12 @@ class TripCubit extends Cubit<TripState> {
       emit(state.copyWith(errorMessage: 'trip.error.active_exists'));
       return;
     }
-    emit(state.copyWith(tripBusy: true, errorMessage: null));
+    emit(state.copyWith(tripBusy: true, errorMessage: null, pendingRetry: null));
     try {
       final plate = car.licensePlate?.trim();
       final display = car.displayName.trim();
-      final created = await _trips.create(
+      final created = await withNetworkRetry(
+        () => _trips.create(
         userId: userId,
         carId: car.id,
         geoZoneVersionId: zone.geoZoneVersionId,
@@ -152,28 +201,49 @@ class TripCubit extends Cubit<TripState> {
         startLng: _round6(car.lon),
         carPlateSnapshot: plate != null && plate.isNotEmpty ? plate : null,
         carDisplayNameSnapshot: display.isNotEmpty ? display : null,
+        ),
       );
       final prevId = state.activeTrip?.id;
+      _lastMetricsUiMsByTrip.remove(created.id);
+      final bound = await _loadTripBoundZone(created.geoZoneVersionId);
       emit(
         state.copyWith(
           activeTrip: created,
-          tripMetrics: const {},
+          tripBoundZone: bound ?? zone,
+          liveMetrics: null,
+          finishSummary: null,
+          selectedZoneId: null,
           tripBusy: false,
           errorMessage: null,
+          pendingRetry: null,
         ),
       );
       _syncSubscription(prevId, created.id);
     } on DioException catch (e) {
-      emit(state.copyWith(
-        tripBusy: false,
-        errorMessage: _readErrorMessage(e) ?? 'trip.error.transition_failed',
-      ));
+      _failTripTransition(
+        e,
+        pending: TripPendingStart(userId: userId, car: car, zone: zone),
+      );
     } catch (e) {
       emit(state.copyWith(tripBusy: false, errorMessage: e.toString()));
     }
   }
 
-  /// STARTED/PENDING → ACTIVE (начать движение).
+  Future<void> retryPendingAction() async {
+    final pending = state.pendingRetry;
+    if (pending == null) return;
+    switch (pending) {
+      case TripPendingStart(:final userId, :final car, :final zone):
+        await startTrip(userId: userId, car: car, zone: zone);
+      case TripPendingFinish(:final finishLat, :final finishLng):
+        await finishTrip(finishLat: finishLat, finishLng: finishLng);
+      case TripPendingCancel():
+        await cancelTrip();
+      case TripPendingPatch(:final body):
+        await _patchActive(body);
+    }
+  }
+
   Future<void> beginDriving() async {
     final trip = state.activeTrip;
     if (trip == null) return;
@@ -183,7 +253,6 @@ class TripCubit extends Cubit<TripState> {
     await _patchActive({'status': TripStatusCode.active});
   }
 
-  /// ACTIVE → PAUSED.
   Future<void> pauseTrip() async {
     final trip = state.activeTrip;
     if (trip == null || trip.status != TripStatusCode.active) return;
@@ -193,8 +262,7 @@ class TripCubit extends Cubit<TripState> {
     });
   }
 
-  /// PAUSED → ACTIVE. Накапливаем totalPausedSec на стороне клиента
-  /// (сервер ничего не считает сам — только хранит).
+  /// PAUSED → ACTIVE; `totalPausedSec` нужен бэкенду для pricing pause.
   Future<void> resumeTrip() async {
     final trip = state.activeTrip;
     if (trip == null || trip.status != TripStatusCode.paused) return;
@@ -212,7 +280,6 @@ class TripCubit extends Cubit<TripState> {
     });
   }
 
-  /// STARTED/PENDING/PAUSED → CANCELLED. Без посчитанной стоимости.
   Future<void> cancelTrip() async {
     final trip = state.activeTrip;
     if (trip == null) return;
@@ -220,24 +287,26 @@ class TripCubit extends Cubit<TripState> {
         trip.status == TripStatusCode.cancelled) {
       return;
     }
-    emit(state.copyWith(tripBusy: true, errorMessage: null));
+    emit(state.copyWith(tripBusy: true, errorMessage: null, pendingRetry: null));
     try {
-      await _trips.patch(trip.id, {'status': TripStatusCode.cancelled});
+      await withNetworkRetry(
+        () => _trips.patch(trip.id, {'status': TripStatusCode.cancelled}),
+      );
       final prevId = trip.id;
+      _lastMetricsUiMsByTrip.remove(prevId);
       emit(
         state.copyWith(
           activeTrip: null,
-          tripMetrics: const {},
+          tripBoundZone: null,
+          liveMetrics: null,
           tripBusy: false,
           errorMessage: null,
+          pendingRetry: null,
         ),
       );
       _syncSubscription(prevId, null);
     } on DioException catch (e) {
-      emit(state.copyWith(
-        tripBusy: false,
-        errorMessage: _readErrorMessage(e) ?? 'trip.error.transition_failed',
-      ));
+      _failTripTransition(e, pending: const TripPendingCancel());
     } catch (e) {
       emit(state.copyWith(tripBusy: false, errorMessage: e.toString()));
     }
@@ -249,81 +318,96 @@ class TripCubit extends Cubit<TripState> {
   }) async {
     final trip = state.activeTrip;
     if (trip == null || !trip.isOngoing) return;
-    emit(state.copyWith(tripBusy: true, errorMessage: null));
+    emit(state.copyWith(tripBusy: true, errorMessage: null, pendingRetry: null));
     try {
+      // Billing-поля не отправляем — пересчёт на сервере (sync при FINISHED).
       final body = <String, dynamic>{
         'status': TripStatusCode.finished,
         'finishedAt': DateTime.now().toUtc().toIso8601String(),
         if (finishLat != null) 'finishLat': _round6(finishLat),
         if (finishLng != null) 'finishLng': _round6(finishLng),
       };
-      await _trips.patch(trip.id, body);
+      final finished = await withNetworkRetry(() => _trips.patch(trip.id, body));
       final prevId = trip.id;
+      _lastMetricsUiMsByTrip.remove(prevId);
       emit(
         state.copyWith(
           activeTrip: null,
-          tripMetrics: const {},
+          tripBoundZone: null,
+          liveMetrics: null,
+          finishSummary: TripFinishSummary.fromTrip(finished),
           tripBusy: false,
           errorMessage: null,
+          pendingRetry: null,
         ),
       );
       _syncSubscription(prevId, null);
     } on DioException catch (e) {
-      emit(state.copyWith(
-        tripBusy: false,
-        errorMessage: _readErrorMessage(e) ?? 'trip.error.transition_failed',
-      ));
+      _failTripTransition(
+        e,
+        pending: TripPendingFinish(finishLat: finishLat, finishLng: finishLng),
+      );
     } catch (e) {
       emit(state.copyWith(tripBusy: false, errorMessage: e.toString()));
     }
   }
 
-  /// Универсальный апдейт активной поездки с обновлением стейта.
+  /// PATCH активной поездки: только status, geo, pause — не billing.
   Future<void> _patchActive(Map<String, dynamic> body) async {
     final trip = state.activeTrip;
     if (trip == null) return;
-    emit(state.copyWith(tripBusy: true, errorMessage: null));
+    emit(state.copyWith(tripBusy: true, errorMessage: null, pendingRetry: null));
     try {
-      final updated = await _trips.patch(trip.id, body);
-      emit(state.copyWith(
-        activeTrip: updated,
-        tripBusy: false,
-        errorMessage: null,
-      ));
+      final updated = await withNetworkRetry(() => _trips.patch(trip.id, body));
+      emit(
+        state.copyWith(
+          activeTrip: updated,
+          tripBusy: false,
+          errorMessage: null,
+          pendingRetry: null,
+        ),
+      );
     } on DioException catch (e) {
-      emit(state.copyWith(
-        tripBusy: false,
-        errorMessage: _readErrorMessage(e) ?? 'trip.error.transition_failed',
-      ));
+      _failTripTransition(e, pending: TripPendingPatch(body));
     } catch (e) {
       emit(state.copyWith(tripBusy: false, errorMessage: e.toString()));
     }
   }
 
-  /// Бэкенд DTO ограничивает координаты `maxDecimalPlaces: 6`.
-  /// Live-точки из WS могут содержать больше знаков → округляем перед PATCH/POST.
+  void _failTripTransition(
+    DioException e, {
+    TripPendingAction? pending,
+    String fallbackKey = 'trip.error.transition_failed',
+  }) {
+    final retryable = isRetryableDio(e);
+    emit(
+      state.copyWith(
+        tripBusy: false,
+        errorMessage: retryable
+            ? 'trip.error.network_retry'
+            : dioErrorMessage(e, fallbackKey: fallbackKey),
+        pendingRetry: retryable ? pending : null,
+      ),
+    );
+  }
+
   static double? _round6(double? v) {
     if (v == null) return null;
     return double.parse(v.toStringAsFixed(6));
-  }
-
-  static String? _readErrorMessage(DioException e) {
-    final data = e.response?.data;
-    if (data is Map) {
-      final m = data['message'];
-      if (m is String && m.isNotEmpty) return m;
-      if (m is List && m.isNotEmpty) return m.first.toString();
-    }
-    return e.message;
   }
 
   void clearError() {
     emit(state.copyWith(errorMessage: null));
   }
 
+  void clearPendingRetry() {
+    emit(state.copyWith(pendingRetry: null));
+  }
+
   void _syncSubscription(String? previousId, String? nextId) {
     if (previousId != null && previousId != nextId) {
       _realtime.unsubscribeTrip(previousId);
+      _lastMetricsUiMsByTrip.remove(previousId);
     }
     if (nextId != null && nextId != _subscribedTripId) {
       _realtime.subscribeTrip(nextId);
@@ -336,68 +420,119 @@ class TripCubit extends Cubit<TripState> {
 
   void _onRealtime(Map<String, dynamic> e) {
     final eventName = e['event']?.toString() ?? '';
-    final tripId = _readTripId(e);
+    final tripId = readTripIdFromEnvelope(e) ?? '';
     final activeId = state.activeTrip?.id;
-    if (activeId != null && tripId != null && tripId != activeId) {
+    if (activeId != null && tripId.isNotEmpty && tripId != activeId) {
       return;
     }
 
     if (eventName == TripWsEvent.tripMetricsUpdated) {
-      final payload = _payloadMap(e);
-      if (payload.isEmpty) return;
-      emit(
-        state.copyWith(
-          tripMetrics: {...state.tripMetrics, ...payload},
-        ),
-      );
+      _handleMetricsUpdated(e, tripId.isNotEmpty ? tripId : activeId);
+      return;
     }
 
-    if (eventName == TripWsEvent.tripStateChanged ||
-        eventName == TripWsEvent.tripFinished) {
-      if (activeId != null) {
-        unawaited(_reloadTrip(activeId));
+    if (eventName == TripWsEvent.tripStateChanged) {
+      _handleStateChanged(e, activeId);
+      return;
+    }
+
+    if (eventName == TripWsEvent.tripFinished) {
+      _handleTripFinished(e, activeId);
+    }
+  }
+
+  void _handleMetricsUpdated(Map<String, dynamic> e, String? tripId) {
+    if (tripId == null || tripId.isEmpty) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final last = _lastMetricsUiMsByTrip[tripId] ?? 0;
+    if (now - last < _metricsUiThrottleMs) return;
+    _lastMetricsUiMsByTrip[tripId] = now;
+
+    final parsed = parseTripMetricsUpdated(e);
+    if (parsed == null) return;
+
+    final merged = (state.liveMetrics ?? const LiveTripMetrics()).mergePatch(parsed);
+    final trip = state.activeTrip;
+    emit(
+      state.copyWith(
+        liveMetrics: merged,
+        activeTrip: trip != null ? trip.applyLiveMetrics(merged) : trip,
+      ),
+    );
+  }
+
+  void _handleStateChanged(Map<String, dynamic> e, String? activeId) {
+    final changed = parseTripStateChanged(e);
+    if (changed != null && activeId != null && changed.tripId == activeId) {
+      final trip = state.activeTrip;
+      if (trip != null) {
+        emit(state.copyWith(activeTrip: trip.copyWith(status: changed.status)));
       }
     }
+    if (activeId != null) {
+      unawaited(_reloadTrip(activeId));
+    }
+  }
+
+  void _handleTripFinished(Map<String, dynamic> e, String? activeId) {
+    if (state.finishSummary != null) {
+      if (activeId != null) {
+        _clearActiveTrip(activeId);
+      }
+      return;
+    }
+
+    final finished = parseTripFinished(e);
+    if (finished != null && activeId != null && finished.tripId == activeId) {
+      emit(
+        state.copyWith(
+          finishSummary: TripFinishSummary(
+            tripId: finished.tripId,
+            finishedAt: finished.finishedAt,
+            distanceMeters: finished.distanceMeters,
+            chargedMinutes: finished.chargedMinutes,
+            chargedKm: finished.chargedKm,
+            priceTotal: finished.priceTotal,
+          ),
+        ),
+      );
+      _clearActiveTrip(activeId);
+      return;
+    }
+
+    if (activeId != null) {
+      unawaited(_reloadTrip(activeId));
+    }
+  }
+
+  void _clearActiveTrip(String id) {
+    _lastMetricsUiMsByTrip.remove(id);
+    emit(
+      state.copyWith(
+        activeTrip: null,
+        liveMetrics: null,
+      ),
+    );
+    _syncSubscription(id, null);
   }
 
   Future<void> _reloadTrip(String id) async {
     try {
       final t = await _trips.getById(id);
       if (!t.isOngoing) {
-        emit(state.copyWith(activeTrip: null, tripMetrics: const {}));
-        _syncSubscription(id, null);
+        if (state.finishSummary == null) {
+          emit(
+            state.copyWith(
+              finishSummary: TripFinishSummary.fromTrip(t),
+            ),
+          );
+        }
+        _clearActiveTrip(id);
       } else {
         emit(state.copyWith(activeTrip: t));
       }
     } catch (_) {}
-  }
-
-  static Map<String, dynamic> _payloadMap(Map<String, dynamic> e) {
-    final p = e['payload'];
-    if (p is Map) {
-      return p.map((k, v) => MapEntry(k.toString(), v));
-    }
-    final out = <String, dynamic>{};
-    for (final en in e.entries) {
-      if (en.key == 'event') continue;
-      out[en.key] = en.value;
-    }
-    return out;
-  }
-
-  static String? _readTripId(Map<String, dynamic> e) {
-    final direct = e['tripId'] ?? e['trip_id'];
-    if (direct != null) return direct.toString();
-    final p = e['payload'];
-    if (p is Map) {
-      final id = p['tripId'] ?? p['id'];
-      if (id != null) return id.toString();
-    }
-    final trip = e['trip'];
-    if (trip is Map && trip['id'] != null) {
-      return trip['id'].toString();
-    }
-    return null;
   }
 
   @override

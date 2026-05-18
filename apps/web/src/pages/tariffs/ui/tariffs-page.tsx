@@ -11,25 +11,29 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { useDebouncedValue } from "@mantine/hooks";
 import { useAction, useAtom } from "@reatom/react";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
+  filterTariffsList,
+  type TariffPresetFilter,
+} from "@/features/tariffs/lib/tariffs-list-filters";
+import {
   loadTariffsCatalog,
   tariffsCatalogAtom,
   tariffsCatalogErrorAtom,
   tariffsCatalogStatusAtom,
 } from "@/features/tariffs/model/tariffs-state";
+import { ROUTES } from "@/shared/config/routes-paths";
+import { useClientPagination } from "@/shared/hooks/use-client-pagination";
+import { useDebouncedSearch } from "@/shared/hooks/use-debounced-search";
 import type { LangKey } from "@/shared/i18n/keys";
 import { LANG_KEYS } from "@/shared/i18n/keys";
-import { ROUTES } from "@/shared/config/routes-paths";
+import { ListPagination, PageLoader } from "@/shared/ui";
 
 import { TariffGridCard } from "@/pages/tariffs/ui/tariff-grid-card";
-
-type PresetFilter = "" | "default" | "nonDefault";
 
 const TariffsPage = () => {
   const { t } = useTranslation();
@@ -38,9 +42,9 @@ const TariffsPage = () => {
   const [error] = useAtom(tariffsCatalogErrorAtom);
   const loadTariffs = useAction(loadTariffsCatalog);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch] = useDebouncedValue(searchQuery, 220);
-  const [presetFilter, setPresetFilter] = useState<PresetFilter>("");
+  const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearch } =
+    useDebouncedSearch();
+  const [presetFilter, setPresetFilter] = useState<TariffPresetFilter>("");
   const [hideDeleted, setHideDeleted] = useState(true);
 
   useEffect(() => {
@@ -62,26 +66,27 @@ const TariffsPage = () => {
   }, [t]);
 
   const filtered = useMemo(() => {
-    const list = rows ?? [];
-    const q = debouncedSearch.trim().toLowerCase();
-
-    return list.filter((row) => {
-      if (hideDeleted && row.isDeleted) {
-        return false;
-      }
-      if (presetFilter === "default" && !row.isDefault) {
-        return false;
-      }
-      if (presetFilter === "nonDefault" && row.isDefault) {
-        return false;
-      }
-      if (!q) {
-        return true;
-      }
-      const hay = `${row.name}\n${row.id}`.toLowerCase();
-      return hay.includes(q);
+    return filterTariffsList(rows ?? [], {
+      debouncedSearch,
+      presetFilter,
+      hideDeleted,
     });
   }, [debouncedSearch, hideDeleted, presetFilter, rows]);
+
+  const {
+    page,
+    setPage,
+    resetPage,
+    pageItems: pageTariffs,
+    totalPages,
+    totalItems,
+    rangeStart,
+    rangeEnd,
+  } = useClientPagination(filtered, { pageSize: 12 });
+
+  useEffect(() => {
+    resetPage();
+  }, [debouncedSearch, presetFilter, hideDeleted, resetPage]);
 
   const statPaper = (labelKey: LangKey, value: number) => (
     <Stack gap={4}>
@@ -132,9 +137,7 @@ const TariffsPage = () => {
       </Group>
 
       {status === "loading" ? (
-        <Text c="dimmed" mt="md">
-          {t(LANG_KEYS.pages.tariffsLoading)}
-        </Text>
+        <PageLoader messageKey={LANG_KEYS.common.loading} />
       ) : error ? (
         <Alert color="red" mt="md" title={t(LANG_KEYS.pages.tariffsTitle)}>
           {error}
@@ -168,7 +171,7 @@ const TariffsPage = () => {
                 data={presetFilterData}
                 value={presetFilter}
                 onChange={(v) => {
-                  setPresetFilter((v ?? "") as PresetFilter);
+                  setPresetFilter((v ?? "") as TariffPresetFilter);
                 }}
               />
               <Switch
@@ -178,14 +181,24 @@ const TariffsPage = () => {
               />
             </Group>
 
-            {filtered.length === 0 ? (
+            {pageTariffs.length === 0 ? (
               <Text c="dimmed">{t(LANG_KEYS.pages.tariffsEmptyFiltered)}</Text>
             ) : (
-              <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
-                {filtered.map((row) => (
-                  <TariffGridCard key={row.id} tariff={row} t={t} />
-                ))}
-              </SimpleGrid>
+              <>
+                <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+                  {pageTariffs.map((row) => (
+                    <TariffGridCard key={row.id} tariff={row} t={t} />
+                  ))}
+                </SimpleGrid>
+                <ListPagination
+                  page={page}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  rangeStart={rangeStart}
+                  rangeEnd={rangeEnd}
+                  onChange={setPage}
+                />
+              </>
             )}
           </Stack>
         </Stack>

@@ -5,13 +5,44 @@ services:
     container_name: carsharing-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: carsharing
-      POSTGRES_PASSWORD: carsharing
-      POSTGRES_DB: carsharing
+      POSTGRES_USER: ${POSTGRES_USER:-carsharing}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-carsharing}
+      POSTGRES_DB: ${POSTGRES_DB:-carsharing}
     ports:
       - '5432:5432'
     volumes:
       - carsharing_pg_data:/var/lib/postgresql/data
+    networks: [carsharing]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER:-carsharing}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 512m
+
+  backend:
+    build:
+      # корень репозитория, чтобы видеть pnpm-workspace.yaml и packages/*
+      context: ../..
+      dockerfile: apps/backend/Dockerfile
+    container_name: carsharing-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # Перекрываем DATABASE_URL: внутри docker-сети postgres доступен как `postgres`
+      DATABASE_URL: postgresql://${POSTGRES_USER:-carsharing}:${POSTGRES_PASSWORD:-carsharing}@postgres:5432/${POSTGRES_DB:-carsharing}?schema=public
+    ports:
+      - '3000:3000'
+    networks: [carsharing]
+    mem_limit: 1g
 
 volumes:
   carsharing_pg_data:
+
+networks:
+  carsharing:
+    name: carsharing

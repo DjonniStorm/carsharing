@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/.moon/cache
+**/.moon/docker
+**/.git
+**/.vscode
+**/.idea
+**/coverage
+**/.env
+**/.env.*
+!**/.env.example
+agents

@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
 
 import '../../../app/router/app_routes.dart';
+import '../../../shared/validation/input_validators.dart';
+import '../../../shared/widgets/password_text_field.dart';
+import '../../profile/cubit/profile_cubit.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
@@ -33,6 +36,8 @@ class _LoginScreenState extends State<LoginScreen> {
       listenWhen: (p, n) => n is AuthAuthorized || n is AuthError,
       listener: (context, state) {
         if (state is AuthAuthorized) {
+          // ignore: discarded_futures
+          context.read<ProfileCubit>().load();
           context.go(AppRoutes.map);
         }
         if (state is AuthError) {
@@ -42,12 +47,22 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: Text('auth.login'.tr())),
+        appBar: AppBar(
+          title: Text('auth.login'.tr()),
+          actions: [
+            IconButton(
+              tooltip: 'support.title'.tr(),
+              icon: const Icon(Icons.help_outline),
+              onPressed: () => context.push(AppRoutes.support),
+            ),
+          ],
+        ),
         body: SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Form(
               key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -55,20 +70,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _loginCtrl,
                     decoration: InputDecoration(
                       labelText: 'auth.email_or_phone'.tr(),
+                      helperText: 'auth.login_hint'.tr(),
+                      helperMaxLines: 2,
                     ),
                     textInputAction: TextInputAction.next,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'required' : null,
+                    validator: validateLogin,
                   ),
                   const Gap(12),
-                  TextFormField(
+                  PasswordTextField(
                     controller: _passwordCtrl,
-                    decoration:
-                        InputDecoration(labelText: 'auth.password'.tr()),
-                    obscureText: true,
+                    labelText: 'auth.password'.tr(),
                     textInputAction: TextInputAction.done,
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? 'required' : null,
+                    validator: validatePasswordLogin,
                   ),
                   const Gap(16),
                   BlocBuilder<AuthCubit, AuthState>(
@@ -99,6 +112,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () => context.go(AppRoutes.register),
                     child: Text('auth.no_account'.tr()),
                   ),
+                  TextButton(
+                    onPressed: () => context.push(AppRoutes.support),
+                    child: Text('auth.help'.tr()),
+                  ),
                 ],
               ),
             ),
@@ -108,4 +125,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-
