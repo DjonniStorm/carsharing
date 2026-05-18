@@ -1,6 +1,5 @@
 import { wrap } from "@reatom/core";
 import {
-  Anchor,
   Button,
   PasswordInput,
   Radio,
@@ -128,13 +127,22 @@ export const RegisterFormView = () => {
         </Button>
         <Text size="sm">
           {t(LANG_KEYS.auth.hasAccount)}{" "}
-          <Anchor
-            component={Link}
+          <Link
             to={ROUTES.login}
-            search={redirect ? { redirect } : {}}
+            search={{
+              redirect: redirect !== undefined ? redirect : undefined,
+              reason: undefined,
+            }}
           >
-            {t(LANG_KEYS.shell.login)}
-          </Anchor>
+            <Text
+              component="span"
+              inherit
+              td="underline"
+              c="var(--mantine-color-anchor)"
+            >
+              {t(LANG_KEYS.shell.login)}
+            </Text>
+          </Link>
         </Text>
       </Stack>
     </form>

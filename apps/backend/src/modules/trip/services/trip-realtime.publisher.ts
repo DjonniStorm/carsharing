@@ -6,10 +6,12 @@ import type { TripStatus } from '../entities/trip.status';
 import { TripWsEvent } from '../entities/realtime/trip-event';
 import { createTripWsEvent } from '../realtime/trip-events.emitter';
 import type {
+  CarStateChangedPayload,
   TripFinishedPayload,
   TripMetricsUpdatedPayload,
   TripStateChangedPayload,
 } from '../realtime/trip-events.payloads';
+import type { CarStateChangedPublishInput } from './trip-realtime.publisher.interface';
 import {
   ITripRealtimeOutboxToken,
   type ITripRealtimeOutbox,
@@ -93,6 +95,27 @@ export class TripRealtimePublisher implements ITripRealtimePublisher {
     await this.outbox.publish(event);
     this.logger.debug(
       `published event=${event.event} tripId=${trip.id} eventId=${event.eventId}`,
+    );
+  }
+
+  async publishCarStateChanged(
+    input: CarStateChangedPublishInput,
+  ): Promise<void> {
+    const ts = new Date().toISOString();
+    const payload: CarStateChangedPayload = {
+      carId: input.carId,
+      status: input.carStatus,
+      isAvailable: input.isAvailable,
+      fuelLevel: input.fuelLevel,
+      ts,
+    };
+    const event = createTripWsEvent(TripWsEvent.CarStateChanged, payload, {
+      eventId: uuidv4(),
+      ts,
+    });
+    await this.outbox.publish(event);
+    this.logger.debug(
+      `published event=${event.event} carId=${input.carId} eventId=${event.eventId}`,
     );
   }
 }

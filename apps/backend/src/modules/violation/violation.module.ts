@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 
 import { GeozoneModule } from '../geozone/geozone.module';
 import { TripModule } from '../trip/trip.module';
@@ -18,7 +18,7 @@ import { ViolationBackgroundWorker } from './background/violation-background.wor
  * (carId для envelope) и `ITripRealtimeOutboxToken` (через экспорт `TripRealtimeModule`).
  */
 @Module({
-  imports: [GeozoneModule, TripModule],
+  imports: [GeozoneModule, forwardRef(() => TripModule)],
   controllers: [ViolationController],
   providers: [
     {

@@ -7,6 +7,7 @@ import 'package:gap/gap.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../shared/validation/input_validators.dart';
 import '../../../shared/widgets/password_text_field.dart';
+import '../../profile/cubit/profile_cubit.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import '../domain/auth_result.dart';
@@ -72,6 +73,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       listenWhen: (p, n) => n is AuthAuthorized || n is AuthError,
       listener: (context, state) {
         if (state is AuthAuthorized) {
+          // ignore: discarded_futures
+          context.read<ProfileCubit>().load();
           context.go(AppRoutes.map);
         }
         if (state is AuthError) {
@@ -79,7 +82,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: Text('auth.register'.tr())),
+        appBar: AppBar(
+          title: Text('auth.register'.tr()),
+          actions: [
+            IconButton(
+              tooltip: 'support.title'.tr(),
+              icon: const Icon(Icons.help_outline),
+              onPressed: () => context.push(AppRoutes.support),
+            ),
+          ],
+        ),
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -183,6 +195,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   TextButton(
                     onPressed: () => context.go(AppRoutes.login),
                     child: Text('auth.have_account'.tr()),
+                  ),
+                  TextButton(
+                    onPressed: () => context.push(AppRoutes.support),
+                    child: Text('auth.help'.tr()),
                   ),
                 ],
               ),

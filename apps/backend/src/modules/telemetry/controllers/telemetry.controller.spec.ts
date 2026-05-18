@@ -136,12 +136,21 @@ describe('TelemetryController', () => {
       enqueueRecalc: () => undefined,
       recalcAndPersist: async () => null,
     };
+    const carTripSyncStub = {
+      assertCarAvailableForNewTrip: async () => undefined,
+      onTripStarted: async () => undefined,
+      onTripFinished: async () => undefined,
+      onTripCancelled: async () => undefined,
+      recalcAvailabilityForTrip: async () => undefined,
+      syncLiveFuel: async () => undefined,
+    };
     const service = new TelemetryService(
       new TelemetryRepository(prisma),
       new InMemoryJobQueue(),
       tripOutbox,
       tripRepository,
       pricingStub,
+      carTripSyncStub,
     );
     const tripServiceStub = {
       ensureTripAccessForUser: (): Promise<void> => Promise.resolve(),

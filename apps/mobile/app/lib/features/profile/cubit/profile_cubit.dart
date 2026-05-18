@@ -40,6 +40,10 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
   }
 
+  void reset() {
+    emit(const ProfileInitial());
+  }
+
   ProfileUser? _currentUser() {
     final s = state;
     if (s is ProfileLoaded) return s.user;

@@ -10,17 +10,14 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { useDebouncedValue } from "@mantine/hooks";
 import { useAction, useAtom } from "@reatom/react";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { GeozoneType } from "@/entities/geozone";
-import {
-  GEOZONE_TYPES_ORDERED,
-  geozoneTypeLangKey,
-} from "@/features/geozones/lib/geozone-type-present";
+import { buildGeozoneTypeSelectData } from "@/features/geozones/lib/geozone-form-present";
+import { filterGeozonesList } from "@/features/geozones/lib/geozones-list-filters";
 import {
   geozonesCatalogAtom,
   geozonesCatalogErrorAtom,
@@ -30,6 +27,9 @@ import {
 import type { LangKey } from "@/shared/i18n/keys";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 import { ROUTES } from "@/shared/config/routes-paths";
+import { useClientPagination } from "@/shared/hooks/use-client-pagination";
+import { useDebouncedSearch } from "@/shared/hooks/use-debounced-search";
+import { ListPagination, PageLoader } from "@/shared/ui";
 
 import { GeozoneGridCard } from "@/pages/geozones/ui/geozone-grid-card";
 
@@ -40,37 +40,40 @@ const GeozonesPage = () => {
   const [error] = useAtom(geozonesCatalogErrorAtom);
   const load = useAction(loadGeozonesCatalog);
 
-  const [nameQuery, setNameQuery] = useState("");
-  const [debouncedName] = useDebouncedValue(nameQuery, 220);
+  const {
+    query: nameQuery,
+    setQuery: setNameQuery,
+    debouncedQuery: debouncedName,
+  } = useDebouncedSearch();
   const [typeFilter, setTypeFilter] = useState<GeozoneType[]>([]);
 
   useEffect(() => {
     void load(false);
   }, [load]);
 
-  const typeSelectData = useMemo(() => {
-    return GEOZONE_TYPES_ORDERED.map((gt) => ({
-      value: gt,
-      label: t(geozoneTypeLangKey(gt)),
-    }));
-  }, [t]);
+  const typeSelectData = buildGeozoneTypeSelectData(t);
 
   const filtered = useMemo(() => {
-    const list = (rows ?? []).filter((z) => z.deletedAt == null);
-    const q = debouncedName.trim().toLowerCase();
-    const typesSet =
-      typeFilter.length > 0 ? new Set(typeFilter as GeozoneType[]) : null;
-
-    return list.filter((z) => {
-      if (typesSet !== null && !typesSet.has(z.type)) {
-        return false;
-      }
-      if (!q) {
-        return true;
-      }
-      return z.name.toLowerCase().includes(q);
+    return filterGeozonesList(rows ?? [], {
+      debouncedName,
+      typeFilter,
     });
   }, [rows, debouncedName, typeFilter]);
+
+  const {
+    page,
+    setPage,
+    resetPage,
+    pageItems: pageZones,
+    totalPages,
+    totalItems,
+    rangeStart,
+    rangeEnd,
+  } = useClientPagination(filtered, { pageSize: 12 });
+
+  useEffect(() => {
+    resetPage();
+  }, [debouncedName, typeFilter, resetPage]);
 
   const statPaper = (labelKey: LangKey, value: number) => (
     <Stack gap={4}>
@@ -84,18 +87,18 @@ const GeozonesPage = () => {
   );
 
   const totalActive = useMemo(() => {
-    return (rows ?? []).filter((z) => z.deletedAt == null).length;
+    return (rows ?? []).filter((zone) => zone.deletedAt == null).length;
   }, [rows]);
 
   const byType = useMemo(() => {
-    const list = (rows ?? []).filter((z) => z.deletedAt == null);
+    const list = (rows ?? []).filter((zone) => zone.deletedAt == null);
     const counts: Record<GeozoneType, number> = {
       [GeozoneType.RENTAL]: 0,
       [GeozoneType.PARKING]: 0,
       [GeozoneType.OTHER]: 0,
     };
-    for (const z of list) {
-      counts[z.type] = (counts[z.type] ?? 0) + 1;
+    for (const zone of list) {
+      counts[zone.type] = (counts[zone.type] ?? 0) + 1;
     }
     return counts;
   }, [rows]);
@@ -115,9 +118,7 @@ const GeozonesPage = () => {
       </Group>
 
       {status === "loading" ? (
-        <Text c="dimmed" mt="md">
-          {t(LANG_KEYS.pages.geozonesLoading)}
-        </Text>
+        <PageLoader messageKey={LANG_KEYS.common.loading} />
       ) : error ? (
         <Alert color="red" mt="md" title={t(LANG_KEYS.pages.geozonesTitle)}>
           {error}
@@ -147,8 +148,8 @@ const GeozonesPage = () => {
                 style={{ flex: "1 1 220px", minWidth: 200 }}
                 placeholder={t(LANG_KEYS.pages.geozonesSearchPlaceholder)}
                 value={nameQuery}
-                onChange={(e) => {
-                  setNameQuery(e.currentTarget.value);
+                onChange={(event) => {
+                  setNameQuery(event.currentTarget.value);
                 }}
               />
               <MultiSelect
@@ -158,20 +159,30 @@ const GeozonesPage = () => {
                 clearable
                 data={typeSelectData}
                 value={typeFilter}
-                onChange={(v) => {
-                  setTypeFilter(v as GeozoneType[]);
+                onChange={(value) => {
+                  setTypeFilter(value as GeozoneType[]);
                 }}
               />
             </Group>
 
-            {filtered.length === 0 ? (
+            {pageZones.length === 0 ? (
               <Text c="dimmed">{t(LANG_KEYS.pages.geozonesEmptyFiltered)}</Text>
             ) : (
-              <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
-                {filtered.map((z) => (
-                  <GeozoneGridCard key={z.id} zone={z} t={t} />
-                ))}
-              </SimpleGrid>
+              <>
+                <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+                  {pageZones.map((zone) => (
+                    <GeozoneGridCard key={zone.id} zone={zone} t={t} />
+                  ))}
+                </SimpleGrid>
+                <ListPagination
+                  page={page}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  rangeStart={rangeStart}
+                  rangeEnd={rangeEnd}
+                  onChange={setPage}
+                />
+              </>
             )}
           </Stack>
         </Stack>

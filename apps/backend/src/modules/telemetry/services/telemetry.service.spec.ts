@@ -34,6 +34,15 @@ import { TelemetryCreate } from '../entities/dto/telemetry.create';
 import { TelemetryRepository } from '../repositories/telemetry.repository';
 import { TelemetryService } from './telemetry.service';
 
+const carTripSyncStub = {
+  assertCarAvailableForNewTrip: async () => undefined,
+  onTripStarted: async () => undefined,
+  onTripFinished: async () => undefined,
+  onTripCancelled: async () => undefined,
+  recalcAvailabilityForTrip: async () => undefined,
+  syncLiveFuel: async () => undefined,
+};
+
 describe('TelemetryService (integration)', () => {
   let prisma: PrismaService;
   let service: TelemetryService;
@@ -138,6 +147,7 @@ describe('TelemetryService (integration)', () => {
       tripOutbox,
       tripRepository,
       pricingService,
+      carTripSyncStub,
     );
   });
 
@@ -185,6 +195,7 @@ describe('TelemetryService (integration)', () => {
         tripOutbox,
         tripRepository,
         pricingService,
+        carTripSyncStub,
       );
 
       await localService.create(

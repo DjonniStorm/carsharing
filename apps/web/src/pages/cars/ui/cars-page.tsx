@@ -13,7 +13,6 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { useDebouncedValue } from "@mantine/hooks";
 import { useAction, useAtom } from "@reatom/react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,6 +21,7 @@ import type { CarRead } from "@/entities/car";
 import { CarStatus } from "@/entities/car";
 import { AddCarToolbarButton } from "@/features/cars/add-car";
 import { EditCarModal } from "@/features/cars/edit-car";
+import { filterCarsList } from "@/features/cars/lib/cars-list-filters";
 import {
   CAR_STATUSES_ORDERED,
   carStatusChartColor,
@@ -34,7 +34,10 @@ import {
   loadCarsList,
 } from "@/features/cars/model/cars-list";
 import type { LangKey } from "@/shared/i18n/keys";
+import { useClientPagination } from "@/shared/hooks/use-client-pagination";
+import { useDebouncedSearch } from "@/shared/hooks/use-debounced-search";
 import { LANG_KEYS } from "@/shared/i18n/keys";
+import { ListPagination, PageLoader } from "@/shared/ui";
 
 import { CarGridCard } from "@/pages/cars/ui/car-grid-card";
 
@@ -56,8 +59,7 @@ const CarsPage = () => {
   const [error] = useAtom(carsListErrorAtom);
   const load = useAction(loadCarsList);
 
-  const [query, setQuery] = useState("");
-  const [debouncedQuery] = useDebouncedValue(query, 220);
+  const { query, setQuery, debouncedQuery } = useDebouncedSearch();
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [editingCar, setEditingCar] = useState<CarRead | null>(null);
 
@@ -91,25 +93,23 @@ const CarsPage = () => {
   }, [counts, t]);
 
   const filteredCars = useMemo(() => {
-    const statusNum =
-      statusFilter !== null ? (Number(statusFilter) as CarStatus) : null;
-
-    const q = debouncedQuery.trim().toLowerCase();
-
-    return fleet.filter((car) => {
-      if (statusNum !== null && car.carStatus !== statusNum) {
-        return false;
-      }
-      if (!q) {
-        return true;
-      }
-      return (
-        car.licensePlate.toLowerCase().includes(q) ||
-        car.brand.toLowerCase().includes(q) ||
-        car.model.toLowerCase().includes(q)
-      );
-    });
+    return filterCarsList(fleet, { debouncedQuery, statusFilter });
   }, [fleet, debouncedQuery, statusFilter]);
+
+  const {
+    page,
+    setPage,
+    resetPage,
+    pageItems: pageCars,
+    totalPages,
+    totalItems,
+    rangeStart,
+    rangeEnd,
+  } = useClientPagination(filteredCars, { pageSize: 12 });
+
+  useEffect(() => {
+    resetPage();
+  }, [debouncedQuery, statusFilter, resetPage]);
 
   const statusSelectData = useMemo(() => {
     return CAR_STATUSES_ORDERED.map((s) => ({
@@ -137,9 +137,7 @@ const CarsPage = () => {
       </Group>
 
       {loadStatus === "loading" ? (
-        <Text c="dimmed" mt="md">
-          {t(LANG_KEYS.pages.carsLoading)}
-        </Text>
+        <PageLoader messageKey={LANG_KEYS.common.loading} />
       ) : error ? (
         <Alert color="red" mt="md" title={t(LANG_KEYS.pages.carsTitle)}>
           {error}
@@ -246,25 +244,35 @@ const CarsPage = () => {
               />
             </Group>
 
-            {filteredCars.length === 0 ? (
+            {pageCars.length === 0 ? (
               <Text c="dimmed">
                 {fleet.length === 0
                   ? t(LANG_KEYS.pages.carsFleetEmpty)
                   : t(LANG_KEYS.pages.carsEmptyFiltered)}
               </Text>
             ) : (
-              <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
-                {filteredCars.map((car) => (
-                  <CarGridCard
-                    key={car.id}
-                    car={car}
-                    t={t}
-                    onEdit={(c) => {
-                      setEditingCar(c);
-                    }}
-                  />
-                ))}
-              </SimpleGrid>
+              <>
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                  {pageCars.map((car) => (
+                    <CarGridCard
+                      key={car.id}
+                      car={car}
+                      t={t}
+                      onEdit={(c) => {
+                        setEditingCar(c);
+                      }}
+                    />
+                  ))}
+                </SimpleGrid>
+                <ListPagination
+                  page={page}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  rangeStart={rangeStart}
+                  rangeEnd={rangeEnd}
+                  onChange={setPage}
+                />
+              </>
             )}
           </Stack>
         </Stack>

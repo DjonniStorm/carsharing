@@ -3,6 +3,21 @@ import '../domain/geozone_kind.dart';
 import '../domain/rental_zone.dart';
 import 'geozones_api.dart';
 
+double? _parsePrice(Object? raw) {
+  if (raw == null) return null;
+  if (raw is num) return raw.toDouble();
+  if (raw is String) return double.tryParse(raw.trim());
+  return null;
+}
+
+Map<String, double?> _tariffFromVersionMap(Map<String, dynamic> vm) {
+  return {
+    'pricePerMinute': _parsePrice(vm['pricePerMinute']),
+    'pricePerKm': _parsePrice(vm['pricePerKm']),
+    'pausePricePerMinute': _parsePrice(vm['pausePricePerMinute']),
+  };
+}
+
 class GeozonesRepository {
   GeozonesRepository(this._api);
 
@@ -34,6 +49,7 @@ class GeozonesRepository {
       if (vid == null || vid.isEmpty || geom == null) continue;
       final id = m['id']?.toString() ?? '';
       if (id.isEmpty) continue;
+      final tariff = _tariffFromVersionMap(vm);
       out.add(
         RentalZone(
           id: id,
@@ -42,6 +58,9 @@ class GeozonesRepository {
           geoZoneVersionId: vid,
           geometry: geom,
           kind: kind,
+          pricePerMinute: tariff['pricePerMinute'],
+          pricePerKm: tariff['pricePerKm'],
+          pausePricePerMinute: tariff['pausePricePerMinute'],
         ),
       );
     }
@@ -54,6 +73,36 @@ class GeozonesRepository {
     try {
       final raw = await _api.getVersionById(versionId);
       return parseMultiPolygonCoordinates(raw['geometry']);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Зона аренды по зафиксированной версии поездки (`geoZoneVersionId`).
+  Future<RentalZone?> rentalZoneForTripVersion(
+    String versionId, {
+    RentalZone? styleFrom,
+  }) async {
+    if (versionId.isEmpty) return null;
+    try {
+      final raw = await _api.getVersionById(versionId);
+      final geozoneId = raw['geozoneId']?.toString() ?? '';
+      final geom = parseMultiPolygonCoordinates(raw['geometry']);
+      if (geozoneId.isEmpty || geom == null) return null;
+      final vm = raw.map((k, v) => MapEntry(k.toString(), v));
+      final tariff = _tariffFromVersionMap(vm);
+      return RentalZone(
+        id: geozoneId,
+        name: styleFrom?.name ?? '',
+        colorHex: styleFrom?.colorHex ?? '#2563EB',
+        geoZoneVersionId: versionId,
+        geometry: geom,
+        kind: GeozoneKind.rental,
+        pricePerMinute: tariff['pricePerMinute'] ?? styleFrom?.pricePerMinute,
+        pricePerKm: tariff['pricePerKm'] ?? styleFrom?.pricePerKm,
+        pausePricePerMinute:
+            tariff['pausePricePerMinute'] ?? styleFrom?.pausePricePerMinute,
+      );
     } catch (_) {
       return null;
     }

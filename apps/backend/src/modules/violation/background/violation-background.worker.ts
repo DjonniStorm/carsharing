@@ -29,6 +29,15 @@ import { executeParkingZoneCheck } from './handlers/parking-zone-check.handler';
 
 import { executeRentalMovementZoneCheck } from './handlers/rental-movement-zone-check.handler';
 
+import {
+  ICarTripSyncServiceToken,
+  type ICarTripSyncService,
+} from '../../car/services/car-trip-sync.service.interface';
+import {
+  ITripRepositoryToken,
+  type ITripRepository,
+} from '../../trip/repositories/trip.repository.interface';
+
 @Injectable()
 export class ViolationBackgroundWorker implements OnModuleInit {
   private readonly logger = new Logger(ViolationBackgroundWorker.name);
@@ -84,6 +93,12 @@ export class ViolationBackgroundWorker implements OnModuleInit {
 
     @Inject(IViolationServiceToken)
     private readonly violationService: IViolationService,
+
+    @Inject(ICarTripSyncServiceToken)
+    private readonly carTripSync: ICarTripSyncService,
+
+    @Inject(ITripRepositoryToken)
+    private readonly tripRepository: ITripRepository,
   ) {}
 
   onModuleInit(): void {
@@ -137,6 +152,14 @@ export class ViolationBackgroundWorker implements OnModuleInit {
 
       geozoneRepository: this.geozoneRepository,
 
+      findTripGeoZoneVersion: async (tripId) => {
+        const trip = await this.tripRepository.findById(tripId);
+        if (!trip) {
+          return null;
+        }
+        return { geoZoneVersionId: trip.geoZoneVersionId };
+      },
+
       createViolation: (dto) => this.violationService.create(dto),
     });
   }
@@ -154,5 +177,14 @@ export class ViolationBackgroundWorker implements OnModuleInit {
 
       createViolation: (dto) => this.violationService.create(dto),
     });
+
+    try {
+      await this.carTripSync.recalcAvailabilityForTrip(input.tripId);
+    } catch (error) {
+      this.logger.warn(
+        `car availability recalc failed tripId=${input.tripId}`,
+        error,
+      );
+    }
   }
 }

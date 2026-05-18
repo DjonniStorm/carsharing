@@ -73,6 +73,27 @@ export class TripRepository implements ITripRepository {
     return TripMapper.fromDbToEntity(row);
   }
 
+  async findActiveByCarId(
+    carId: string,
+    excludeTripId?: string,
+  ): Promise<TripEntity | null> {
+    const ongoing: TripStatus[] = [
+      TripStatus.PENDING,
+      TripStatus.STARTED,
+      TripStatus.ACTIVE,
+      TripStatus.PAUSED,
+    ];
+    const row = await this.prisma.trip.findFirst({
+      where: {
+        carId,
+        status: { in: ongoing },
+        ...(excludeTripId ? { id: { not: excludeTripId } } : {}),
+      },
+      orderBy: { startedAt: 'desc' },
+    });
+    return row ? TripMapper.fromDbToEntity(row) : null;
+  }
+
   async create(input: TripRepositoryCreateInput): Promise<TripEntity> {
     const row = await this.prisma.trip.create({
       data: {

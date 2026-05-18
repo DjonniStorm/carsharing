@@ -5,7 +5,6 @@ import {
   Button,
   Container,
   Group,
-  Loader,
   ScrollArea,
   Select,
   Stack,
@@ -14,14 +13,16 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { useDebouncedValue } from "@mantine/hooks";
 import { useAction, useAtom } from "@reatom/react";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { ReadUser } from "@/entities/user";
 import { UserRole } from "@/entities/user";
+import {
+  filterUsersList,
+  type UsersStatusFilter,
+} from "@/features/users/lib/users-list-filters";
 import {
   loadUsersList,
   usersListAtom,
@@ -29,10 +30,11 @@ import {
   usersListStatusAtom,
 } from "@/features/users/model/users-list";
 import { ROUTES } from "@/shared/config/routes-paths";
+import { useClientPagination } from "@/shared/hooks/use-client-pagination";
+import { useDebouncedSearch } from "@/shared/hooks/use-debounced-search";
 import type { LangKey } from "@/shared/i18n/keys";
 import { LANG_KEYS } from "@/shared/i18n/keys";
-
-type StatusFilter = "all" | "active" | "inactive" | "deleted";
+import { ListPagination, PageLoader } from "@/shared/ui";
 
 function roleLangKey(role: UserRole): LangKey {
   const r = Number(role);
@@ -48,35 +50,6 @@ function roleLangKey(role: UserRole): LangKey {
   }
 }
 
-function matchesAccountStatus(user: ReadUser, filter: StatusFilter): boolean {
-  if (filter === "all") {
-    return true;
-  }
-  if (filter === "deleted") {
-    return user.isDeleted === true;
-  }
-  if (user.isDeleted === true) {
-    return false;
-  }
-  if (filter === "inactive") {
-    return user.isActive === false;
-  }
-  if (filter === "active") {
-    return user.isActive !== false;
-  }
-  return true;
-}
-
-function matchesSearch(user: ReadUser, q: string): boolean {
-  if (!q) {
-    return true;
-  }
-  const n = user.name.toLowerCase();
-  const e = user.email.toLowerCase();
-  const p = user.phone.toLowerCase();
-  return n.includes(q) || e.includes(q) || p.includes(q);
-}
-
 const UsersListPage = () => {
   const { t } = useTranslation();
   const [rows] = useAtom(usersListAtom);
@@ -84,33 +57,36 @@ const UsersListPage = () => {
   const [error] = useAtom(usersListErrorAtom);
   const load = useAction(loadUsersList);
 
-  const [query, setQuery] = useState("");
-  const [debouncedQuery] = useDebouncedValue(query, 220);
+  const { query, setQuery, debouncedQuery } = useDebouncedSearch();
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<UsersStatusFilter>("all");
 
   useEffect(() => {
     void load();
   }, [load]);
 
   const filtered = useMemo(() => {
-    const list = rows ?? [];
-    const q = debouncedQuery.trim().toLowerCase();
-    const roleNum =
-      roleFilter !== null && roleFilter !== ""
-        ? (Number(roleFilter) as UserRole)
-        : null;
-
-    return list.filter((u) => {
-      if (roleNum !== null && Number(u.role) !== roleNum) {
-        return false;
-      }
-      if (!matchesAccountStatus(u, statusFilter)) {
-        return false;
-      }
-      return matchesSearch(u, q);
+    return filterUsersList(rows ?? [], {
+      debouncedQuery,
+      roleFilter,
+      statusFilter,
     });
   }, [rows, debouncedQuery, roleFilter, statusFilter]);
+
+  const {
+    page,
+    setPage,
+    resetPage,
+    pageItems,
+    totalPages,
+    totalItems,
+    rangeStart,
+    rangeEnd,
+  } = useClientPagination(filtered, { pageSize: 20 });
+
+  useEffect(() => {
+    resetPage();
+  }, [debouncedQuery, roleFilter, statusFilter, resetPage]);
 
   const roleSelectData = useMemo(() => {
     return [
@@ -180,7 +156,7 @@ const UsersListPage = () => {
             data={statusSelectData}
             value={statusFilter}
             onChange={(v) => {
-              setStatusFilter((v as StatusFilter) ?? "all");
+              setStatusFilter((v as UsersStatusFilter) ?? "all");
             }}
             style={{ width: 200 }}
           />
@@ -190,84 +166,92 @@ const UsersListPage = () => {
         </Group>
 
         {loading ? (
-          <Group justify="center" py="xl">
-            <Loader />
-          </Group>
+          <PageLoader messageKey={LANG_KEYS.common.loading} />
         ) : (
-          <ScrollArea>
-            <Table striped highlightOnHover withTableBorder>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{t(LANG_KEYS.pages.usersListColName)}</Table.Th>
-                  <Table.Th>{t(LANG_KEYS.pages.usersListColEmail)}</Table.Th>
-                  <Table.Th>{t(LANG_KEYS.pages.usersListColPhone)}</Table.Th>
-                  <Table.Th>{t(LANG_KEYS.pages.usersListColRole)}</Table.Th>
-                  <Table.Th>{t(LANG_KEYS.pages.usersListColStatus)}</Table.Th>
-                  <Table.Th w={120} />
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {filtered.length === 0 ? (
+          <>
+            <ScrollArea>
+              <Table striped highlightOnHover withTableBorder>
+                <Table.Thead>
                   <Table.Tr>
-                    <Table.Td colSpan={6}>
-                      <Text c="dimmed" size="sm" py="md" ta="center">
-                        {rows && rows.length > 0
-                          ? t(LANG_KEYS.pages.usersListEmptyFiltered)
-                          : t(LANG_KEYS.pages.usersListEmpty)}
-                      </Text>
-                    </Table.Td>
+                    <Table.Th>{t(LANG_KEYS.pages.usersListColName)}</Table.Th>
+                    <Table.Th>{t(LANG_KEYS.pages.usersListColEmail)}</Table.Th>
+                    <Table.Th>{t(LANG_KEYS.pages.usersListColPhone)}</Table.Th>
+                    <Table.Th>{t(LANG_KEYS.pages.usersListColRole)}</Table.Th>
+                    <Table.Th>{t(LANG_KEYS.pages.usersListColStatus)}</Table.Th>
+                    <Table.Th w={120} />
                   </Table.Tr>
-                ) : (
-                  filtered.map((u) => {
-                    const deleted = u.isDeleted === true;
-                    const inactive = !deleted && u.isActive === false;
-                    return (
-                      <Table.Tr
-                        key={u.id}
-                        style={{
-                          opacity: deleted ? 0.65 : 1,
-                        }}
-                      >
-                        <Table.Td>
-                          <Text fw={500}>{u.name}</Text>
-                          <Text size="xs" c="dimmed">
-                            {u.id}
-                          </Text>
-                        </Table.Td>
-                        <Table.Td>{u.email}</Table.Td>
-                        <Table.Td>{u.phone}</Table.Td>
-                        <Table.Td>{t(roleLangKey(u.role))}</Table.Td>
-                        <Table.Td>
-                          {deleted ? (
-                            <Badge color="gray" variant="light">
-                              {t(LANG_KEYS.pages.userViewDeleted)}
-                            </Badge>
-                          ) : inactive ? (
-                            <Badge color="orange" variant="light">
-                              {t(LANG_KEYS.pages.userViewInactive)}
-                            </Badge>
-                          ) : (
-                            <Badge color="green" variant="light">
-                              {t(LANG_KEYS.pages.userViewActive)}
-                            </Badge>
-                          )}
-                        </Table.Td>
-                        <Table.Td>
-                          <Anchor
-                            component={Link}
-                            to={ROUTES.dashboard.userView(u.id)}
-                            size="sm"
-                          >
-                            {t(LANG_KEYS.pages.usersListOpen)}
-                          </Anchor>
-                        </Table.Td>
-                      </Table.Tr>
-                    );
-                  })
-                )}
-              </Table.Tbody>
-            </Table>
-          </ScrollArea>
+                </Table.Thead>
+                <Table.Tbody>
+                  {pageItems.length === 0 ? (
+                    <Table.Tr>
+                      <Table.Td colSpan={6}>
+                        <Text c="dimmed" size="sm" py="md" ta="center">
+                          {rows && rows.length > 0
+                            ? t(LANG_KEYS.pages.usersListEmptyFiltered)
+                            : t(LANG_KEYS.pages.usersListEmpty)}
+                        </Text>
+                      </Table.Td>
+                    </Table.Tr>
+                  ) : (
+                    pageItems.map((u) => {
+                      const deleted = u.isDeleted === true;
+                      const inactive = !deleted && u.isActive === false;
+                      return (
+                        <Table.Tr
+                          key={u.id}
+                          style={{
+                            opacity: deleted ? 0.65 : 1,
+                          }}
+                        >
+                          <Table.Td>
+                            <Text fw={500}>{u.name}</Text>
+                            <Text size="xs" c="dimmed">
+                              {u.id}
+                            </Text>
+                          </Table.Td>
+                          <Table.Td>{u.email}</Table.Td>
+                          <Table.Td>{u.phone}</Table.Td>
+                          <Table.Td>{t(roleLangKey(u.role))}</Table.Td>
+                          <Table.Td>
+                            {deleted ? (
+                              <Badge color="gray" variant="light">
+                                {t(LANG_KEYS.pages.userViewDeleted)}
+                              </Badge>
+                            ) : inactive ? (
+                              <Badge color="orange" variant="light">
+                                {t(LANG_KEYS.pages.userViewInactive)}
+                              </Badge>
+                            ) : (
+                              <Badge color="green" variant="light">
+                                {t(LANG_KEYS.pages.userViewActive)}
+                              </Badge>
+                            )}
+                          </Table.Td>
+                          <Table.Td>
+                            <Anchor
+                              component={Link}
+                              to={ROUTES.dashboard.userView(u.id)}
+                              size="sm"
+                            >
+                              {t(LANG_KEYS.pages.usersListOpen)}
+                            </Anchor>
+                          </Table.Td>
+                        </Table.Tr>
+                      );
+                    })
+                  )}
+                </Table.Tbody>
+              </Table>
+            </ScrollArea>
+            <ListPagination
+              page={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              rangeStart={rangeStart}
+              rangeEnd={rangeEnd}
+              onChange={setPage}
+            />
+          </>
         )}
       </Stack>
     </Container>

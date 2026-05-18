@@ -140,6 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const Spacer(),
                   OutlinedButton.icon(
                     onPressed: () async {
+                      context.read<ProfileCubit>().reset();
                       await context.read<AuthCubit>().logout();
                     },
                     icon: const Icon(Icons.logout),

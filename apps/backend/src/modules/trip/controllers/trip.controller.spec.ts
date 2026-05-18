@@ -30,7 +30,10 @@ import { TripCreate } from '../entities/dtos/trip.create';
 import { TripUpdate } from '../entities/dtos/trip.update';
 import { TripStatus } from '../entities/trip.status';
 import { InMemoryJobQueue } from 'src/shared/background/in-memory-job-queue';
+import { CarRepository } from '../../car/repositories/car.repository';
+import { CarTripSyncService } from '../../car/services/car-trip-sync.service';
 import { TelemetryRepository } from '../../telemetry/repositories/telemetry.repository';
+import { ViolationRepository } from '../../violation/repositories/violation.repository';
 import { TripGateway } from '../gateways/trip.gateway';
 import { TripPricingService } from '../pricing/trip-pricing.service';
 import { LoggerTripRealtimeOutbox } from '../realtime/trip-realtime.outbox.logger';
@@ -54,6 +57,7 @@ describe('TripController', () => {
   let controller: TripController;
   let userId: string;
   let carId: string;
+  let carId2: string;
   let geoZoneVersionId: string;
   let geoZoneVersionIdOther: string;
 
@@ -101,6 +105,22 @@ describe('TripController', () => {
     });
     carId = car.id;
 
+    const car2 = await prisma.car.create({
+      data: {
+        brand: 'Ctrl',
+        model: 'Trip2',
+        licensePlate: `CT2${suffix.slice(0, 7)}`,
+        color: 'black',
+        mileage: 3_000,
+        fuelLevel: 65,
+        isAvailable: true,
+        carStatus: CarStatus.AVAILABLE,
+        isDeleted: false,
+        createdAt: new Date().toISOString(),
+      },
+    });
+    carId2 = car2.id;
+
     const geozoneRepository = new GeozoneRepository(prisma);
     const firstZone = await geozoneRepository.createWithInitialVersion({
       name: 'Trip ctrl zone',
@@ -143,11 +163,19 @@ describe('TripController', () => {
       new InMemoryJobQueue(),
       publisher,
     );
+    const carTripSync = new CarTripSyncService(
+      new CarRepository(prisma),
+      tripRepository,
+      new TelemetryRepository(prisma),
+      new ViolationRepository(prisma),
+      publisher,
+    );
     const service = new TripService(
       tripRepository,
       publisher,
       new InMemoryJobQueue(),
       pricingService,
+      carTripSync,
     );
     controller = new TripController(service);
   });
@@ -208,7 +236,7 @@ describe('TripController', () => {
         driverActor(userId),
         buildTripCreate({
           userId,
-          carId,
+          carId: carId2,
           geoZoneVersionId,
           status: TripStatus.PENDING,
         }),

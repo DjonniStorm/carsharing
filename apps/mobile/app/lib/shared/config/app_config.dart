@@ -11,4 +11,7 @@ class AppConfig {
     'SOCKET_BASE_URL',
     defaultValue: apiBaseUrl,
   );
+
+  static const supportPhone = '+7 (495) 728-14-36';
+  static const supportEmail = 'help@carsharing-demo.ru';
 }

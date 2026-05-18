@@ -19,9 +19,14 @@ import {
 } from 'src/shared/background/job-queue.interface';
 import { ViolationJobName } from 'src/modules/violation/background/violation-jobs';
 import {
+  ICarTripSyncServiceToken,
+  type ICarTripSyncService,
+} from '../../car/services/car-trip-sync.service.interface';
+import {
   ITripPricingServiceToken,
   type ITripPricingService,
 } from '../../trip/pricing/trip-pricing.service.interface';
+import { TripStatus } from '../../trip/entities/trip.status';
 import {
   ITripRepositoryToken,
   type ITripRepository,
@@ -40,6 +45,8 @@ export class TelemetryService implements ITelemetryService {
   /** Отдельный throttle для WS: не спамим `trip.route.point` и `car.location` чаще ingest-периода. */
   private readonly wsThrottle = new Throttle();
 
+  private readonly carFuelThrottle = new Throttle();
+
   constructor(
     @Inject(ITelemetryRepositoryToken)
     private readonly repository: ITelemetryRepository,
@@ -51,6 +58,8 @@ export class TelemetryService implements ITelemetryService {
     private readonly trips: ITripRepository,
     @Inject(ITripPricingServiceToken)
     private readonly tripPricing: ITripPricingService,
+    @Inject(ICarTripSyncServiceToken)
+    private readonly carTripSync: ICarTripSyncService,
   ) {}
 
   async create(input: TelemetryCreate): Promise<TelemetryRead> {
@@ -105,6 +114,7 @@ export class TelemetryService implements ITelemetryService {
       });
       void this.publishTripRealtimeFromTelemetry(input);
       this.tripPricing.enqueueRecalc(input.tripId, 'telemetry');
+      void this.syncCarFuelFromTelemetry(input);
       return TelemetryMapper.fromEntityToRead(created);
     } catch (error) {
       this.logger.error('Failed to create telemetry point', error);
@@ -220,6 +230,40 @@ export class TelemetryService implements ITelemetryService {
     } catch (error) {
       this.logger.warn(
         `telemetry realtime publish failed tripId=${input.tripId}`,
+        error,
+      );
+    }
+  }
+
+  private async syncCarFuelFromTelemetry(input: TelemetryCreate): Promise<void> {
+    const { periodSec } = getTelemetryConfig();
+    const windowMs = periodSec * 1000;
+    if (
+      !this.carFuelThrottle.allow(
+        `telemetry_car_fuel:${input.tripId}`,
+        windowMs,
+      )
+    ) {
+      return;
+    }
+    try {
+      const trip = await this.trips.findById(input.tripId);
+      if (!trip) {
+        return;
+      }
+      const ongoing: TripStatus[] = [
+        TripStatus.PENDING,
+        TripStatus.STARTED,
+        TripStatus.ACTIVE,
+        TripStatus.PAUSED,
+      ];
+      if (!ongoing.includes(trip.status)) {
+        return;
+      }
+      await this.carTripSync.syncLiveFuel(trip.carId, input.fuelLevel);
+    } catch (error) {
+      this.logger.warn(
+        `sync car fuel from telemetry failed tripId=${input.tripId}`,
         error,
       );
     }

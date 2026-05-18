@@ -435,6 +435,31 @@ export class GeozoneRepository implements IGeozoneRepository {
     return idRows.map((row) => row.id);
   }
 
+  /** Точка внутри геометрии указанной версии (не `current_version`). */
+  async isPointInsideVersion(
+    versionId: string,
+    lon: number,
+    lat: number,
+  ): Promise<boolean> {
+    const rows = await this.prisma.$queryRawUnsafe<{ inside: boolean }[]>(
+      `
+      SELECT EXISTS(
+        SELECT 1
+        FROM geo_zone_version gzv
+        WHERE gzv.id = $3::uuid
+          AND ST_Contains(
+            gzv.geometry,
+            ST_SetSRID(ST_MakePoint($1::float8, $2::float8), 4326)
+          )
+      ) AS inside
+      `,
+      lon,
+      lat,
+      versionId,
+    );
+    return rows[0]?.inside === true;
+  }
+
   /** Собирает `where` для списка зон из query-параметров. */
   private buildListWhere(params?: GeozoneListParams): Prisma.GeoZoneWhereInput {
     const listParams = params ?? {};

@@ -74,7 +74,7 @@ const TripHistoryRouteMap = ({
   if (!apiKey.trim()) {
     return (
       <Alert color="gray" variant="light">
-        {t(LANG_KEYS.map.emptyKey)}
+        {t(LANG_KEYS.mapsLoader.emptyKey)}
       </Alert>
     );
   }

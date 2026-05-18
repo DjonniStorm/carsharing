@@ -23,7 +23,7 @@ export function loadYandexMapsApi(apiKey: string): Promise<void> {
     return Promise.reject(new Error(translate(LANG_KEYS.mapsLoader.emptyKey)));
   }
 
-  if (typeof window === "undefined") {
+  if (typeof window === undefined) {
     return Promise.reject(
       new Error(translate(LANG_KEYS.mapsLoader.browserOnly)),
     );

@@ -6,6 +6,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import {
+  ICarTripSyncServiceToken,
+  type ICarTripSyncService,
+} from 'src/modules/car/services/car-trip-sync.service.interface';
+
 import { UserRole } from 'src/modules/user/entities/user.role';
 import {
   IJobQueueToken,
@@ -59,6 +64,8 @@ export class TripService implements ITripService {
     private readonly jobQueue: IJobQueue,
     @Inject(ITripPricingServiceToken)
     private readonly pricingService: ITripPricingService,
+    @Inject(ICarTripSyncServiceToken)
+    private readonly carTripSync: ICarTripSyncService,
   ) {}
 
   async findMany(params?: TripListParams): Promise<TripRead[]> {
@@ -89,6 +96,7 @@ export class TripService implements ITripService {
   async create(input: TripCreate): Promise<TripRead> {
     this.logger.log('Creating trip');
     try {
+      await this.carTripSync.assertCarAvailableForNewTrip(input.carId);
       const created = await this.repository.create({
         userId: input.userId,
         carId: input.carId,
@@ -100,6 +108,7 @@ export class TripService implements ITripService {
         carDisplayNameSnapshot: input.carDisplayNameSnapshot,
       });
       const read = TripMapper.fromEntityToRead(created);
+      await this.carTripSync.onTripStarted(read.carId, read.id);
       try {
         await this.realtimePublisher.publishTripStarted(read);
       } catch (error) {
@@ -214,6 +223,7 @@ export class TripService implements ITripService {
         if (priced) {
           read = priced;
         }
+        await this.carTripSync.onTripFinished(id);
         await this.safePublishStateChanged(read, existing.status);
         await this.safePublishTripFinished(read);
         if (updated.finishLat != null && updated.finishLng != null) {
@@ -235,7 +245,9 @@ export class TripService implements ITripService {
 
       if (statusChanged) {
         await this.safePublishStateChanged(read, existing.status);
-        if (updated.status !== TripStatus.CANCELLED) {
+        if (updated.status === TripStatus.CANCELLED) {
+          await this.carTripSync.onTripCancelled(updated.carId);
+        } else {
           this.pricingService.enqueueRecalc(id, 'status');
         }
       } else if (pauseFieldsChanged && updated.status !== TripStatus.CANCELLED) {

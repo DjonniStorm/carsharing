@@ -52,7 +52,11 @@ function readTripStatus(v: unknown): TripStatus | null {
   return null;
 }
 
-const VALID_STATUSES = new Set<number>(Object.values(TripStatusEnum));
+const VALID_STATUSES = new Set<number>(
+  Object.values(TripStatusEnum).filter(
+    (v): v is number => typeof v === "number",
+  ),
+);
 
 export function parseTripMetricsUpdated(
   raw: unknown,

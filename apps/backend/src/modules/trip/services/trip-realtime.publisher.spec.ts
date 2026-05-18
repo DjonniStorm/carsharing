@@ -75,6 +75,28 @@ describe('TripRealtimePublisher', () => {
     });
   });
 
+  it('publishes car.state.changed', async () => {
+    const publish = vi.fn().mockResolvedValue(undefined);
+    const outbox = { publish } as unknown as ITripRealtimeOutbox;
+    const publisher = new TripRealtimePublisher(outbox);
+
+    await publisher.publishCarStateChanged({
+      carId: 'car-1',
+      carStatus: 2,
+      isAvailable: false,
+      fuelLevel: 35,
+    });
+
+    const envelope = publish.mock.calls[0]![0];
+    expect(envelope.event).toBe(TripWsEvent.CarStateChanged);
+    expect(envelope.payload).toMatchObject({
+      carId: 'car-1',
+      status: 2,
+      isAvailable: false,
+      fuelLevel: 35,
+    });
+  });
+
   it('publishes trip.finished', async () => {
     const publish = vi.fn().mockResolvedValue(undefined);
     const outbox = { publish } as unknown as ITripRealtimeOutbox;

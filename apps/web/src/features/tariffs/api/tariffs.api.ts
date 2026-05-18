@@ -5,17 +5,7 @@ import type {
 } from "@/entities/tariff";
 import { BaseApiClient } from "@/shared/api";
 import type { AccessTokenGetter } from "@/shared/api/base-api-client";
-
-function optionalQuery(params: Record<string, string | undefined>): string {
-  const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== "") {
-      sp.set(k, v);
-    }
-  }
-  const q = sp.toString();
-  return q ? `?${q}` : "";
-}
+import { optionalQuery } from "@/shared/api/optional-query";
 
 export type TariffListQuery = {
   includeDeleted?: boolean;

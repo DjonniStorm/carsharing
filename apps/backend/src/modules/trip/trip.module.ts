@@ -8,12 +8,17 @@ import { Module, forwardRef } from '@nestjs/common';
  * 3) Фоновые джобы по нарушениям парковки живут в `ViolationModule`/общей очереди; триггер —
  *    переход поездки в FINISHED в `TripService.update`.
  * 4) **Trip pricing** — пересчёт стоимости + `TripPricingBackgroundWorker`.
+ * 5) **CarTripSyncService** — пробег/топливо/позиция при finish, H11, статусы авто.
  *
  * Телеметрия импортирует этот модуль ради `ITripRepositoryToken` и outbox (через re-export ниже),
  * цикла с `TelemetryModule` нет — он не импортируется.
  */
+import { CarModule } from '../car/car.module';
+import { CarTripSyncService } from '../car/services/car-trip-sync.service';
+import { ICarTripSyncServiceToken } from '../car/services/car-trip-sync.service.interface';
 import { GeozoneModule } from '../geozone/geozone.module';
 import { TelemetryModule } from '../telemetry/telemetry.module';
+import { ViolationModule } from '../violation/violation.module';
 import { TripController } from './controllers/trip.controller';
 import { TripHistoryController } from './controllers/trip.history.controller';
 import { TripPricingBackgroundWorker } from './pricing/trip-pricing-background.worker';
@@ -30,7 +35,9 @@ import { TripService } from './services/trip.service';
   imports: [
     TripRealtimeModule,
     GeozoneModule,
+    CarModule,
     forwardRef(() => TelemetryModule),
+    forwardRef(() => ViolationModule),
   ],
   controllers: [TripController, TripHistoryController],
   providers: [
@@ -45,12 +52,18 @@ import { TripService } from './services/trip.service';
       useClass: TripPricingService,
     },
     TripPricingBackgroundWorker,
+    CarTripSyncService,
+    {
+      provide: ICarTripSyncServiceToken,
+      useClass: CarTripSyncService,
+    },
   ],
   exports: [
     TripRealtimeModule,
     ITripRepositoryToken,
     TripService,
     ITripPricingServiceToken,
+    ICarTripSyncServiceToken,
   ],
 })
 export class TripModule {}

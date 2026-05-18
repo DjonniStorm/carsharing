@@ -7,6 +7,7 @@ import { executeRentalMovementZoneCheck } from '../../rental-movement-zone-check
 
 describe(`executeRentalMovementZoneCheck (${ViolationJobName.RentalMovementZoneCheck})`, () => {
   const tripId = '11111111-1111-1111-1111-111111111111';
+  const geoZoneVersionId = '22222222-2222-2222-2222-222222222222';
 
   const baseCfg: ViolationConfig = {
     speedLimitKmh: 90,
@@ -15,12 +16,14 @@ describe(`executeRentalMovementZoneCheck (${ViolationJobName.RentalMovementZoneC
   };
 
   let createViolation: ReturnType<typeof vi.fn>;
-  let findIdsContainingPoint: ReturnType<typeof vi.fn>;
+  let isPointInsideVersion: ReturnType<typeof vi.fn>;
+  let findTripGeoZoneVersion: ReturnType<typeof vi.fn>;
   let dedupeAllow: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     createViolation = vi.fn().mockResolvedValue(undefined);
-    findIdsContainingPoint = vi.fn().mockResolvedValue([]);
+    isPointInsideVersion = vi.fn().mockResolvedValue(false);
+    findTripGeoZoneVersion = vi.fn().mockResolvedValue({ geoZoneVersionId });
     dedupeAllow = vi.fn().mockReturnValue(true);
   });
 
@@ -28,7 +31,8 @@ describe(`executeRentalMovementZoneCheck (${ViolationJobName.RentalMovementZoneC
     return {
       config: baseCfg,
       dedupeAllow,
-      geozoneRepository: { findIdsContainingPoint },
+      geozoneRepository: { isPointInsideVersion },
+      findTripGeoZoneVersion,
       createViolation,
     };
   }
@@ -56,7 +60,7 @@ describe(`executeRentalMovementZoneCheck (${ViolationJobName.RentalMovementZoneC
   });
 
   it('не создаёт SPEEDING при скорости не выше лимита', async () => {
-    findIdsContainingPoint.mockResolvedValue(['inside-rental']);
+    isPointInsideVersion.mockResolvedValue(true);
 
     await executeRentalMovementZoneCheck(
       {
@@ -117,14 +121,14 @@ describe(`executeRentalMovementZoneCheck (${ViolationJobName.RentalMovementZoneC
       deps(),
     );
 
-    expect(findIdsContainingPoint).not.toHaveBeenCalled();
+    expect(isPointInsideVersion).not.toHaveBeenCalled();
     expect(createViolation).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: ViolationStatus.OUT_OF_GEOZONE }),
     );
   });
 
-  it('не создаёт OUT_OF_GEOZONE, если точка попадает хотя бы в одну RENTAL-зону', async () => {
-    findIdsContainingPoint.mockResolvedValue(['zone-1']);
+  it('не создаёт OUT_OF_GEOZONE, если точка внутри версии геозоны поездки', async () => {
+    isPointInsideVersion.mockResolvedValue(true);
 
     await executeRentalMovementZoneCheck(
       {
@@ -138,19 +142,18 @@ describe(`executeRentalMovementZoneCheck (${ViolationJobName.RentalMovementZoneC
       deps(),
     );
 
-    expect(findIdsContainingPoint).toHaveBeenCalledWith(
-      expect.objectContaining({
-        lon: 37.61,
-        lat: 55.75,
-        types: expect.any(Array),
-      }),
+    expect(findTripGeoZoneVersion).toHaveBeenCalledWith(tripId);
+    expect(isPointInsideVersion).toHaveBeenCalledWith(
+      geoZoneVersionId,
+      37.61,
+      55.75,
     );
     expect(createViolation).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: ViolationStatus.OUT_OF_GEOZONE }),
     );
   });
 
-  it('создаёт OUT_OF_GEOZONE, если дедуп разрешил и список зон пуст', async () => {
+  it('создаёт OUT_OF_GEOZONE, если точка вне версии геозоны поездки', async () => {
     await executeRentalMovementZoneCheck(
       {
         tripId,
@@ -168,6 +171,27 @@ describe(`executeRentalMovementZoneCheck (${ViolationJobName.RentalMovementZoneC
         tripId,
         type: ViolationStatus.OUT_OF_GEOZONE,
       }),
+    );
+  });
+
+  it('не создаёт OUT_OF_GEOZONE, если поездка не найдена', async () => {
+    findTripGeoZoneVersion.mockResolvedValue(null);
+
+    await executeRentalMovementZoneCheck(
+      {
+        tripId,
+        recordedAt: '2026-05-09T12:00:00.000Z',
+        lat: 55.75,
+        lon: 37.61,
+        speed: 40,
+        fuelLevel: 50,
+      },
+      deps(),
+    );
+
+    expect(isPointInsideVersion).not.toHaveBeenCalled();
+    expect(createViolation).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: ViolationStatus.OUT_OF_GEOZONE }),
     );
   });
 
@@ -197,6 +221,6 @@ describe(`executeRentalMovementZoneCheck (${ViolationJobName.RentalMovementZoneC
     expect(createViolation).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: ViolationStatus.SPEEDING }),
     );
-    expect(findIdsContainingPoint).not.toHaveBeenCalled();
+    expect(isPointInsideVersion).not.toHaveBeenCalled();
   });
 });

@@ -211,10 +211,23 @@ class _MapScreenState extends State<MapScreen> {
             final msg = state.errorMessage;
             if (msg == null || msg.isEmpty) return;
             final text = msg.contains('.') ? msg.tr() : msg;
+            final trip = context.read<TripCubit>();
+            final pending = state.pendingRetry;
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(text)),
+              SnackBar(
+                content: Text(text),
+                action: pending != null
+                    ? SnackBarAction(
+                        label: 'common.retry'.tr(),
+                        onPressed: () {
+                          // ignore: discarded_futures
+                          trip.retryPendingAction();
+                        },
+                      )
+                    : null,
+              ),
             );
-            context.read<TripCubit>().clearError();
+            trip.clearError();
           },
         ),
         BlocListener<TripCubit, TripState>(
@@ -248,6 +261,7 @@ class _MapScreenState extends State<MapScreen> {
                   return BlocBuilder<TripCubit, TripState>(
                     builder: (context, tripState) {
                       final objects = <MapObject>[
+                        ..._tripBoundZoneObjects(tripState),
                         ..._zoneObjects(tripState),
                         ..._carObjects(mapState, tripState),
                       ];
@@ -508,11 +522,30 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  List<MapObject> _tripBoundZoneObjects(TripState tripState) {
+    final trip = tripState.activeTrip;
+    final bound = tripState.tripBoundZone;
+    if (trip == null || !trip.isOngoing || bound == null) {
+      return const [];
+    }
+    return bound.buildPolygons(
+      selected: true,
+      isTripContract: true,
+      onTripZoneTap: null,
+    );
+  }
+
   List<MapObject> _zoneObjects(TripState tripState) {
     final selectedId = tripState.selectedZoneId;
     final trip = context.read<TripCubit>();
+    final boundVersionId = tripState.tripBoundZone?.geoZoneVersionId;
     final objects = <MapObject>[];
     for (final zone in tripState.zonesInView) {
+      if (boundVersionId != null &&
+          boundVersionId.isNotEmpty &&
+          zone.geoZoneVersionId == boundVersionId) {
+        continue;
+      }
       final visible = (zone.kind == GeozoneKind.rental &&
               tripState.showRentalZones) ||
           (zone.kind == GeozoneKind.parking && tripState.showParkingZones);
@@ -780,16 +813,67 @@ class _TripBottomPanel extends StatelessWidget {
       );
     }
 
+    final zone = tripState.selectedZone!;
     return Card(
       elevation: 6,
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Text(
-          'map.select_car_hint'.tr(),
-          style: Theme.of(context).textTheme.bodyMedium,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (zone.hasTariff) ...[
+              Text(
+                zone.name.isNotEmpty ? zone.name : 'map.zone_tariff_title'.tr(),
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              if (zone.name.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'map.zone_tariff_title'.tr(),
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              ],
+              const SizedBox(height: 8),
+              if (zone.pricePerMinute != null)
+                Text(
+                  'map.tariff_per_minute'.tr(
+                    args: [_formatPrice(zone.pricePerMinute!)],
+                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              if (zone.pricePerKm != null)
+                Text(
+                  'map.tariff_per_km'.tr(
+                    args: [_formatPrice(zone.pricePerKm!)],
+                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              if (zone.pausePricePerMinute != null)
+                Text(
+                  'map.tariff_pause'.tr(
+                    args: [_formatPrice(zone.pausePricePerMinute!)],
+                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              const SizedBox(height: 8),
+            ],
+            Text(
+              'map.select_car_hint'.tr(),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  static String _formatPrice(double v) {
+    final rounded = (v * 10).round() / 10;
+    if (rounded == rounded.roundToDouble()) {
+      return rounded.toInt().toString();
+    }
+    return rounded.toStringAsFixed(1);
   }
 
   Widget _activeTripCard(BuildContext context, TripRead trip) {

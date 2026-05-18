@@ -8,6 +8,7 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
+import type { ReactNode } from "react";
 
 import type { CarRead } from "@/entities/car";
 import {
@@ -23,6 +24,32 @@ type Props = {
   t: (key: LangKey) => string;
   onEdit?: (car: CarRead) => void;
 };
+
+function CarCardField({
+  label,
+  value,
+  valueFw,
+}: {
+  label: string;
+  value: ReactNode;
+  valueFw?: number;
+}) {
+  return (
+    <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
+      <Text size="sm" c="dimmed" style={{ flex: "0 1 auto" }}>
+        {label}
+      </Text>
+      <Text
+        size="sm"
+        fw={valueFw}
+        ta="right"
+        style={{ flex: "1 1 auto", minWidth: 0, wordBreak: "break-word" }}
+      >
+        {value}
+      </Text>
+    </Group>
+  );
+}
 
 const CarGridCard = ({ car, t, onEdit }: Props) => {
   const statusLabel = t(carStatusLangKey(car.carStatus));
@@ -111,69 +138,51 @@ const CarGridCard = ({ car, t, onEdit }: Props) => {
             </Text>
           </Stack>
 
-          <Stack gap={6} style={{ flex: 1 }}>
-            <Text size="sm">
-              <Text span c="dimmed">
-                {t(LANG_KEYS.pages.carsColFuel)}
-              </Text>{" "}
-              <Text span fw={500}>
-                {Math.round(car.fuelLevel)}%
-              </Text>
-            </Text>
-            <Text size="sm">
-              <Text span c="dimmed">
-                {t(LANG_KEYS.pages.carsCardMileage)}
-              </Text>{" "}
-              <Text span fw={500}>
-                {car.mileage.toLocaleString()}
-              </Text>
-            </Text>
-            <Text size="sm" style={{ wordBreak: "break-word" }}>
-              <Text span c="dimmed">
-                {t(LANG_KEYS.pages.carsCardColor)}
-              </Text>{" "}
-              <Text span fw={500}>
-                {car.color}
-              </Text>
-            </Text>
-            <Text size="sm">
-              <Text span c="dimmed">
-                {t(LANG_KEYS.pages.carsAddFieldAvailable)}
-              </Text>{" "}
-              <Text span fw={500}>
-                {car.isAvailable
+          <Stack gap={6} style={{ flex: 1, minWidth: 0 }}>
+            <CarCardField
+              label={t(LANG_KEYS.pages.carsColFuel)}
+              value={`${Math.round(car.fuelLevel)}%`}
+              valueFw={500}
+            />
+            <CarCardField
+              label={t(LANG_KEYS.pages.carsCardMileage)}
+              value={car.mileage.toLocaleString()}
+              valueFw={500}
+            />
+            <CarCardField
+              label={t(LANG_KEYS.pages.carsCardColor)}
+              value={car.color}
+              valueFw={500}
+            />
+            <CarCardField
+              label={t(LANG_KEYS.pages.carsAddFieldAvailable)}
+              value={
+                car.isAvailable
                   ? t(LANG_KEYS.pages.carsCardAvailYes)
-                  : t(LANG_KEYS.pages.carsCardAvailNo)}
-              </Text>
-            </Text>
-            <Text size="sm" style={{ wordBreak: "break-word" }}>
-              <Text span c="dimmed">
-                {t(LANG_KEYS.pages.carsColPosition)}
-              </Text>{" "}
-              <Text span>
-                {car.lastKnownLon != null && car.lastKnownLat != null
+                  : t(LANG_KEYS.pages.carsCardAvailNo)
+              }
+              valueFw={500}
+            />
+            <CarCardField
+              label={t(LANG_KEYS.pages.carsColPosition)}
+              value={
+                car.lastKnownLon != null && car.lastKnownLat != null
                   ? `${car.lastKnownLat.toFixed(4)}, ${car.lastKnownLon.toFixed(4)}`
-                  : "—"}
-              </Text>
-            </Text>
-            <Text size="sm" style={{ wordBreak: "break-word" }}>
-              <Text span c="dimmed">
-                {t(LANG_KEYS.pages.carsCardLastPosAt)}
-              </Text>{" "}
-              <Text span>{formatCardDateTime(car.lastPositionAt)}</Text>
-            </Text>
-            <Text size="sm" style={{ wordBreak: "break-word" }}>
-              <Text span c="dimmed">
-                {t(LANG_KEYS.pages.carsCardCreatedAt)}
-              </Text>{" "}
-              <Text span>{formatCardDateTime(car.createdAt)}</Text>
-            </Text>
-            <Text size="sm" style={{ wordBreak: "break-word" }}>
-              <Text span c="dimmed">
-                {t(LANG_KEYS.pages.carsCardUpdatedAt)}
-              </Text>{" "}
-              <Text span>{formatCardDateTime(car.updatedAt)}</Text>
-            </Text>
+                  : "—"
+              }
+            />
+            <CarCardField
+              label={t(LANG_KEYS.pages.carsCardLastPosAt)}
+              value={formatCardDateTime(car.lastPositionAt)}
+            />
+            <CarCardField
+              label={t(LANG_KEYS.pages.carsCardCreatedAt)}
+              value={formatCardDateTime(car.createdAt)}
+            />
+            <CarCardField
+              label={t(LANG_KEYS.pages.carsCardUpdatedAt)}
+              value={formatCardDateTime(car.updatedAt)}
+            />
           </Stack>
         </Group>
       </Stack>

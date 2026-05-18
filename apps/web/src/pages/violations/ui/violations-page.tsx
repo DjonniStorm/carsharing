@@ -10,17 +10,16 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { useDebouncedValue } from "@mantine/hooks";
 import { useAction, useAtom } from "@reatom/react";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ViolationStatus } from "@/entities/violation";
+import { filterViolationsList } from "@/features/violations/lib/violations-list-filters";
 import {
-  VIOLATION_STATUSES_ORDERED,
+  buildViolationStatusSelectData,
   isViolationTerminal,
-  violationStatusLangKey,
 } from "@/features/violations/lib/violation-status-present";
 import {
   loadViolationsAdminList,
@@ -31,6 +30,9 @@ import {
 import type { LangKey } from "@/shared/i18n/keys";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 import { ROUTES } from "@/shared/config/routes-paths";
+import { useClientPagination } from "@/shared/hooks/use-client-pagination";
+import { useDebouncedSearch } from "@/shared/hooks/use-debounced-search";
+import { ListPagination, PageLoader } from "@/shared/ui";
 
 import { ViolationGridCard } from "@/pages/violations/ui/violation-grid-card";
 
@@ -41,38 +43,40 @@ const ViolationsPage = () => {
   const [error] = useAtom(violationsAdminListErrorAtom);
   const load = useAction(loadViolationsAdminList);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch] = useDebouncedValue(searchQuery, 220);
+  const {
+    query: searchQuery,
+    setQuery: setSearchQuery,
+    debouncedQuery: debouncedSearch,
+  } = useDebouncedSearch();
   const [typeFilter, setTypeFilter] = useState<ViolationStatus[]>([]);
 
   useEffect(() => {
     void load({ includeResolved: true });
   }, [load]);
 
-  const typeSelectData = useMemo(() => {
-    return VIOLATION_STATUSES_ORDERED.map((s) => ({
-      value: String(s),
-      label: t(violationStatusLangKey(s)),
-    }));
-  }, [t]);
+  const typeSelectData = buildViolationStatusSelectData(t);
 
   const filtered = useMemo(() => {
-    const list = rows ?? [];
-    const q = debouncedSearch.trim().toLowerCase();
-    const typesSet =
-      typeFilter.length > 0 ? new Set(typeFilter as ViolationStatus[]) : null;
-
-    return list.filter((v) => {
-      if (typesSet !== null && !typesSet.has(v.type)) {
-        return false;
-      }
-      if (!q) {
-        return true;
-      }
-      const hay = `${v.description}\n${v.tripId}\n${v.id}`.toLowerCase();
-      return hay.includes(q);
+    return filterViolationsList(rows ?? [], {
+      debouncedSearch,
+      typeFilter,
     });
   }, [rows, debouncedSearch, typeFilter]);
+
+  const {
+    page,
+    setPage,
+    resetPage,
+    pageItems: pageViolations,
+    totalPages,
+    totalItems,
+    rangeStart,
+    rangeEnd,
+  } = useClientPagination(filtered, { pageSize: 12 });
+
+  useEffect(() => {
+    resetPage();
+  }, [debouncedSearch, typeFilter, resetPage]);
 
   const statPaper = (labelKey: LangKey, value: number) => (
     <Stack gap={4}>
@@ -117,9 +121,7 @@ const ViolationsPage = () => {
       </Group>
 
       {status === "loading" ? (
-        <Text c="dimmed" mt="md">
-          {t(LANG_KEYS.pages.violationsLoading)}
-        </Text>
+        <PageLoader messageKey={LANG_KEYS.common.loading} />
       ) : error ? (
         <Alert color="red" mt="md" title={t(LANG_KEYS.pages.violationsTitle)}>
           {error}
@@ -159,16 +161,26 @@ const ViolationsPage = () => {
               />
             </Group>
 
-            {filtered.length === 0 ? (
+            {pageViolations.length === 0 ? (
               <Text c="dimmed">
                 {t(LANG_KEYS.pages.violationsEmptyFiltered)}
               </Text>
             ) : (
-              <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
-                {filtered.map((v) => (
-                  <ViolationGridCard key={v.id} violation={v} t={t} />
-                ))}
-              </SimpleGrid>
+              <>
+                <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+                  {pageViolations.map((v) => (
+                    <ViolationGridCard key={v.id} violation={v} t={t} />
+                  ))}
+                </SimpleGrid>
+                <ListPagination
+                  page={page}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  rangeStart={rangeStart}
+                  rangeEnd={rangeEnd}
+                  onChange={setPage}
+                />
+              </>
             )}
           </Stack>
         </Stack>

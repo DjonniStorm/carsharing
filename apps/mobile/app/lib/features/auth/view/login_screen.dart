@@ -7,6 +7,7 @@ import 'package:gap/gap.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../shared/validation/input_validators.dart';
 import '../../../shared/widgets/password_text_field.dart';
+import '../../profile/cubit/profile_cubit.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
@@ -35,6 +36,8 @@ class _LoginScreenState extends State<LoginScreen> {
       listenWhen: (p, n) => n is AuthAuthorized || n is AuthError,
       listener: (context, state) {
         if (state is AuthAuthorized) {
+          // ignore: discarded_futures
+          context.read<ProfileCubit>().load();
           context.go(AppRoutes.map);
         }
         if (state is AuthError) {
@@ -44,7 +47,16 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: Text('auth.login'.tr())),
+        appBar: AppBar(
+          title: Text('auth.login'.tr()),
+          actions: [
+            IconButton(
+              tooltip: 'support.title'.tr(),
+              icon: const Icon(Icons.help_outline),
+              onPressed: () => context.push(AppRoutes.support),
+            ),
+          ],
+        ),
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -99,6 +111,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextButton(
                     onPressed: () => context.go(AppRoutes.register),
                     child: Text('auth.no_account'.tr()),
+                  ),
+                  TextButton(
+                    onPressed: () => context.push(AppRoutes.support),
+                    child: Text('auth.help'.tr()),
                   ),
                 ],
               ),

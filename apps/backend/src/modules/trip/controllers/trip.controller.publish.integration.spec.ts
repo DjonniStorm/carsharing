@@ -29,6 +29,7 @@ import {
 } from 'src/shared/testing';
 import { InMemoryJobQueue } from 'src/shared/background/in-memory-job-queue';
 import { IJobQueueToken } from 'src/shared/background/job-queue.interface';
+import { ICarTripSyncServiceToken } from '../../car/services/car-trip-sync.service.interface';
 import { ITripPricingServiceToken } from '../pricing/trip-pricing.service.interface';
 import { ITripRepositoryToken } from '../repositories/trip.repository.interface';
 import { TripRepository } from '../repositories/trip.repository';
@@ -61,6 +62,10 @@ class FailingTripRealtimePublisher implements ITripRealtimePublisher {
 
   async publishTripFinished(trip: TripRead): Promise<void> {
     this.fail(trip);
+  }
+
+  async publishCarStateChanged(): Promise<void> {
+    return;
   }
 }
 
@@ -149,6 +154,17 @@ describe('TripController: ошибки публикации (интеграци�
           useValue: {
             enqueueRecalc: () => undefined,
             recalcAndPersist: async () => null,
+          },
+        },
+        {
+          provide: ICarTripSyncServiceToken,
+          useValue: {
+            assertCarAvailableForNewTrip: async () => undefined,
+            onTripStarted: async () => undefined,
+            onTripFinished: async () => undefined,
+            onTripCancelled: async () => undefined,
+            recalcAvailabilityForTrip: async () => undefined,
+            syncLiveFuel: async () => undefined,
           },
         },
       ],

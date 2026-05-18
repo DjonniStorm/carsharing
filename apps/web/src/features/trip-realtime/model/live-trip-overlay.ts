@@ -24,7 +24,7 @@ export type LiveTripOverlay = {
 
 /** tripId, на которые UI подписан через WS (`subscribe.trip`). */
 export const tripRealtimeWatchAtom = atom<ReadonlySet<string>>(
-  new Set(),
+  new Set<string>(),
   "tripRealtimeWatch",
 );
 
@@ -81,7 +81,7 @@ export const clearLiveTripOverlay = action((tripId?: string) => {
 }, "clearLiveTripOverlay");
 
 export const resetTripRealtimeState = action(() => {
-  tripRealtimeWatchAtom.set(new Set());
+  tripRealtimeWatchAtom.set(new Set<string>());
   liveTripOverlayAtom.set({});
   metricsThrottleMsByTrip.clear();
 }, "resetTripRealtimeState");

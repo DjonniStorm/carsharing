@@ -81,7 +81,7 @@ const ViolationSummaryCard = ({
       </Badge>
       <Text size="xs" c="dimmed" fz="lg">
         {t(LANG_KEYS.pages.tripDetailViolationAt)}{" "}
-        {formatCardDateTime(new Date(v.createdAt))}
+        {formatCardDateTime(v.createdAt)}
       </Text>
       <Text size="sm">{v.description}</Text>
       {showTripLink ? (
