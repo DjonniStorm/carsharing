@@ -25,6 +25,7 @@ describe('CarController', () => {
     loadBackendDevEnv();
     prisma = createTestPrismaService();
     await prisma.$connect();
+    await truncateApplicationTable(prisma, 'car');
     repository = new CarRepository(prisma);
     service = new CarService(repository);
     controller = new CarController(service);
@@ -42,9 +43,11 @@ describe('CarController', () => {
   describe('Получение всех автомобилей', () => {
     it('Получает все автомобили', async () => {
       // arrange
+      const id1 = uuidv4();
+      const id2 = uuidv4();
       const cars = [
         {
-          id: '1',
+          id: id1,
           brand: 'Toyota',
           model: 'Camry',
           licensePlate: '1234567890',
@@ -61,7 +64,7 @@ describe('CarController', () => {
           lastPositionAt: new Date(),
         },
         {
-          id: '2',
+          id: id2,
           brand: 'Honda',
           model: 'Accord',
           licensePlate: '1234567891',

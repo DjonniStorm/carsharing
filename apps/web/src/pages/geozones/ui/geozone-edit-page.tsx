@@ -366,10 +366,7 @@ const GeozoneEditPage = () => {
 
     const im = initialMetaRef.current;
 
-    if (
-      versionDirty &&
-      (!tariffPresetId || !String(tariffPresetId).trim())
-    ) {
+    if (versionDirty && (!tariffPresetId || !String(tariffPresetId).trim())) {
       setFormError(t(LANG_KEYS.pages.geozonesEditTariffPresetRequired));
       return;
     }

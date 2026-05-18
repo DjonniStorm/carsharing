@@ -18,10 +18,7 @@ import {
 
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { Roles } from 'src/modules/auth/decorators/roles.decorator';
-import {
-  ADMIN_ROLES,
-  ALL_APP_ROLES,
-} from 'src/modules/auth/roles.constants';
+import { ADMIN_ROLES, ALL_APP_ROLES } from 'src/modules/auth/roles.constants';
 import type { AuthenticatedUser } from 'src/modules/auth/types/authenticated-user';
 import { TripNotFoundException } from 'src/modules/trip/common/errors';
 import { TripService } from 'src/modules/trip/services/trip.service';
@@ -56,7 +53,11 @@ export class ManagerViolationNoticeController {
     @Param('tripId') tripId: string,
   ): Promise<TripNotificationReadDto[]> {
     try {
-      await this.tripService.ensureTripAccessForUser(user.role, user.id, tripId);
+      await this.tripService.ensureTripAccessForUser(
+        user.role,
+        user.id,
+        tripId,
+      );
     } catch (e) {
       if (e instanceof ForbiddenException) {
         throw e;

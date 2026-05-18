@@ -2,6 +2,7 @@ class AppConfig {
   /// Для Android-эмулятора: http://10.0.2.2:3000
   static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
+    // defaultValue: 'http://46.253.132.51:3000',
     defaultValue: 'http://10.0.2.2:3000',
   );
 
@@ -11,4 +12,3 @@ class AppConfig {
     defaultValue: apiBaseUrl,
   );
 }
-

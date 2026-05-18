@@ -12,8 +12,6 @@ export function violationsFromTripHistoryRows(
     }
   }
   return [...byId.values()].sort((a, b) => {
-    return (
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 }

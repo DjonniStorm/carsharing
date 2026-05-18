@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../geozone/domain/geozone_kind.dart';
 import '../../geozone/domain/rental_zone.dart';
+import '../domain/live_trip_metrics.dart';
 import '../domain/trip_read.dart';
 
 const Object _kUnset = Object();
@@ -11,7 +12,8 @@ class TripState extends Equatable {
     required this.zonesInView,
     this.selectedZoneId,
     this.activeTrip,
-    this.tripMetrics = const {},
+    this.liveMetrics,
+    this.finishSummary,
     this.loadingZones = false,
     this.tripBusy = false,
     this.errorMessage,
@@ -22,19 +24,16 @@ class TripState extends Equatable {
   final List<RentalZone> zonesInView;
   final String? selectedZoneId;
   final TripRead? activeTrip;
-  final Map<String, dynamic> tripMetrics;
+  final LiveTripMetrics? liveMetrics;
+  final TripFinishSummary? finishSummary;
 
   final bool loadingZones;
   final bool tripBusy;
   final String? errorMessage;
 
-  /// Показ полигонов аренды на карте.
   final bool showRentalZones;
-
-  /// Показ полигонов парковки на карте.
   final bool showParkingZones;
 
-  /// Выбранная для поездки зона аренды (парковки не выбираются).
   RentalZone? get selectedZone {
     final id = selectedZoneId;
     if (id == null) return null;
@@ -44,11 +43,19 @@ class TripState extends Equatable {
     return null;
   }
 
+  /// Метрики для UI: WS/live + поля активной поездки.
+  LiveTripMetrics? get displayMetrics {
+    final trip = activeTrip;
+    if (trip == null) return liveMetrics;
+    return LiveTripMetrics.merge(liveMetrics, trip);
+  }
+
   TripState copyWith({
     List<RentalZone>? zonesInView,
     Object? selectedZoneId = _kUnset,
     Object? activeTrip = _kUnset,
-    Map<String, dynamic>? tripMetrics,
+    Object? liveMetrics = _kUnset,
+    Object? finishSummary = _kUnset,
     bool? loadingZones,
     bool? tripBusy,
     Object? errorMessage = _kUnset,
@@ -62,7 +69,12 @@ class TripState extends Equatable {
           : selectedZoneId as String?,
       activeTrip:
           activeTrip == _kUnset ? this.activeTrip : activeTrip as TripRead?,
-      tripMetrics: tripMetrics ?? this.tripMetrics,
+      liveMetrics: liveMetrics == _kUnset
+          ? this.liveMetrics
+          : liveMetrics as LiveTripMetrics?,
+      finishSummary: finishSummary == _kUnset
+          ? this.finishSummary
+          : finishSummary as TripFinishSummary?,
       loadingZones: loadingZones ?? this.loadingZones,
       tripBusy: tripBusy ?? this.tripBusy,
       errorMessage:
@@ -78,7 +90,12 @@ class TripState extends Equatable {
         selectedZoneId,
         activeTrip?.id,
         activeTrip?.status,
-        tripMetrics.length,
+        activeTrip?.priceTotal,
+        activeTrip?.distanceMeters,
+        liveMetrics?.priceTotal,
+        liveMetrics?.distanceMeters,
+        finishSummary?.tripId,
+        finishSummary?.priceTotal,
         loadingZones,
         tripBusy,
         errorMessage,

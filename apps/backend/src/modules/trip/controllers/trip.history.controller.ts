@@ -75,8 +75,7 @@ export class TripHistoryController {
     name: 'finishedBefore',
     required: false,
     type: String,
-    description:
-      'ISO-8601: только завершённые поездки, `finishedAt <= …`',
+    description: 'ISO-8601: только завершённые поездки, `finishedAt <= …`',
   })
   @ApiResponse({ status: 200, type: [TripHistoryShortInfoRead] })
   async listHistory(
@@ -99,7 +98,12 @@ export class TripHistoryController {
     const startedBefore = parseDateQuery(rawStartedBefore, 'startedBefore');
     const finishedAfter = parseDateQuery(rawFinishedAfter, 'finishedAfter');
     const finishedBefore = parseDateQuery(rawFinishedBefore, 'finishedBefore');
-    assertDateRangeOrder(startedAfter, startedBefore, 'startedAfter', 'startedBefore');
+    assertDateRangeOrder(
+      startedAfter,
+      startedBefore,
+      'startedAfter',
+      'startedBefore',
+    );
     assertDateRangeOrder(
       finishedAfter,
       finishedBefore,
@@ -130,7 +134,11 @@ export class TripHistoryController {
     @Param('tripId') tripId: string,
   ): Promise<TripHistoryRead> {
     try {
-      await this.tripService.ensureTripAccessForUser(user.role, user.id, tripId);
+      await this.tripService.ensureTripAccessForUser(
+        user.role,
+        user.id,
+        tripId,
+      );
       return await this.tripService.getTripHistoryFullInfo(tripId);
     } catch (error) {
       if (error instanceof ForbiddenException) {
@@ -160,7 +168,11 @@ export class TripHistoryController {
     @Param('tripId') tripId: string,
   ): Promise<TripHistoryShortInfoRead> {
     try {
-      await this.tripService.ensureTripAccessForUser(user.role, user.id, tripId);
+      await this.tripService.ensureTripAccessForUser(
+        user.role,
+        user.id,
+        tripId,
+      );
       return await this.tripService.getTripHistoryShortInfo(tripId);
     } catch (error) {
       if (error instanceof ForbiddenException) {
@@ -182,11 +194,7 @@ function resolveHistoryUserId(
   queryUserId: string | undefined,
 ): string {
   if (user.role === UserRole.DRIVER) {
-    if (
-      queryUserId != null &&
-      queryUserId !== '' &&
-      queryUserId !== user.id
-    ) {
+    if (queryUserId != null && queryUserId !== '' && queryUserId !== user.id) {
       throw new ForbiddenException('Cannot list trip history for another user');
     }
     return user.id;
@@ -247,11 +255,7 @@ function assertDateRangeOrder(
   afterName: string,
   beforeName: string,
 ): void {
-  if (
-    after &&
-    before &&
-    after.getTime() > before.getTime()
-  ) {
+  if (after && before && after.getTime() > before.getTime()) {
     throw new BadRequestException(
       `${afterName} must be less than or equal to ${beforeName}`,
     );

@@ -10,32 +10,19 @@ import { carsListAtom } from "@/features/cars/model/cars-list";
 import { getApiBaseUrl } from "@/shared/config/env";
 
 import { TripWsCommand, TripWsEvent } from "../constants";
+import {
+  parseCarLocationEnvelope,
+  parseTripFinished,
+  parseTripMetricsUpdated,
+  parseTripStateChanged,
+} from "../lib/parse-trip-ws";
 import { applyCarLocationFromWs } from "../model/live-car-positions";
-
-function parseCarLocationEnvelope(data: unknown): {
-  carId: string;
-  lat: number;
-  lng: number;
-  positionAt: string;
-} | null {
-  if (typeof data !== "object" || data === null || !("payload" in data)) {
-    return null;
-  }
-  const payload = (data as { payload: unknown }).payload;
-  if (typeof payload !== "object" || payload === null) {
-    return null;
-  }
-  const { carId, lat, lng, positionAt } = payload as Record<string, unknown>;
-  if (
-    typeof carId !== "string" ||
-    typeof lat !== "number" ||
-    typeof lng !== "number" ||
-    typeof positionAt !== "string"
-  ) {
-    return null;
-  }
-  return { carId, lat, lng, positionAt };
-}
+import {
+  applyTripFinishedFromWs,
+  applyTripMetricsFromWs,
+  applyTripStateFromWs,
+  tripRealtimeWatchAtom,
+} from "../model/live-trip-overlay";
 
 function syncCarSubscriptions(
   socket: Socket,
@@ -59,21 +46,46 @@ function syncCarSubscriptions(
   }
 }
 
+function syncTripSubscriptions(
+  socket: Socket,
+  wantedTripIds: ReadonlySet<string>,
+  subscribedRef: { current: Set<string> },
+) {
+  for (const id of subscribedRef.current) {
+    if (!wantedTripIds.has(id)) {
+      socket.emit(TripWsCommand.UnsubscribeTrip, { tripId: id });
+      subscribedRef.current.delete(id);
+    }
+  }
+  for (const id of wantedTripIds) {
+    if (!subscribedRef.current.has(id)) {
+      socket.emit(TripWsCommand.SubscribeTrip, { tripId: id });
+      subscribedRef.current.add(id);
+    }
+  }
+}
+
 /**
- * Держит Socket.IO к `/trip`, подписывается на машины из {@link carsListAtom}.
+ * Держит Socket.IO к `/trip`: позиции машин + live-биллинг поездок.
  * Без UI — монтируется в layout дашборда.
  */
 const DashboardTripRealtimeSync = () => {
   const [token] = useAtom(accessTokenAtom);
   const [cars] = useAtom(carsListAtom);
-  const subscribedRef = useRef(new Set<string>());
+  const [watchedTrips] = useAtom(tripRealtimeWatchAtom);
+
+  const subscribedCarsRef = useRef(new Set<string>());
+  const subscribedTripsRef = useRef(new Set<string>());
   const socketRef = useRef<Socket | null>(null);
   const carsRef = useRef(cars);
+  const watchedTripsRef = useRef(watchedTrips);
   carsRef.current = cars;
+  watchedTripsRef.current = watchedTrips;
 
   useEffect(() => {
     if (!token) {
-      subscribedRef.current.clear();
+      subscribedCarsRef.current.clear();
+      subscribedTripsRef.current.clear();
       socketRef.current?.disconnect();
       socketRef.current = null;
       return;
@@ -95,24 +107,68 @@ const DashboardTripRealtimeSync = () => {
       rootFrame.run(() => applyCarLocationFromWs(parsed));
     };
 
+    const onMetrics = (raw: unknown) => {
+      const parsed = parseTripMetricsUpdated(raw);
+      if (!parsed) {
+        return;
+      }
+      rootFrame.run(() => applyTripMetricsFromWs(parsed));
+    };
+
+    const onStateChanged = (raw: unknown) => {
+      const parsed = parseTripStateChanged(raw);
+      if (!parsed) {
+        return;
+      }
+      rootFrame.run(() => applyTripStateFromWs(parsed));
+    };
+
+    const onFinished = (raw: unknown) => {
+      const parsed = parseTripFinished(raw);
+      if (!parsed) {
+        return;
+      }
+      rootFrame.run(() => applyTripFinishedFromWs(parsed));
+    };
+
     const onConnect = () => {
-      syncCarSubscriptions(socket, carsRef.current, subscribedRef);
+      syncCarSubscriptions(socket, carsRef.current, subscribedCarsRef);
+      syncTripSubscriptions(
+        socket,
+        watchedTripsRef.current,
+        subscribedTripsRef,
+      );
     };
 
     socket.on("connect", onConnect);
     socket.on(TripWsEvent.CarLocationUpdated, onLocation);
+    socket.on(TripWsEvent.TripMetricsUpdated, onMetrics);
+    socket.on(TripWsEvent.TripStateChanged, onStateChanged);
+    socket.on(TripWsEvent.TripFinished, onFinished);
 
     if (socket.connected) {
-      syncCarSubscriptions(socket, carsRef.current, subscribedRef);
+      syncCarSubscriptions(socket, carsRef.current, subscribedCarsRef);
+      syncTripSubscriptions(
+        socket,
+        watchedTripsRef.current,
+        subscribedTripsRef,
+      );
     }
 
     return () => {
       socket.off("connect", onConnect);
       socket.off(TripWsEvent.CarLocationUpdated, onLocation);
-      for (const id of subscribedRef.current) {
+      socket.off(TripWsEvent.TripMetricsUpdated, onMetrics);
+      socket.off(TripWsEvent.TripStateChanged, onStateChanged);
+      socket.off(TripWsEvent.TripFinished, onFinished);
+      for (const id of subscribedCarsRef.current) {
         socket.emit(TripWsCommand.UnsubscribeCar, { carId: id });
       }
-      subscribedRef.current.clear();
+      for (const id of subscribedTripsRef.current) {
+        socket.emit(TripWsCommand.UnsubscribeTrip, { tripId: id });
+      }
+      subscribedCarsRef.current.clear();
+      subscribedTripsRef.current.clear();
       socket.disconnect();
       socketRef.current = null;
     };
@@ -123,8 +179,16 @@ const DashboardTripRealtimeSync = () => {
     if (!token || !socket?.connected) {
       return;
     }
-    syncCarSubscriptions(socket, cars, subscribedRef);
+    syncCarSubscriptions(socket, cars, subscribedCarsRef);
   }, [cars, token]);
+
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!token || !socket?.connected) {
+      return;
+    }
+    syncTripSubscriptions(socket, watchedTrips, subscribedTripsRef);
+  }, [watchedTrips, token]);
 
   return null;
 };

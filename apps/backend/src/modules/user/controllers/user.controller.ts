@@ -142,7 +142,9 @@ export class UserController {
       const isAdmin = ADMIN_ROLES.includes(actor.role);
       const isSelf = actor.id === id;
       if (!isAdmin && !isSelf) {
-        throw new BadRequestException('Недостаточно прав для обновления профиля');
+        throw new BadRequestException(
+          'Недостаточно прав для обновления профиля',
+        );
       }
       return this.userService.update(id, user);
     } catch (error) {

@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
 
 import '../../../app/router/app_routes.dart';
+import '../../../shared/validation/input_validators.dart';
+import '../../auth/cubit/auth_cubit.dart';
 import '../cubit/profile_cubit.dart';
 import '../cubit/profile_state.dart';
 import '../domain/profile_user.dart';
@@ -17,6 +19,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final _profileFormKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   String? _filledForUserId;
 
@@ -33,8 +36,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _onSave(BuildContext context) {
+    if (!_profileFormKey.currentState!.validate()) return;
     final name = _nameCtrl.text.trim();
-    if (name.isEmpty) return;
     context.read<ProfileCubit>().updateName(name);
   }
 
@@ -77,9 +80,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           body: SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+              child: Form(
+                key: _profileFormKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                   if (isLoading) ...[
                     const LinearProgressIndicator(),
                     const Gap(16),
@@ -99,13 +105,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const Gap(16),
                   ],
-                  TextField(
+                  TextFormField(
                     controller: _nameCtrl,
                     enabled: user != null && !isLoading,
                     decoration: InputDecoration(
                       labelText: 'auth.name'.tr(),
                       hintText: 'profile.update_name_hint'.tr(),
                     ),
+                    validator: (v) =>
+                        user == null ? null : validateProfileName(v),
                   ),
                   const Gap(12),
                   FilledButton(
@@ -129,11 +137,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onPressed: () => context.push(AppRoutes.trips),
                     child: Text('profile.trip_history'.tr()),
                   ),
+                  const Spacer(),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      await context.read<AuthCubit>().logout();
+                    },
+                    icon: const Icon(Icons.logout),
+                    label: Text('common.logout'.tr()),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-        );
+        ),
+      );
       },
     );
   }

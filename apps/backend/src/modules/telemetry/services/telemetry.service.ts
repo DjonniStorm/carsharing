@@ -19,6 +19,10 @@ import {
 } from 'src/shared/background/job-queue.interface';
 import { ViolationJobName } from 'src/modules/violation/background/violation-jobs';
 import {
+  ITripPricingServiceToken,
+  type ITripPricingService,
+} from '../../trip/pricing/trip-pricing.service.interface';
+import {
   ITripRepositoryToken,
   type ITripRepository,
 } from '../../trip/repositories/trip.repository.interface';
@@ -45,6 +49,8 @@ export class TelemetryService implements ITelemetryService {
     private readonly tripOutbox: ITripRealtimeOutbox,
     @Inject(ITripRepositoryToken)
     private readonly trips: ITripRepository,
+    @Inject(ITripPricingServiceToken)
+    private readonly tripPricing: ITripPricingService,
   ) {}
 
   async create(input: TelemetryCreate): Promise<TelemetryRead> {
@@ -98,6 +104,7 @@ export class TelemetryService implements ITelemetryService {
         createdAtMs: Date.now(),
       });
       void this.publishTripRealtimeFromTelemetry(input);
+      this.tripPricing.enqueueRecalc(input.tripId, 'telemetry');
       return TelemetryMapper.fromEntityToRead(created);
     } catch (error) {
       this.logger.error('Failed to create telemetry point', error);
@@ -186,6 +193,7 @@ export class TelemetryService implements ITelemetryService {
               lat: input.lat,
               lng: input.lon,
               speed: input.speed,
+              fuelLevel: input.fuelLevel,
               recordedAt,
             },
             { eventId: uuidv4(), ts: recordedAt },

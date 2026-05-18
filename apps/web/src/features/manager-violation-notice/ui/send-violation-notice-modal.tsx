@@ -109,11 +109,10 @@ const SendViolationNoticeModal = ({
       onClose();
     } catch (e: unknown) {
       const msg =
-        e instanceof Error ? e.message : t(LANG_KEYS.pages.tripViolationNoticeErrorFallback);
-      notification.error(
-        t(LANG_KEYS.pages.tripViolationNoticeErrorTitle),
-        msg,
-      );
+        e instanceof Error
+          ? e.message
+          : t(LANG_KEYS.pages.tripViolationNoticeErrorFallback);
+      notification.error(t(LANG_KEYS.pages.tripViolationNoticeErrorTitle), msg);
     } finally {
       setSubmitting(false);
     }

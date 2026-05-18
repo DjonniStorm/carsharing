@@ -6,9 +6,7 @@ import { persistLanguage } from "@/shared/i18n/language";
 
 const ShellLanguageControl = () => {
   const { i18n } = useTranslation();
-  const value: SupportedLanguage = i18n.language.startsWith("en")
-    ? "en"
-    : "ru";
+  const value: SupportedLanguage = i18n.language.startsWith("en") ? "en" : "ru";
 
   return (
     <SegmentedControl

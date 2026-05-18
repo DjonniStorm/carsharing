@@ -237,6 +237,9 @@ export const LANG_KEYS = {
     dashboardCarPanelGoCars: "pages.dashboardCarPanelGoCars",
     dashboardCarPanelGoTrip: "pages.dashboardCarPanelGoTrip",
     dashboardCarPanelGoUser: "pages.dashboardCarPanelGoUser",
+    dashboardCarPanelTripDistance: "pages.dashboardCarPanelTripDistance",
+    dashboardCarPanelTripPrice: "pages.dashboardCarPanelTripPrice",
+    tripDetailPriceCalculating: "pages.tripDetailPriceCalculating",
     tripStatusPending: "pages.tripStatusPending",
     tripStatusStarted: "pages.tripStatusStarted",
     tripStatusActive: "pages.tripStatusActive",
@@ -268,7 +271,8 @@ export const LANG_KEYS = {
       "pages.tripDetailEmailNoticeViolationsInLetter",
     tripDetailEmailNoticeViolationMissing:
       "pages.tripDetailEmailNoticeViolationMissing",
-    tripDetailViolationOpenEditNewTab: "pages.tripDetailViolationOpenEditNewTab",
+    tripDetailViolationOpenEditNewTab:
+      "pages.tripDetailViolationOpenEditNewTab",
     tripDetailEmailNoticeStatusPENDING:
       "pages.tripDetailEmailNoticeStatusPENDING",
     tripDetailEmailNoticeStatusSENT: "pages.tripDetailEmailNoticeStatusSENT",
@@ -330,8 +334,7 @@ export const LANG_KEYS = {
     tripViolationNoticeSuccessTitle: "pages.tripViolationNoticeSuccessTitle",
     tripViolationNoticeSuccessBody: "pages.tripViolationNoticeSuccessBody",
     tripViolationNoticeErrorTitle: "pages.tripViolationNoticeErrorTitle",
-    tripViolationNoticeErrorFallback:
-      "pages.tripViolationNoticeErrorFallback",
+    tripViolationNoticeErrorFallback: "pages.tripViolationNoticeErrorFallback",
     tripDetailViolationAt: "pages.tripDetailViolationAt",
     tripDetailLoadError: "pages.tripDetailLoadError",
     tripDetailMapNoRoute: "pages.tripDetailMapNoRoute",

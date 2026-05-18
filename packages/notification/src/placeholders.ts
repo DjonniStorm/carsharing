@@ -13,14 +13,10 @@ export function substitutePlaceholders<T extends JsonWithPlaceholders>(
   vars: PlaceholderVars,
 ): T {
   if (typeof value === 'string') {
-    return value
-      .replaceAll('{{to}}', vars.to)
-      .replaceAll('{{body}}', vars.body) as T;
+    return value.replaceAll('{{to}}', vars.to).replaceAll('{{body}}', vars.body) as T;
   }
   if (Array.isArray(value)) {
-    return value.map((item) =>
-      substitutePlaceholders(item, vars),
-    ) as T;
+    return value.map((item) => substitutePlaceholders(item, vars)) as T;
   }
   if (value !== null && typeof value === 'object') {
     const out: Record<string, JsonWithPlaceholders> = {};

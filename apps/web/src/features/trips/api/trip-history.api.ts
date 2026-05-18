@@ -35,14 +35,14 @@ export class TripHistoryApi extends BaseApiClient {
   }
 
   /** Список поездок с нарушениями по пользователю (`GET /trip-history`). */
-  listShort(query: TripHistoryListQuery = {}): Promise<TripHistoryShortInfoRead[]> {
+  listShort(
+    query: TripHistoryListQuery = {},
+  ): Promise<TripHistoryShortInfoRead[]> {
     return this.getJson<TripHistoryShortInfoRead[]>(
       `/trip-history${optionalQuery({
         userId: query.userId,
-        limit:
-          query.limit !== undefined ? String(query.limit) : undefined,
-        offset:
-          query.offset !== undefined ? String(query.offset) : undefined,
+        limit: query.limit !== undefined ? String(query.limit) : undefined,
+        offset: query.offset !== undefined ? String(query.offset) : undefined,
         startedAfter: query.startedAfter,
         startedBefore: query.startedBefore,
         finishedAfter: query.finishedAfter,

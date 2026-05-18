@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 
 import { CarModule } from '../car/car.module';
 import { TripModule } from '../trip/trip.module';
@@ -9,7 +9,7 @@ import { TelemetryService } from './services/telemetry.service';
 import { ITelemetryServiceToken } from './services/telemetry.service.interface';
 
 @Module({
-  imports: [CarModule, TripModule],
+  imports: [CarModule, forwardRef(() => TripModule)],
   controllers: [TelemetryController],
   providers: [
     {

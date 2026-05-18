@@ -4,10 +4,7 @@ import { createNotificationClient } from '../src/client.js';
 
 describe('createNotificationClient sendSms', () => {
   beforeEach(() => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response(null, { status: 200 })),
-    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
   });
 
   afterEach(() => {
@@ -58,9 +55,7 @@ describe('createNotificationClient sendSms', () => {
   });
 
   it('бросает при HTTP ошибке', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(
-      new Response('fail', { status: 500 }),
-    );
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('fail', { status: 500 }));
 
     const client = createNotificationClient({
       sms: {
@@ -70,8 +65,8 @@ describe('createNotificationClient sendSms', () => {
       },
     });
 
-    await expect(
-      client.sendSms({ to: '1', body: '2' }),
-    ).rejects.toThrow(/Ошибка HTTP при отправке SMS/);
+    await expect(client.sendSms({ to: '1', body: '2' })).rejects.toThrow(
+      /Ошибка HTTP при отправке SMS/,
+    );
   });
 });

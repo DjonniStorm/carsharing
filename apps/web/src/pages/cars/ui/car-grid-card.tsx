@@ -16,17 +16,7 @@ import {
 } from "@/features/cars/lib/car-status-present";
 import type { LangKey } from "@/shared/i18n/keys";
 import { LANG_KEYS } from "@/shared/i18n/keys";
-
-function formatCardDateTime(iso: string | null | undefined): string {
-  if (iso == null || iso === "") {
-    return "—";
-  }
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) {
-    return "—";
-  }
-  return d.toLocaleString();
-}
+import { formatCardDateTime } from "@/shared/lib/format";
 
 type Props = {
   car: CarRead;
@@ -170,9 +160,7 @@ const CarGridCard = ({ car, t, onEdit }: Props) => {
               <Text span c="dimmed">
                 {t(LANG_KEYS.pages.carsCardLastPosAt)}
               </Text>{" "}
-              <Text span>
-                {formatCardDateTime(car.lastPositionAt)}
-              </Text>
+              <Text span>{formatCardDateTime(car.lastPositionAt)}</Text>
             </Text>
             <Text size="sm" style={{ wordBreak: "break-word" }}>
               <Text span c="dimmed">

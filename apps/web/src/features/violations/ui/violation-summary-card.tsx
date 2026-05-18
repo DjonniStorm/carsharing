@@ -9,6 +9,7 @@ import {
 } from "@/features/violations/lib/violation-status-present";
 import { ROUTES } from "@/shared/config/routes-paths";
 import { LANG_KEYS } from "@/shared/i18n/keys";
+import { formatCardDateTime } from "@/shared/lib/format";
 
 function PencilGlyph({ size = 18 }: { size?: number }) {
   return (
@@ -80,7 +81,7 @@ const ViolationSummaryCard = ({
       </Badge>
       <Text size="xs" c="dimmed" fz="lg">
         {t(LANG_KEYS.pages.tripDetailViolationAt)}{" "}
-        {new Date(v.createdAt).toLocaleString()}
+        {formatCardDateTime(new Date(v.createdAt))}
       </Text>
       <Text size="sm">{v.description}</Text>
       {showTripLink ? (

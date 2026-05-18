@@ -30,7 +30,9 @@ import { TripCreate } from '../entities/dtos/trip.create';
 import { TripUpdate } from '../entities/dtos/trip.update';
 import { TripStatus } from '../entities/trip.status';
 import { InMemoryJobQueue } from 'src/shared/background/in-memory-job-queue';
+import { TelemetryRepository } from '../../telemetry/repositories/telemetry.repository';
 import { TripGateway } from '../gateways/trip.gateway';
+import { TripPricingService } from '../pricing/trip-pricing.service';
 import { LoggerTripRealtimeOutbox } from '../realtime/trip-realtime.outbox.logger';
 import { TripRepository } from '../repositories/trip.repository';
 import { TripRealtimePublisher } from './trip-realtime.publisher';
@@ -117,14 +119,24 @@ describe('TripService (integration)', () => {
     geoZoneVersionId = firstZone.currentVersionId;
     geoZoneVersionIdOther = secondZone.currentVersionId;
 
-    service = new TripService(
-      new TripRepository(prisma),
-      new TripRealtimePublisher(
-        new LoggerTripRealtimeOutbox({
-          publish: () => undefined,
-        } as Pick<TripGateway, 'publish'>),
-      ),
+    const tripRepository = new TripRepository(prisma);
+    const publisher = new TripRealtimePublisher(
+      new LoggerTripRealtimeOutbox({
+        publish: () => undefined,
+      } as Pick<TripGateway, 'publish'>),
+    );
+    const pricingService = new TripPricingService(
+      tripRepository,
+      geozoneRepository,
+      new TelemetryRepository(prisma),
       new InMemoryJobQueue(),
+      publisher,
+    );
+    service = new TripService(
+      tripRepository,
+      publisher,
+      new InMemoryJobQueue(),
+      pricingService,
     );
   });
 
@@ -239,24 +251,32 @@ describe('TripService (integration)', () => {
   });
 
   describe('update', () => {
-    it('updates mutable fields', async () => {
+    it('updates mutable fields and ignores client billing on finish', async () => {
       const created = await service.create(
         createTripInput({
           userId,
           carId,
           geoZoneVersionId,
+          status: TripStatus.ACTIVE,
         }),
       );
+      const startedAt = new Date(Date.now() - 10 * 60 * 1000);
+      await prisma.trip.update({
+        where: { id: created.id },
+        data: { startedAt },
+      });
+
       const patch = new TripUpdate();
       patch.status = TripStatus.FINISHED;
+      patch.finishedAt = new Date();
       patch.distanceMeters = 12_345;
       patch.priceTotal = 321.5;
-      patch.geoZoneVersionId = geoZoneVersionIdOther;
       const updated = await service.update(created.id, patch);
       expect(updated.status).toBe(TripStatus.FINISHED);
-      expect(updated.distanceMeters).toBe(12_345);
-      expect(updated.priceTotal).toBe(321.5);
-      expect(updated.geoZoneVersionId).toBe(geoZoneVersionIdOther);
+      expect(updated.geoZoneVersionId).toBe(geoZoneVersionId);
+      expect(updated.priceTotal).not.toBe(321.5);
+      expect(updated.chargedMinutes).toBe(10);
+      expect(updated.priceTime).toBe(10);
     });
 
     it('throws TripNotFoundException for unknown id', async () => {

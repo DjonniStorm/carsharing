@@ -21,6 +21,7 @@ import { GeozoneType } from '../../geozone/entities/geozone.type';
 import { GeozoneRepository } from '../../geozone/repositories/geozone.repository';
 import { TripRepository } from '../../trip/repositories/trip.repository';
 import type { ITripRealtimeOutbox } from '../../trip/realtime/trip-realtime.outbox.interface';
+import { TripRealtimePublisher } from '../../trip/services/trip-realtime.publisher';
 import type { AuthenticatedUser } from 'src/modules/auth/types/authenticated-user';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { InMemoryJobQueue } from 'src/shared/background/in-memory-job-queue';
@@ -129,11 +130,18 @@ describe('TelemetryController', () => {
     const tripOutbox: ITripRealtimeOutbox = {
       publish: () => Promise.resolve(),
     };
+    const tripRepository = new TripRepository(prisma);
+    const publisher = new TripRealtimePublisher(tripOutbox);
+    const pricingStub = {
+      enqueueRecalc: () => undefined,
+      recalcAndPersist: async () => null,
+    };
     const service = new TelemetryService(
       new TelemetryRepository(prisma),
       new InMemoryJobQueue(),
       tripOutbox,
-      new TripRepository(prisma),
+      tripRepository,
+      pricingStub,
     );
     const tripServiceStub = {
       ensureTripAccessForUser: (): Promise<void> => Promise.resolve(),

@@ -105,13 +105,14 @@ export class ManagerViolationNoticeService {
 
     let notificationId: number;
     try {
-      const created = await this.tripNotificationRepository.createWithViolations({
-        userId: tripRead.userId,
-        tripId: dto.tripId,
-        message: messageJson,
-        status: ManagerNoticeDeliveryStatus.PENDING,
-        violationIds,
-      });
+      const created =
+        await this.tripNotificationRepository.createWithViolations({
+          userId: tripRead.userId,
+          tripId: dto.tripId,
+          message: messageJson,
+          status: ManagerNoticeDeliveryStatus.PENDING,
+          violationIds,
+        });
       notificationId = created.id;
     } catch (err) {
       this.logger.error('createWithViolations failed', err);
@@ -153,8 +154,7 @@ export class ManagerViolationNoticeService {
         deliveryStatus: ManagerNoticeDeliveryStatus.FAILED,
         violationIds,
         sentToEmail: email,
-        failureReason:
-          err instanceof Error ? err.message : String(err),
+        failureReason: err instanceof Error ? err.message : String(err),
       };
     }
   }

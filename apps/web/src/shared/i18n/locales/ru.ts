@@ -240,6 +240,9 @@ export const ru = {
     dashboardCarPanelGoCars: "К списку автомобилей",
     dashboardCarPanelGoTrip: "Карточка поездки",
     dashboardCarPanelGoUser: "Профиль пользователя",
+    dashboardCarPanelTripDistance: "Дистанция (live)",
+    dashboardCarPanelTripPrice: "Текущая сумма",
+    tripDetailPriceCalculating: "Расчёт…",
     tripStatusPending: "Ожидание",
     tripStatusStarted: "Начата",
     tripStatusActive: "Активна",
@@ -265,8 +268,10 @@ export const ru = {
     tripDetailPlaceholderSoon: "Раздел будет добавлен позже.",
     tripDetailEmailNoticesIntro:
       "Письма водителю по нарушениям (сохранённые уведомления с привязкой к поездке).",
-    tripDetailEmailNoticesEmpty: "Пока нет записей об отправленных уведомлениях.",
-    tripDetailEmailNoticesLoadError: "Не удалось загрузить уведомления по поездке.",
+    tripDetailEmailNoticesEmpty:
+      "Пока нет записей об отправленных уведомлениях.",
+    tripDetailEmailNoticesLoadError:
+      "Не удалось загрузить уведомления по поездке.",
     tripDetailEmailNoticeId: "Уведомление №",
     tripDetailEmailNoticeViolationsInLetter: "Нарушения в этом письме",
     tripDetailEmailNoticeViolationMissing:

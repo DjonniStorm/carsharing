@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 
 import type { TripNotificationRead } from "@/entities/manager-violation-notice";
 import type { ReadUser } from "@/entities/user";
+import { TripStatus } from "@/entities/trip";
 
 import { UserRole } from "@/entities/user/model/user-role";
 import { usersApi } from "@/features/auth/api";
@@ -32,8 +33,19 @@ import {
 } from "@/features/cars/lib/car-status-present";
 import { authUserAtom } from "@/features/auth/model/session";
 import { managerViolationNoticeApi } from "@/features/manager-violation-notice/api";
-import { tripNotificationDetailsText, tripNotificationMessagePreview } from "@/features/manager-violation-notice/lib/trip-notification-preview";
+import {
+  tripNotificationDetailsText,
+  tripNotificationMessagePreview,
+} from "@/features/manager-violation-notice/lib/trip-notification-preview";
 import { SendViolationNoticeModal } from "@/features/manager-violation-notice/ui/send-violation-notice-modal";
+import {
+  useLiveTrip,
+  useLiveTripOverlay,
+} from "@/features/trip-realtime/hooks/use-live-trip";
+import {
+  registerTripWatch,
+  unregisterTripWatch,
+} from "@/features/trip-realtime/model/live-trip-overlay";
 import {
   loadTripGeozoneForMap,
   loadTripHistoryFull,
@@ -45,31 +57,20 @@ import {
   tripHistoryFullStatusAtom,
 } from "@/features/trips/model/trip-history-view";
 import { tripStatusLangKey } from "@/features/trips/lib/trip-status-lang-key";
-import { ViolationSummaryCard, PencilGlyph } from "@/features/violations/ui/violation-summary-card";
+import {
+  ViolationSummaryCard,
+  PencilGlyph,
+} from "@/features/violations/ui/violation-summary-card";
 import { ROUTES } from "@/shared/config/routes-paths";
 import { getYandexMapsApiKey } from "@/shared/config/env";
+import { formatCardDateTime, formatCoord, formatMoney } from "@/shared/lib/format";
+import { isOngoingTripStatus } from "@/shared/lib/is-ongoing-trip-status";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 
 import { TripHistoryRouteMap } from "@/pages/trip/ui/trip-history-route-map";
+import type { ViolationRead } from "@/entities/violation";
 
 const tripMapApiKey = getYandexMapsApiKey();
-
-function fmtCoord(lat: number | null, lon: number | null): string {
-  if (lat == null || lon == null) {
-    return "—";
-  }
-  return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
-}
-
-function fmtMoney(n: number | null | undefined): string {
-  if (n == null || !Number.isFinite(Number(n))) {
-    return "—";
-  }
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(Number(n));
-}
 
 function Row({
   label,
@@ -131,12 +132,16 @@ const TripViewPage = () => {
   const [tripMapGeozone] = useAtom(tripGeozoneForMapAtom);
   const [tripGeozoneStatus] = useAtom(tripGeozoneForMapStatusAtom);
   const [authUser] = useAtom(authUserAtom);
-  const [noticeOpened, { open: openViolationNotice, close: closeViolationNotice }] =
-    useDisclosure(false);
+  const [
+    noticeOpened,
+    { open: openViolationNotice, close: closeViolationNotice },
+  ] = useDisclosure(false);
 
   const loadFull = useAction(loadTripHistoryFull);
   const loadZone = useAction(loadTripGeozoneForMap);
   const resetView = useAction(resetTripHistoryView);
+  const watchTrip = useAction(registerTripWatch);
+  const unwatchTrip = useAction(unregisterTripWatch);
 
   useEffect(() => {
     resetView();
@@ -171,12 +176,31 @@ const TripViewPage = () => {
   }, [errorState?.status, navigate]);
 
   const trip = data?.trip;
+  const shownTrip = useLiveTrip(trip) ?? trip;
+  const tripOverlay = useLiveTripOverlay(tripId);
   const car = data?.car;
   const violations = data?.violations ?? [];
+  useEffect(() => {
+    if (!trip || !isOngoingTripStatus(trip.status)) {
+      return;
+    }
+    watchTrip(trip.id);
+    return () => {
+      unwatchTrip(trip.id);
+    };
+  }, [trip?.id, trip?.status, watchTrip, unwatchTrip]);
+
+  useEffect(() => {
+    if (tripOverlay?.status !== TripStatus.FINISHED) {
+      return;
+    }
+    void loadFull(tripId);
+  }, [tripOverlay?.status, tripOverlay?.updatedAt, tripId, loadFull]);
+
   const violationById = useMemo(() => {
-    const m = new Map<string, (typeof violations)[number]>();
-    for (const v of violations) {
-      m.set(v.id, v);
+    const m = new Map<string, ViolationRead>();
+    for (const violation of violations) {
+      m.set(violation.id, violation);
     }
     return m;
   }, [violations]);
@@ -193,9 +217,8 @@ const TripViewPage = () => {
     setEmailNoticesPhase("loading");
     setEmailNoticesError(null);
     try {
-      const list = await managerViolationNoticeApi.listTripNotifications(
-        tripId,
-      );
+      const list =
+        await managerViolationNoticeApi.listTripNotifications(tripId);
       setEmailNotices(list);
       setEmailNoticesPhase("ok");
     } catch (e) {
@@ -205,7 +228,9 @@ const TripViewPage = () => {
     }
   }, [tripId]);
 
-  const [userById, setUserById] = useState<Map<string, ReadUser>>(() => new Map());
+  const [userById, setUserById] = useState<Map<string, ReadUser>>(
+    () => new Map(),
+  );
 
   useEffect(() => {
     const ids = new Set<string>();
@@ -223,6 +248,7 @@ const TripViewPage = () => {
       return;
     }
     let cancelled = false;
+    // TODO: заменить на Reatom
     void Promise.all(
       list.map((id) =>
         usersApi
@@ -276,7 +302,12 @@ const TripViewPage = () => {
     const u = userById.get(id);
     if (u) {
       return (
-        <Anchor component={Link} to={ROUTES.dashboard.userView(id)} size="sm" fw={500}>
+        <Anchor
+          component={Link}
+          to={ROUTES.dashboard.userView(id)}
+          size="sm"
+          fw={500}
+        >
           {u.name}
         </Anchor>
       );
@@ -311,7 +342,7 @@ const TripViewPage = () => {
           <Alert color="red" title={t(LANG_KEYS.pages.tripDetailLoadError)}>
             {errorMessage}
           </Alert>
-        ) : trip && car ? (
+        ) : shownTrip && car ? (
           <>
             <Paper p="md" radius="md" withBorder>
               <Stack gap="sm">
@@ -319,116 +350,118 @@ const TripViewPage = () => {
                   {t(LANG_KEYS.pages.tripDetailSectionTrip)}
                 </Text>
                 <Divider />
-                <Row label={t(LANG_KEYS.pages.tripViewId)} value={trip.id} />
+                <Row label={t(LANG_KEYS.pages.tripViewId)} value={shownTrip.id} />
                 <Row
                   label={t(LANG_KEYS.pages.tripViewStatus)}
-                  value={t(tripStatusLangKey(trip.status))}
+                  value={t(tripStatusLangKey(shownTrip.status))}
                 />
                 <Text size="sm">
                   <Text span fw={600}>
                     {t(LANG_KEYS.pages.tripViewUser)}
                   </Text>{" "}
-                  {userNameLink(trip.userId)}
+                  {userNameLink(shownTrip.userId)}
                 </Text>
                 <Row
                   label={t(LANG_KEYS.pages.tripViewCar)}
-                  value={trip.carId}
+                  value={shownTrip.carId}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailGeoZoneVersionId)}
-                  value={trip.geoZoneVersionId ?? "—"}
+                  value={shownTrip.geoZoneVersionId ?? "—"}
                 />
-                {trip.tariffVersionId ? (
+                {shownTrip.tariffVersionId ? (
                   <Row
                     label={t(LANG_KEYS.pages.tripDetailTariffVersionId)}
-                    value={trip.tariffVersionId}
+                    value={shownTrip.tariffVersionId}
                   />
                 ) : null}
                 <Row
                   label={t(LANG_KEYS.pages.tripViewStarted)}
-                  value={new Date(trip.startedAt).toLocaleString()}
+                  value={formatCardDateTime(shownTrip.startedAt)}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripViewFinished)}
-                  value={
-                    trip.finishedAt
-                      ? new Date(trip.finishedAt).toLocaleString()
-                      : "—"
-                  }
+                  value={formatCardDateTime(shownTrip.finishedAt)}
                 />
-                {trip.pauseStartedAt ? (
+                {shownTrip.pauseStartedAt ? (
                   <Row
                     label={t(LANG_KEYS.pages.tripDetailPauseStarted)}
-                    value={new Date(trip.pauseStartedAt).toLocaleString()}
+                    value={formatCardDateTime(shownTrip.pauseStartedAt)}
                   />
                 ) : null}
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailTotalPausedSec)}
-                  value={trip.totalPausedSec}
+                  value={shownTrip.totalPausedSec}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailStartCoords)}
-                  value={fmtCoord(trip.startLat, trip.startLng)}
+                  value={formatCoord(shownTrip.startLat, shownTrip.startLng)}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailFinishCoords)}
-                  value={fmtCoord(trip.finishLat, trip.finishLng)}
+                  value={formatCoord(shownTrip.finishLat, shownTrip.finishLng)}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailDistanceLegacy)}
-                  value={trip.distance}
+                  value={shownTrip.distance}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailDistanceMeters)}
-                  value={trip.distanceMeters ?? "—"}
+                  value={shownTrip.distanceMeters ?? "—"}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailDurationLegacy)}
-                  value={trip.duration}
+                  value={shownTrip.duration}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailChargedMinutes)}
-                  value={trip.chargedMinutes ?? "—"}
+                  value={shownTrip.chargedMinutes ?? "—"}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailChargedKm)}
-                  value={trip.chargedKm ?? "—"}
+                  value={shownTrip.chargedKm ?? "—"}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailPriceTime)}
-                  value={fmtMoney(trip.priceTime)}
+                  value={formatMoney(shownTrip.priceTime)}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailPriceDistance)}
-                  value={fmtMoney(trip.priceDistance)}
+                  value={formatMoney(shownTrip.priceDistance)}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailPricePause)}
-                  value={fmtMoney(trip.pricePause)}
+                  value={formatMoney(shownTrip.pricePause)}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailPriceTotal)}
-                  value={fmtMoney(trip.priceTotal)}
+                  value={
+                    shownTrip.priceTotal != null
+                      ? formatMoney(shownTrip.priceTotal)
+                      : isOngoingTripStatus(shownTrip.status)
+                        ? t(LANG_KEYS.pages.tripDetailPriceCalculating)
+                        : "—"
+                  }
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailCreatedAt)}
-                  value={new Date(trip.createdAt).toLocaleString()}
+                  value={formatCardDateTime(shownTrip.createdAt)}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailUpdatedAt)}
-                  value={new Date(trip.updatedAt).toLocaleString()}
+                  value={formatCardDateTime(shownTrip.updatedAt)}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailCarPlateSnapshot)}
-                  value={trip.carPlateSnapshot ?? "—"}
+                  value={shownTrip.carPlateSnapshot ?? "—"}
                 />
                 <Row
                   label={t(LANG_KEYS.pages.tripDetailCarDisplayNameSnapshot)}
-                  value={trip.carDisplayNameSnapshot ?? "—"}
+                  value={shownTrip.carDisplayNameSnapshot ?? "—"}
                 />
                 <Button
                   component={Link}
-                  to={ROUTES.dashboard.userView(trip.userId)}
+                  to={ROUTES.dashboard.userView(shownTrip.userId)}
                   variant="light"
                   size="xs"
                   mt="xs"
@@ -604,7 +637,8 @@ const TripViewPage = () => {
                                 </Badge>
                               </Group>
                               <Text size="xs" c="dimmed" lineClamp={2}>
-                                {tripNotificationMessagePreview(n.message) || "—"}
+                                {tripNotificationMessagePreview(n.message) ||
+                                  "—"}
                               </Text>
                             </Stack>
                           </Accordion.Control>
@@ -618,8 +652,13 @@ const TripViewPage = () => {
                                     </Text>{" "}
                                     {userNameLink(n.userId)}
                                   </Text>
-                                  <Text size="sm" lh={1.55} style={{ whiteSpace: "pre-wrap" }}>
-                                    {tripNotificationDetailsText(n.message) || "—"}
+                                  <Text
+                                    size="sm"
+                                    lh={1.55}
+                                    style={{ whiteSpace: "pre-wrap" }}
+                                  >
+                                    {tripNotificationDetailsText(n.message) ||
+                                      "—"}
                                   </Text>
                                 </Stack>
                               </Paper>
@@ -647,7 +686,11 @@ const TripViewPage = () => {
                                       align="center"
                                       gap="xs"
                                     >
-                                      <Text size="sm" c="dimmed" style={{ flex: 1 }}>
+                                      <Text
+                                        size="sm"
+                                        c="dimmed"
+                                        style={{ flex: 1 }}
+                                      >
                                         {t(
                                           LANG_KEYS.pages
                                             .tripDetailEmailNoticeViolationMissing,

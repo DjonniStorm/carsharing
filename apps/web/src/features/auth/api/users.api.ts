@@ -29,8 +29,7 @@ export class UsersApi extends BaseApiClient {
   findAll(query: UsersListQuery = {}): Promise<ReadUser[]> {
     return this.getJson<ReadUser[]>(
       `/users${optionalQuery({
-        includeDeleted:
-          query.includeDeleted === true ? "true" : undefined,
+        includeDeleted: query.includeDeleted === true ? "true" : undefined,
       })}`,
     ).catch((err: unknown) => {
       if (

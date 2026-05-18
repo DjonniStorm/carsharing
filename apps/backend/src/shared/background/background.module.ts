@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 
 import { IJobQueueToken } from './job-queue.interface';
 import { InMemoryJobQueue } from './in-memory-job-queue';
+import { ITripPricingJobQueueToken } from './trip-pricing-job-queue.interface';
 
 @Global()
 @Module({
@@ -10,7 +11,11 @@ import { InMemoryJobQueue } from './in-memory-job-queue';
       provide: IJobQueueToken,
       useValue: new InMemoryJobQueue(),
     },
+    {
+      provide: ITripPricingJobQueueToken,
+      useValue: new InMemoryJobQueue(),
+    },
   ],
-  exports: [IJobQueueToken],
+  exports: [IJobQueueToken, ITripPricingJobQueueToken],
 })
 export class BackgroundModule {}

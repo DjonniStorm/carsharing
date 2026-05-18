@@ -1,7 +1,10 @@
 import nodemailer from 'nodemailer';
 
 import { substitutePlaceholders } from './placeholders.js';
-import { buildVerificationEmail, buildVerificationSmsBody } from './templates/verification-templates.js';
+import {
+  buildVerificationEmail,
+  buildVerificationSmsBody,
+} from './templates/verification-templates.js';
 import { buildViolationNoticeEmail } from './templates/violation-templates.js';
 import type {
   NotificationClient,
@@ -15,9 +18,7 @@ import type {
 /**
  * Создаёт клиент уведомлений по конфигурации, переданной приложением (ключи и URL — с бэкенда).
  */
-export function createNotificationClient(
-  config: NotificationConfig,
-): NotificationClient {
+export function createNotificationClient(config: NotificationConfig): NotificationClient {
   const emailCfg = config.email;
   const smsCfg = config.sms;
 
@@ -67,10 +68,7 @@ export function createNotificationClient(
       if (smsCfg.method === 'POST' && smsCfg.jsonBody !== undefined) {
         const payload = substitutePlaceholders(smsCfg.jsonBody, vars);
         body = JSON.stringify(payload);
-        const hasContentType =
-          Object.keys(headers).some(
-            (k) => k.toLowerCase() === 'content-type',
-          );
+        const hasContentType = Object.keys(headers).some((k) => k.toLowerCase() === 'content-type');
         if (!hasContentType) {
           headers['Content-Type'] = 'application/json';
         }
@@ -84,17 +82,12 @@ export function createNotificationClient(
 
       if (!res.ok) {
         const snippet = await res.text().catch(() => '');
-        throw new Error(
-          `Ошибка HTTP при отправке SMS (${res.status}): ${snippet.slice(0, 500)}`,
-        );
+        throw new Error(`Ошибка HTTP при отправке SMS (${res.status}): ${snippet.slice(0, 500)}`);
       }
     },
 
-    async sendVerificationCode(
-      input: SendVerificationCodeInput,
-    ): Promise<void> {
-      const preferSms =
-        smsCfg && input.phone && String(input.phone).trim() !== '';
+    async sendVerificationCode(input: SendVerificationCodeInput): Promise<void> {
+      const preferSms = smsCfg && input.phone && String(input.phone).trim() !== '';
       if (preferSms) {
         await api.sendSms({
           to: String(input.phone).trim(),
@@ -122,9 +115,7 @@ export function createNotificationClient(
 
     async sendViolationNotice(input: ViolationNoticeInput): Promise<void> {
       if (!emailCfg || !transport) {
-        throw new Error(
-          'Уведомление о нарушении: канал email не сконфигурирован',
-        );
+        throw new Error('Уведомление о нарушении: канал email не сконфигурирован');
       }
       const { to, ...fields } = input;
       const { subject, text, html } = buildViolationNoticeEmail(fields);

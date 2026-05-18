@@ -47,7 +47,9 @@ const TripHistoryRouteMap = ({
   }, [tripGeozone]);
 
   /** Чипы старт/финиш по первой/последней координате трека (если их хотя бы две). */
-  const startFinishMarkers = useMemo<YandexMapOverlayMarker[] | undefined>(() => {
+  const startFinishMarkers = useMemo<
+    YandexMapOverlayMarker[] | undefined
+  >(() => {
     if (routeLine.length < 2) {
       return undefined;
     }

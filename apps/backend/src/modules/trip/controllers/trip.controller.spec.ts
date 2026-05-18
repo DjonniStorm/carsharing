@@ -30,7 +30,9 @@ import { TripCreate } from '../entities/dtos/trip.create';
 import { TripUpdate } from '../entities/dtos/trip.update';
 import { TripStatus } from '../entities/trip.status';
 import { InMemoryJobQueue } from 'src/shared/background/in-memory-job-queue';
+import { TelemetryRepository } from '../../telemetry/repositories/telemetry.repository';
 import { TripGateway } from '../gateways/trip.gateway';
+import { TripPricingService } from '../pricing/trip-pricing.service';
 import { LoggerTripRealtimeOutbox } from '../realtime/trip-realtime.outbox.logger';
 import { TripRepository } from '../repositories/trip.repository';
 import { TripService } from '../services/trip.service';
@@ -40,6 +42,11 @@ import { TripRealtimePublisher } from '../services/trip-realtime.publisher';
 const adminActor = (): AuthenticatedUser => ({
   id: '00000000-0000-0000-0000-000000000001',
   role: UserRole.MANAGER,
+});
+
+const driverActor = (userId: string): AuthenticatedUser => ({
+  id: userId,
+  role: UserRole.DRIVER,
 });
 
 describe('TripController', () => {
@@ -123,14 +130,24 @@ describe('TripController', () => {
     geoZoneVersionId = firstZone.currentVersionId;
     geoZoneVersionIdOther = secondZone.currentVersionId;
 
-    const service = new TripService(
-      new TripRepository(prisma),
-      new TripRealtimePublisher(
-        new LoggerTripRealtimeOutbox({
-          publish: () => undefined,
-        } as Pick<TripGateway, 'publish'>),
-      ),
+    const tripRepository = new TripRepository(prisma);
+    const publisher = new TripRealtimePublisher(
+      new LoggerTripRealtimeOutbox({
+        publish: () => undefined,
+      } as Pick<TripGateway, 'publish'>),
+    );
+    const pricingService = new TripPricingService(
+      tripRepository,
+      geozoneRepository,
+      new TelemetryRepository(prisma),
       new InMemoryJobQueue(),
+      publisher,
+    );
+    const service = new TripService(
+      tripRepository,
+      publisher,
+      new InMemoryJobQueue(),
+      pricingService,
     );
     controller = new TripController(service);
   });
@@ -157,7 +174,7 @@ describe('TripController', () => {
   describe('create', () => {
     it('creates trip', async () => {
       const created = await controller.create(
-        adminActor(),
+        driverActor(userId),
         buildTripCreate({ userId, carId, geoZoneVersionId }),
       );
       expect(created.id).toBeTruthy();
@@ -169,7 +186,7 @@ describe('TripController', () => {
     it('maps invalid relation to BadRequest', async () => {
       await expect(
         controller.create(
-          adminActor(),
+          driverActor(userId),
           buildTripCreate({
             userId,
             carId,
@@ -188,7 +205,7 @@ describe('TripController', () => {
 
     it('filters by geoZoneVersionId and status', async () => {
       await controller.create(
-        adminActor(),
+        driverActor(userId),
         buildTripCreate({
           userId,
           carId,
@@ -197,7 +214,7 @@ describe('TripController', () => {
         }),
       );
       const active = await controller.create(
-        adminActor(),
+        driverActor(userId),
         buildTripCreate({
           userId,
           carId,
@@ -266,7 +283,7 @@ describe('TripController', () => {
   describe('findById', () => {
     it('returns trip by id', async () => {
       const created = await controller.create(
-        adminActor(),
+        driverActor(userId),
         buildTripCreate({ userId, carId, geoZoneVersionId }),
       );
       const found = await controller.findById(adminActor(), created.id);
@@ -283,7 +300,7 @@ describe('TripController', () => {
   describe('update', () => {
     it('updates status and geoZoneVersionId', async () => {
       const created = await controller.create(
-        adminActor(),
+        driverActor(userId),
         buildTripCreate({ userId, carId, geoZoneVersionId }),
       );
       const patch = new TripUpdate();

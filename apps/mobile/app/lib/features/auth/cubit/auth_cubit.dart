@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../shared/api/dio_error_message.dart';
 import '../../../shared/storage/secure_token_storage.dart';
 import '../data/auth_repository.dart';
 import '../domain/auth_result.dart';
@@ -44,7 +45,7 @@ class AuthCubit extends Cubit<AuthState> {
       await _tokenStorage.writeAccessToken(token);
       emit(AuthAuthorized(token));
     } on DioException catch (e) {
-      emit(AuthError(e.message ?? 'Network error'));
+      emit(AuthError(dioErrorMessage(e)));
       emit(const AuthUnauthorized());
     } catch (e) {
       emit(AuthError(e.toString()));
@@ -52,7 +53,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  Future<AuthResult> register({
+  Future<AuthResult?> register({
     required String name,
     required String email,
     required String phone,
@@ -74,9 +75,9 @@ class AuthCubit extends Cubit<AuthState> {
       }
       return res;
     } on DioException catch (e) {
-      emit(AuthError(e.message ?? 'Network error'));
+      emit(AuthError(dioErrorMessage(e)));
       emit(const AuthUnauthorized());
-      rethrow;
+      return null;
     }
   }
 
@@ -91,7 +92,7 @@ class AuthCubit extends Cubit<AuthState> {
       await _tokenStorage.writeAccessToken(token);
       emit(AuthAuthorized(token));
     } on DioException catch (e) {
-      emit(AuthError(e.message ?? 'Network error'));
+      emit(AuthError(dioErrorMessage(e)));
       emit(const AuthUnauthorized());
     } catch (e) {
       emit(AuthError(e.toString()));
@@ -110,4 +111,3 @@ class AuthCubit extends Cubit<AuthState> {
     return super.close();
   }
 }
-

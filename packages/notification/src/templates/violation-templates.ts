@@ -15,9 +15,7 @@ export function buildViolationNoticeEmail(
 ): ViolationNoticeEmailContent {
   const subject = `Нарушение: ${input.title}`;
   const when = formatRuDate(input.occurredAt ?? new Date());
-  const tripLine = input.tripId
-    ? `Поездка: ${input.tripId}`
-    : null;
+  const tripLine = input.tripId ? `Поездка: ${input.tripId}` : null;
 
   const summary = normalizeViolationSummary(input.violationSummary);
   const summaryTextBlock =
@@ -28,8 +26,7 @@ export function buildViolationNoticeEmail(
           `Всего нарушений в этом уведомлении: ${summary.total}`,
           'По типам:',
           ...summary.byKind.map(
-            ({ kind, count }) =>
-              `  — ${violationTitleFromKind(kind)}: ${count}`,
+            ({ kind, count }) => `  — ${violationTitleFromKind(kind)}: ${count}`,
           ),
         ];
 
@@ -62,8 +59,7 @@ export function buildViolationNoticeEmail(
       : []),
   ].join('');
 
-  const summaryHtml =
-    summary === null ? '' : buildViolationSummaryHtmlBlock(summary);
+  const summaryHtml = summary === null ? '' : buildViolationSummaryHtmlBlock(summary);
 
   const inner = `
     <p style="margin:0 0 12px;font-size:17px;color:#18181b;">Здравствуйте!</p>
@@ -102,9 +98,7 @@ function normalizeViolationSummary(
   };
 }
 
-function buildViolationSummaryHtmlBlock(
-  summary: ViolationSummaryNormalized,
-): string {
+function buildViolationSummaryHtmlBlock(summary: ViolationSummaryNormalized): string {
   const rows = summary.byKind
     .map(
       ({ kind, count }) =>

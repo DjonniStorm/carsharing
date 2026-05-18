@@ -11,6 +11,7 @@ import {
   Title,
 } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
+import { useAction } from "@reatom/react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -18,6 +19,11 @@ import type { CarRead } from "@/entities/car";
 import type { ReadUser } from "@/entities/user";
 import { carsApi } from "@/features/cars/api";
 import { pickOngoingTrip } from "@/features/dashboard/lib/pick-ongoing-trip";
+import { useLiveTrip } from "@/features/trip-realtime/hooks/use-live-trip";
+import {
+  registerTripWatch,
+  unregisterTripWatch,
+} from "@/features/trip-realtime/model/live-trip-overlay";
 import { tripStatusLangKey } from "@/features/trips/lib/trip-status-lang-key";
 import { tripsApi } from "@/features/trips/api";
 import { usersApi } from "@/features/auth/api";
@@ -29,6 +35,8 @@ import { violationsApi } from "@/features/violations/api";
 import type { TripRead } from "@/entities/trip";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 import { ROUTES } from "@/shared/config/routes-paths";
+import { formatMoney, formatTripDistanceKm } from "@/shared/lib/format";
+import { isOngoingTripStatus } from "@/shared/lib/is-ongoing-trip-status";
 
 type Props = {
   carId: string | null;
@@ -55,6 +63,8 @@ const DashboardSelectedCarPanel = ({
   onClearSelection,
 }: Props) => {
   const { t } = useTranslation();
+  const watchTrip = useAction(registerTripWatch);
+  const unwatchTrip = useAction(unregisterTripWatch);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<PanelState>({
@@ -127,6 +137,19 @@ const DashboardSelectedCarPanel = ({
       cancelled = true;
     };
   }, [carId]);
+
+  const ongoingTrip = data.ongoingTrip;
+  const liveOngoingTrip = useLiveTrip(ongoingTrip) ?? ongoingTrip;
+
+  useEffect(() => {
+    if (!ongoingTrip || !isOngoingTripStatus(ongoingTrip.status)) {
+      return;
+    }
+    watchTrip(ongoingTrip.id);
+    return () => {
+      unwatchTrip(ongoingTrip.id);
+    };
+  }, [ongoingTrip?.id, ongoingTrip?.status, watchTrip, unwatchTrip]);
 
   if (!carId) {
     return null;
@@ -274,20 +297,38 @@ const DashboardSelectedCarPanel = ({
                     <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
                       {t(LANG_KEYS.pages.dashboardCarPanelSectionTrip)}
                     </Text>
-                    {data.ongoingTrip ? (
+                    {liveOngoingTrip ? (
                       <>
                         <Text size="xs" c="dimmed">
                           {t(LANG_KEYS.pages.dashboardCarPanelTripStatus)}{" "}
                           <Text span fw={600} c="var(--mantine-color-text)">
-                            {t(tripStatusLangKey(data.ongoingTrip.status))}
+                            {t(tripStatusLangKey(liveOngoingTrip.status))}
                           </Text>
                         </Text>
                         <Text size="xs" c="dimmed">
                           {t(LANG_KEYS.pages.dashboardCarPanelTripStarted)}{" "}
                           <Text span fw={600} c="var(--mantine-color-text)">
                             {new Date(
-                              data.ongoingTrip.startedAt,
+                              liveOngoingTrip.startedAt,
                             ).toLocaleString()}
+                          </Text>
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {t(LANG_KEYS.pages.dashboardCarPanelTripDistance)}{" "}
+                          <Text span fw={600} c="var(--mantine-color-text)">
+                            {formatTripDistanceKm(
+                              liveOngoingTrip.distanceMeters,
+                              liveOngoingTrip.distance,
+                            )}{" "}
+                            km
+                          </Text>
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {t(LANG_KEYS.pages.dashboardCarPanelTripPrice)}{" "}
+                          <Text span fw={600} c="var(--mantine-color-text)">
+                            {liveOngoingTrip.priceTotal != null
+                              ? formatMoney(liveOngoingTrip.priceTotal)
+                              : t(LANG_KEYS.pages.tripDetailPriceCalculating)}
                           </Text>
                         </Text>
                         {data.violationsCount !== null ? (
@@ -316,7 +357,7 @@ const DashboardSelectedCarPanel = ({
                       <Text size="sm" fw={600}>
                         {data.driver.name}
                       </Text>
-                    ) : data.ongoingTrip ? (
+                    ) : liveOngoingTrip ? (
                       <Text size="xs" c="dimmed">
                         {t(LANG_KEYS.pages.dashboardCarPanelDriverFallback)}
                       </Text>
@@ -337,11 +378,11 @@ const DashboardSelectedCarPanel = ({
                     >
                       {t(LANG_KEYS.pages.dashboardCarPanelGoCars)}
                     </Button>
-                    {data.ongoingTrip ? (
+                    {liveOngoingTrip ? (
                       <>
                         <Button
                           component={Link}
-                          to={ROUTES.dashboard.tripView(data.ongoingTrip.id)}
+                          to={ROUTES.dashboard.tripView(liveOngoingTrip.id)}
                           size="xs"
                           variant="light"
                           fullWidth
@@ -351,7 +392,7 @@ const DashboardSelectedCarPanel = ({
                         <Button
                           component={Link}
                           to={ROUTES.dashboard.userView(
-                            data.ongoingTrip.userId,
+                            liveOngoingTrip.userId,
                           )}
                           size="xs"
                           variant="light"

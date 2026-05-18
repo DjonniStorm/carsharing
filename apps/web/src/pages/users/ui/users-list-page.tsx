@@ -132,7 +132,10 @@ const UsersListPage = () => {
   const statusSelectData = useMemo(() => {
     return [
       { value: "all", label: t(LANG_KEYS.pages.usersListFilterStatusAll) },
-      { value: "active", label: t(LANG_KEYS.pages.usersListFilterStatusActive) },
+      {
+        value: "active",
+        label: t(LANG_KEYS.pages.usersListFilterStatusActive),
+      },
       {
         value: "inactive",
         label: t(LANG_KEYS.pages.usersListFilterStatusInactive),

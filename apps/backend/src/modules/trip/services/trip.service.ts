@@ -37,6 +37,10 @@ import {
   type ITripRepository,
 } from '../repositories/trip.repository.interface';
 import {
+  ITripPricingServiceToken,
+  type ITripPricingService,
+} from '../pricing/trip-pricing.service.interface';
+import {
   ITripRealtimePublisherToken,
   type ITripRealtimePublisher,
 } from './trip-realtime.publisher.interface';
@@ -53,6 +57,8 @@ export class TripService implements ITripService {
     private readonly realtimePublisher: ITripRealtimePublisher,
     @Inject(IJobQueueToken)
     private readonly jobQueue: IJobQueue,
+    @Inject(ITripPricingServiceToken)
+    private readonly pricingService: ITripPricingService,
   ) {}
 
   async findMany(params?: TripListParams): Promise<TripRead[]> {
@@ -134,7 +140,10 @@ export class TripService implements ITripService {
     userId: string,
     options?: TripHistoryShortListOptions,
   ): Promise<TripHistoryShortInfoRead[]> {
-    const rows = await this.repository.findHistoryShortByUserId(userId, options);
+    const rows = await this.repository.findHistoryShortByUserId(
+      userId,
+      options,
+    );
     return rows.map(TripHistoryMapper.shortInfoFromSqlRow);
   }
 
@@ -174,17 +183,16 @@ export class TripService implements ITripService {
         finishLng: input.finishLng,
         distance: input.distance,
         duration: input.duration,
-        distanceMeters: input.distanceMeters,
-        chargedMinutes: input.chargedMinutes,
-        chargedKm: input.chargedKm,
-        priceTime: input.priceTime,
-        priceDistance: input.priceDistance,
-        pricePause: input.pricePause,
-        priceTotal: input.priceTotal,
         geoZoneVersionId: input.geoZoneVersionId,
         carPlateSnapshot: input.carPlateSnapshot,
         carDisplayNameSnapshot: input.carDisplayNameSnapshot,
       });
+
+      const statusChanged =
+        input.status !== undefined && input.status !== existing.status;
+      const pauseFieldsChanged =
+        input.pauseStartedAt !== undefined ||
+        input.totalPausedSec !== undefined;
 
       /**
        * Финиш поездки → проверка PARKING-геозоны асинхронно в `ViolationBackgroundWorker`.
@@ -195,29 +203,74 @@ export class TripService implements ITripService {
       const becameFinished =
         updated.status === TripStatus.FINISHED &&
         existing.status !== TripStatus.FINISHED;
-      if (
-        becameFinished &&
-        updated.finishLat != null &&
-        updated.finishLng != null
-      ) {
-        const recordedAt =
-          updated.finishedAt?.toISOString() ?? new Date().toISOString();
-        this.jobQueue.enqueue({
-          name: ViolationJobName.ParkingZoneCheck,
-          payload: {
-            tripId: id,
-            recordedAt,
-            lat: updated.finishLat,
-            lon: updated.finishLng,
-          },
-          createdAtMs: Date.now(),
+
+      let read = TripMapper.fromEntityToRead(updated);
+
+      if (becameFinished) {
+        const priced = await this.pricingService.recalcAndPersist(id, {
+          trigger: 'finish',
+          publishMetrics: false,
         });
+        if (priced) {
+          read = priced;
+        }
+        await this.safePublishStateChanged(read, existing.status);
+        await this.safePublishTripFinished(read);
+        if (updated.finishLat != null && updated.finishLng != null) {
+          const recordedAt =
+            updated.finishedAt?.toISOString() ?? new Date().toISOString();
+          this.jobQueue.enqueue({
+            name: ViolationJobName.ParkingZoneCheck,
+            payload: {
+              tripId: id,
+              recordedAt,
+              lat: updated.finishLat,
+              lon: updated.finishLng,
+            },
+            createdAtMs: Date.now(),
+          });
+        }
+        return read;
       }
 
-      return TripMapper.fromEntityToRead(updated);
+      if (statusChanged) {
+        await this.safePublishStateChanged(read, existing.status);
+        if (updated.status !== TripStatus.CANCELLED) {
+          this.pricingService.enqueueRecalc(id, 'status');
+        }
+      } else if (pauseFieldsChanged && updated.status !== TripStatus.CANCELLED) {
+        this.pricingService.enqueueRecalc(id, 'status');
+      }
+
+      return read;
     } catch (error) {
       this.logger.error(`Failed to update trip: ${id}`, error);
       throw TripDbErrors.mapError(error);
+    }
+  }
+
+  private async safePublishStateChanged(
+    trip: TripRead,
+    previousStatus?: TripStatus,
+  ): Promise<void> {
+    try {
+      await this.realtimePublisher.publishTripStateChanged(trip, previousStatus);
+    } catch (error) {
+      this.logger.warn(
+        `publish trip.state.changed failed tripId=${trip.id}`,
+        error,
+      );
+    }
+  }
+
+  private async safePublishTripFinished(trip: TripRead): Promise<void> {
+    try {
+      await this.realtimePublisher.publishTripFinished(trip);
+    } catch (error) {
+      this.logger.warn(
+        `publish trip.finished failed tripId=${trip.id}`,
+        error,
+      );
     }
   }
 }

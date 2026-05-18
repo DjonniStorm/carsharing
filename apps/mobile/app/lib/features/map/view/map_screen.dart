@@ -14,6 +14,7 @@ import '../../profile/cubit/profile_cubit.dart';
 import '../../profile/cubit/profile_state.dart';
 import '../../trip/cubit/trip_cubit.dart';
 import '../../trip/cubit/trip_state.dart';
+import '../../trip/domain/live_trip_metrics.dart';
 import '../../trip/domain/trip_read.dart';
 import '../../trip/domain/trip_status.dart';
 import '../cubit/map_cubit.dart';
@@ -201,16 +202,43 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<TripCubit, TripState>(
-      listenWhen: (p, c) =>
-          c.errorMessage != null && c.errorMessage != p.errorMessage,
-      listener: (context, state) {
-        final msg = state.errorMessage;
-        if (msg == null || msg.isEmpty) return;
-        final text = msg.contains('.') ? msg.tr() : msg;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
-        context.read<TripCubit>().clearError();
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<TripCubit, TripState>(
+          listenWhen: (p, c) =>
+              c.errorMessage != null && c.errorMessage != p.errorMessage,
+          listener: (context, state) {
+            final msg = state.errorMessage;
+            if (msg == null || msg.isEmpty) return;
+            final text = msg.contains('.') ? msg.tr() : msg;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(text)),
+            );
+            context.read<TripCubit>().clearError();
+          },
+        ),
+        BlocListener<TripCubit, TripState>(
+          listenWhen: (p, c) =>
+              c.finishSummary != null && c.finishSummary != p.finishSummary,
+          listener: (context, state) {
+            final summary = state.finishSummary;
+            if (summary == null) return;
+            final km = summary.distanceKm?.toStringAsFixed(2) ?? '—';
+            final price = summary.priceTotal?.toStringAsFixed(0) ?? '—';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                duration: const Duration(seconds: 5),
+                content: Text(
+                  'trip.finish_summary'.tr(
+                    namedArgs: {'km': km, 'price': price},
+                  ),
+                ),
+              ),
+            );
+            context.read<TripCubit>().clearFinishSummary();
+          },
+        ),
+      ],
       child: Scaffold(
         body: Stack(
           children: [
@@ -765,11 +793,11 @@ class _TripBottomPanel extends StatelessWidget {
   }
 
   Widget _activeTripCard(BuildContext context, TripRead trip) {
-    final km = trip.distanceMeters != null
-        ? (trip.distanceMeters! / 1000).toStringAsFixed(2)
+    final metrics = tripState.displayMetrics;
+    final km = metrics?.distanceKm != null
+        ? metrics!.distanceKm!.toStringAsFixed(2)
         : trip.distance.toStringAsFixed(2);
-    final price = trip.priceTotal;
-    final extra = tripState.tripMetrics;
+    final price = metrics?.priceTotal ?? trip.priceTotal;
     final busy = tripState.tripBusy;
 
     final plateFromSnap = trip.carPlateSnapshot?.trim();
@@ -844,16 +872,10 @@ class _TripBottomPanel extends StatelessWidget {
             ],
             const SizedBox(height: 8),
             _TripMetricsRow(km: km, price: price),
-            if (extra.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                extra.entries
-                    .where((e) => e.value != null)
-                    .map((e) => '${e.key}: ${e.value}')
-                    .take(3)
-                    .join('\n'),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+            if (metrics != null &&
+                (metrics.chargedMinutes != null || metrics.pricePause != null)) ...[
+              const SizedBox(height: 6),
+              _TripBillingDetailsRow(metrics: metrics),
             ],
             const SizedBox(height: 10),
             if (busy)
@@ -1002,11 +1024,23 @@ class _CarMonitorRow extends StatelessWidget {
         color: _fuelColor(context, fuel),
       ));
     }
+    final speed = car.speedKmh;
+    if (speed != null) {
+      chips.add(_MonitorChip(
+        icon: Icons.speed_rounded,
+        label: 'car.current_speed'.tr(
+          args: [speed.toStringAsFixed(0)],
+        ),
+        color: cs.primary,
+      ));
+    }
     final mileage = car.mileage;
     if (mileage != null) {
       chips.add(_MonitorChip(
-        icon: Icons.speed_rounded,
-        label: '${mileage.toStringAsFixed(0)} ${'car.km'.tr()}',
+        icon: Icons.straighten_rounded,
+        label: 'car.odometer_km'.tr(
+          args: [mileage.toStringAsFixed(0)],
+        ),
         color: cs.onSurfaceVariant,
       ));
     }
@@ -1025,6 +1059,34 @@ class _CarMonitorRow extends StatelessWidget {
       runSpacing: 6,
       children: chips,
     );
+  }
+}
+
+class _TripBillingDetailsRow extends StatelessWidget {
+  const _TripBillingDetailsRow({required this.metrics});
+
+  final LiveTripMetrics metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        );
+    final parts = <String>[];
+    final mins = metrics.chargedMinutes;
+    if (mins != null) {
+      parts.add('trip.charged_minutes'.tr(args: [mins.toStringAsFixed(0)]));
+    }
+    final kmCharged = metrics.chargedKm;
+    if (kmCharged != null) {
+      parts.add('trip.charged_km'.tr(args: [kmCharged.toStringAsFixed(2)]));
+    }
+    final pause = metrics.pricePause;
+    if (pause != null && pause > 0) {
+      parts.add('trip.price_pause'.tr(args: [pause.toStringAsFixed(0)]));
+    }
+    if (parts.isEmpty) return const SizedBox.shrink();
+    return Text(parts.join(' · '), style: style);
   }
 }
 

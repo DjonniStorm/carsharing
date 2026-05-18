@@ -11,6 +11,7 @@ class CarPosition {
     this.color,
     this.mileage,
     this.fuelLevel,
+    this.speedKmh,
     this.carStatus,
   });
 
@@ -30,6 +31,9 @@ class CarPosition {
   final String? color;
   final double? mileage;
   final double? fuelLevel;
+
+  /// Скорость с последней телеметрии (WS `trip.route.point`), км/ч.
+  final double? speedKmh;
   final int? carStatus;
 
   String get displayName {
@@ -82,6 +86,7 @@ class CarPosition {
     String? color,
     double? mileage,
     double? fuelLevel,
+    double? speedKmh,
     int? carStatus,
   }) {
     return CarPosition(
@@ -96,6 +101,7 @@ class CarPosition {
       color: color ?? this.color,
       mileage: mileage ?? this.mileage,
       fuelLevel: fuelLevel ?? this.fuelLevel,
+      speedKmh: speedKmh ?? this.speedKmh,
       carStatus: carStatus ?? this.carStatus,
     );
   }

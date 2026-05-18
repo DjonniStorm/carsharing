@@ -1,4 +1,7 @@
-import type { JsonWithPlaceholders, NotificationConfig } from '@carsharing/notification';
+import type {
+  JsonWithPlaceholders,
+  NotificationConfig,
+} from '@carsharing/notification';
 
 function parseBool(raw: string | undefined, defaultVal: boolean): boolean {
   if (raw === undefined || raw.trim() === '') return defaultVal;
@@ -47,7 +50,10 @@ export function getNotificationConfig(): NotificationConfig {
     const port =
       Number.isFinite(portParsed) && portParsed > 0 ? portParsed : 587;
     const secureDefault = port === 465;
-    const secure = parseBool(process.env.NOTIFICATION_EMAIL_SECURE, secureDefault);
+    const secure = parseBool(
+      process.env.NOTIFICATION_EMAIL_SECURE,
+      secureDefault,
+    );
 
     out.email = {
       host,
