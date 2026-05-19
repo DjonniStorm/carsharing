@@ -4,7 +4,7 @@ import type { GeozoneRead } from "@/entities/geozone";
 import type { TripHistoryFullRead } from "@/entities/trip";
 import { tripHistoryApi } from "@/features/trips/api";
 import { resolveTripGeozoneForMap } from "@/features/trips/lib/resolve-trip-geozone-for-map";
-import { HttpApiError } from "@/shared/api/http-api-error";
+import { HttpApiError, resolveApiErrorMessage } from "@/shared/api";
 import type { AsyncStatus } from "@/shared/model/async-status";
 
 /** HTTP-ошибка с сохранённым статусом — нужен на странице, чтобы решить редирект на `/error`. */
@@ -63,12 +63,11 @@ export const loadTripHistoryFull = action(async (tripId: string) => {
   } catch (e) {
     tripHistoryFullAtom.set(null);
     tripHistoryFullStatusAtom.set("error");
+    const message = resolveApiErrorMessage(e);
     if (e instanceof HttpApiError) {
-      tripHistoryFullErrorAtom.set({ status: e.status, message: e.message });
+      tripHistoryFullErrorAtom.set({ status: e.status, message });
     } else {
-      tripHistoryFullErrorAtom.set({
-        message: e instanceof Error ? e.message : String(e),
-      });
+      tripHistoryFullErrorAtom.set({ message });
     }
   }
 }, "loadTripHistoryFull");

@@ -3,6 +3,7 @@ import { action, atom, wrap } from "@reatom/core";
 import type { ViolationRead } from "@/entities/violation";
 import { violationsApi } from "@/features/violations/api";
 
+import { resolveApiErrorMessage } from "@/shared/api";
 import type { AsyncStatus } from "@/shared/model/async-status";
 
 export const violationsAdminListAtom = atom<ViolationRead[] | null>(
@@ -40,9 +41,7 @@ export const loadViolationsAdminList = action(
       violationsAdminListStatusAtom.set("idle");
     } catch (e) {
       violationsAdminListStatusAtom.set("error");
-      violationsAdminListErrorAtom.set(
-        e instanceof Error ? e.message : String(e),
-      );
+      violationsAdminListErrorAtom.set(resolveApiErrorMessage(e));
     }
   },
   "loadViolationsAdminList",

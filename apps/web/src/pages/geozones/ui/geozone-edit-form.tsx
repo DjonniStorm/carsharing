@@ -11,6 +11,8 @@ import {
 } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
+import { FIELD_LIMITS } from "@carsharing/validation";
+
 import type { GeozoneType } from "@/entities/geozone";
 import type { TariffRead } from "@/entities/tariff";
 import { LANG_KEYS } from "@/shared/i18n/keys";
@@ -71,6 +73,8 @@ export function GeozoneEditForm({
         label={t(LANG_KEYS.pages.geozonesCreateFieldName)}
         value={name}
         onChange={(e) => onNameChange(e.currentTarget.value)}
+        minLength={FIELD_LIMITS.GEOZONE_NAME_MIN}
+        maxLength={FIELD_LIMITS.GEOZONE_NAME_MAX}
         required
       />
       <Select
@@ -135,6 +139,8 @@ export function GeozoneEditForm({
         placeholder={t(LANG_KEYS.pages.geozonesCreateRulesPlaceholder)}
         value={rulesJson}
         onChange={(e) => onRulesJsonChange(e.currentTarget.value)}
+        minLength={FIELD_LIMITS.NON_EMPTY_STRING_MIN}
+        maxLength={FIELD_LIMITS.GEOZONE_RULES_JSON_MAX}
         autosize
         minRows={2}
       />

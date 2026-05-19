@@ -35,7 +35,7 @@ import { TripService } from './services/trip.service';
   imports: [
     TripRealtimeModule,
     GeozoneModule,
-    CarModule,
+    forwardRef(() => CarModule),
     forwardRef(() => TelemetryModule),
     forwardRef(() => ViolationModule),
   ],

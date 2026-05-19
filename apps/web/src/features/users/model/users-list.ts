@@ -2,6 +2,7 @@ import { action, atom, wrap } from "@reatom/core";
 
 import type { ReadUser } from "@/entities/user";
 import { usersApi } from "@/features/auth/api";
+import { resolveApiErrorMessage } from "@/shared/api";
 import type { AsyncStatus } from "@/shared/model/async-status";
 
 export const usersListAtom = atom<ReadUser[] | null>(null, "usersList");
@@ -26,6 +27,6 @@ export const loadUsersList = action(async () => {
     usersListStatusAtom.set("idle");
   } catch (e) {
     usersListStatusAtom.set("error");
-    usersListErrorAtom.set(e instanceof Error ? e.message : String(e));
+    usersListErrorAtom.set(resolveApiErrorMessage(e));
   }
 }, "loadUsersList");

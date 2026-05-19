@@ -4,7 +4,8 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -184,6 +185,8 @@ model Trip {
   @@index([userId])
   @@index([carId])
   @@index([geoZoneVersionId])
+  /// Одна незавершённая поездка на машину (PENDING/STARTED/ACTIVE/PAUSED).
+  @@unique([carId], map: "trip_one_ongoing_per_car_idx", where: raw("status IN (0, 1, 2, 3)"))
   @@map("trip")
 }
 

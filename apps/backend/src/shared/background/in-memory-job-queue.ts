@@ -12,4 +12,14 @@ export class InMemoryJobQueue implements IJobQueue {
   dequeue(): JobEnvelope<JobName, object> | null {
     return this.items.shift() ?? null;
   }
+
+  /** Для тестов: снимок очереди без изъятия элементов. */
+  snapshotEnqueued(): readonly JobEnvelope<JobName, object>[] {
+    return [...this.items];
+  }
+
+  /** Для тестов: сброс очереди между кейсами. */
+  clearEnqueued(): void {
+    this.items.length = 0;
+  }
 }

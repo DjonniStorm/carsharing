@@ -1,3 +1,4 @@
+import { FIELD_LIMITS } from '@carsharing/validation';
 import {
   IsNotEmpty,
   IsNumber,
@@ -7,6 +8,8 @@ import {
   Max,
   Min,
 } from 'class-validator';
+
+import { MaxJsonSerializedLength } from 'src/shared/validation/max-json-serialized-length.validator';
 
 import type { GeoJSONMultiPolygon } from '../geozone.geometry';
 
@@ -21,6 +24,7 @@ export class GeozoneVersionCreate {
 
   @IsOptional()
   @IsObject()
+  @MaxJsonSerializedLength(FIELD_LIMITS.GEOZONE_RULES_JSON_MAX)
   rules?: Record<string, unknown> | null;
 
   /** Если задан — ставки берутся из шаблона (имеет приоритет над полями price*). */

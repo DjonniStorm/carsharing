@@ -1,9 +1,16 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 
 import {
   IJobQueueToken,
   type IJobQueue,
 } from 'src/shared/background/job-queue.interface';
+import { SerializedTickRunner } from 'src/shared/background/serialized-tick.runner';
 
 import { Throttle } from 'src/shared/throttle/throttle';
 
@@ -38,27 +45,24 @@ import {
   type ITripRepository,
 } from '../../trip/repositories/trip.repository.interface';
 
+const TICK_INTERVAL_MS = 250;
+
 @Injectable()
-export class ViolationBackgroundWorker implements OnModuleInit {
+export class ViolationBackgroundWorker
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(ViolationBackgroundWorker.name);
 
   private readonly dedupThrottle = new Throttle();
 
-  private timer: NodeJS.Timeout | null = null;
+  private readonly tickRunner: SerializedTickRunner;
 
   /**
    * Пример того, как job попадает сюда:
    * // TelemetryService.create(...)
    * jobQueue.enqueue({
    *   name: ViolationJobName.RentalMovementZoneCheck,
-   *   payload: {
-   *     tripId,
-   *     recordedAt: timestampIso,
-   *     lat,
-   *     lon,
-   *     speed,
-   *     fuelLevel,
-   *   },
+   *   payload: { tripId, recordedAt, lat, lon, speed, fuelLevel },
    *   createdAtMs: Date.now(),
    * });
    */
@@ -78,42 +82,46 @@ export class ViolationBackgroundWorker implements OnModuleInit {
 
     @Inject(ITripRepositoryToken)
     private readonly tripRepository: ITripRepository,
-  ) {}
-
-  onModuleInit(): void {
-    // Простейший фоновой цикл: один воркер, небольшой интервал, без параллельности.
-
-    this.timer = setInterval(() => this.tick(), 250);
-
-    this.timer.unref?.();
+  ) {
+    this.tickRunner = new SerializedTickRunner(
+      () => this.runOneJob(),
+      (error) => this.logger.error('tick failed', error),
+    );
   }
 
-  private async tick(): Promise<void> {
+  onModuleInit(): void {
+    this.tickRunner.startInterval(TICK_INTERVAL_MS);
+  }
+
+  onModuleDestroy(): void {
+    this.tickRunner.dispose();
+  }
+
+  /** @internal unit-тесты */
+  private tick(): Promise<void> {
+    return this.tickRunner.requestTick();
+  }
+
+  private async runOneJob(): Promise<void> {
     const job = this.queue.dequeue();
 
     if (!job) {
       return;
     }
 
-    try {
-      if (job.name === ViolationJobName.RentalMovementZoneCheck) {
-        await this.handleRentalMovement(
-          job.payload as RentalMovementZoneCheckJob,
-        );
-
-        return;
-      }
-
-      if (job.name === ViolationJobName.ParkingZoneCheck) {
-        await this.handleParking(job.payload as ParkingZoneCheckJob);
-
-        return;
-      }
-
-      this.logger.debug(`skip unknown job=${job.name}`);
-    } catch (e) {
-      this.logger.error(`job failed name=${job.name}`, e);
+    if (job.name === ViolationJobName.RentalMovementZoneCheck) {
+      await this.handleRentalMovement(
+        job.payload as RentalMovementZoneCheckJob,
+      );
+      return;
     }
+
+    if (job.name === ViolationJobName.ParkingZoneCheck) {
+      await this.handleParking(job.payload as ParkingZoneCheckJob);
+      return;
+    }
+
+    this.logger.debug(`skip unknown job=${job.name}`);
   }
 
   private async handleRentalMovement(

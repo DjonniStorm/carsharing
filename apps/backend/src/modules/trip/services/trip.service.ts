@@ -31,6 +31,7 @@ import {
 import { TripCreate } from '../entities/dtos/trip.create';
 import { TripRead } from '../entities/dtos/trip.read';
 import { TripUpdate } from '../entities/dtos/trip.update';
+import { TripEntity } from '../entities/trip.entity';
 import { TripStatus } from '../entities/trip.status';
 import {
   TripFindByIdOptions,
@@ -96,8 +97,7 @@ export class TripService implements ITripService {
   async create(input: TripCreate): Promise<TripRead> {
     this.logger.log('Creating trip');
     try {
-      await this.carTripSync.assertCarAvailableForNewTrip(input.carId);
-      const created = await this.repository.create({
+      const created = await this.repository.createStartingTripWithCarLock({
         userId: input.userId,
         carId: input.carId,
         geoZoneVersionId: input.geoZoneVersionId,
@@ -181,7 +181,7 @@ export class TripService implements ITripService {
       if (!existing) {
         throw new TripNotFoundException(`Trip with id ${id} was not found`);
       }
-      const updated = await this.repository.update(id, {
+      const updatePatch = {
         status: input.status,
         finishedAt: input.finishedAt,
         pauseStartedAt: input.pauseStartedAt,
@@ -195,7 +195,26 @@ export class TripService implements ITripService {
         geoZoneVersionId: input.geoZoneVersionId,
         carPlateSnapshot: input.carPlateSnapshot,
         carDisplayNameSnapshot: input.carDisplayNameSnapshot,
-      });
+      };
+
+      const finishing =
+        input.status === TripStatus.FINISHED &&
+        existing.status !== TripStatus.FINISHED;
+
+      let updated: TripEntity;
+      let firstFinish = false;
+
+      if (finishing) {
+        const transition =
+          await this.repository.transitionToFinishedIfNotFinished(
+            id,
+            updatePatch,
+          );
+        updated = transition.entity;
+        firstFinish = transition.applied;
+      } else {
+        updated = await this.repository.update(id, updatePatch);
+      }
 
       const statusChanged =
         input.status !== undefined && input.status !== existing.status;
@@ -209,13 +228,9 @@ export class TripService implements ITripService {
        * Пример PATCH:
        * `{ "status": 4, "finishLat": 55.75, "finishLng": 37.61, "finishedAt": "..." }`
        */
-      const becameFinished =
-        updated.status === TripStatus.FINISHED &&
-        existing.status !== TripStatus.FINISHED;
-
       let read = TripMapper.fromEntityToRead(updated);
 
-      if (becameFinished) {
+      if (firstFinish) {
         const priced = await this.pricingService.recalcAndPersist(id, {
           trigger: 'finish',
           publishMetrics: false,

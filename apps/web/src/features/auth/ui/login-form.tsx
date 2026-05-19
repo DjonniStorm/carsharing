@@ -13,12 +13,15 @@ import { useAction } from "@reatom/react";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
+import { FIELD_LIMITS } from "@carsharing/validation";
+
 import { loginSchema, type LoginFormOutput } from "@/entities/auth";
 import { authApi } from "@/features/auth/api";
 import { applyAccessToken } from "@/features/auth/model/session";
 import { ROUTES } from "@/shared/config/routes-paths";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 import { safeInternalPath } from "@/shared/lib/navigation/safe-internal-path";
+import { notifyApiError } from "@/shared/lib/notify-api-error";
 import { notification } from "@/shared/lib/notification";
 
 export const LoginFormView = () => {
@@ -47,11 +50,9 @@ export const LoginFormView = () => {
       const nextPath = safeInternalPath(redirect, ROUTES.dashboard.overview);
       navigate({ to: nextPath });
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : t(LANG_KEYS.auth.notifyLoginErrorFallback);
-      notification.error(t(LANG_KEYS.auth.notifyLoginErrorTitle), msg);
+      notifyApiError(LANG_KEYS.auth.notifyLoginErrorTitle, err, {
+        fallbackKey: LANG_KEYS.auth.notifyLoginErrorFallback,
+      });
     }
   });
 
@@ -68,12 +69,15 @@ export const LoginFormView = () => {
           label={t(LANG_KEYS.auth.loginField)}
           placeholder={t(LANG_KEYS.auth.loginPlaceholder)}
           autoComplete="username"
+          minLength={FIELD_LIMITS.LOGIN_MIN}
+          maxLength={FIELD_LIMITS.LOGIN_MAX}
           key={form.key("login")}
           {...form.getInputProps("login")}
         />
         <PasswordInput
           label={t(LANG_KEYS.auth.password)}
           autoComplete="current-password"
+          maxLength={FIELD_LIMITS.USER_PASSWORD_MAX}
           key={form.key("password")}
           {...form.getInputProps("password")}
         />

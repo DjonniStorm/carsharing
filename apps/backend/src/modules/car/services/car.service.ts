@@ -4,6 +4,7 @@ import { DbErrors } from '../common/db-errors';
 import {
   CarAlreadyDeletedException,
   CarAlreadyRestoredException,
+  CarInActiveTripException,
   CarNotFoundException,
   LicensePlateAlreadyExistsException,
 } from '../common/errors';
@@ -15,6 +16,10 @@ import {
   ICarRepositoryToken,
   type ICarRepository,
 } from '../repositories/car.repository.interface';
+import {
+  ITripRepositoryToken,
+  type ITripRepository,
+} from '../../trip/repositories/trip.repository.interface';
 import { ICarService } from './car.service.interface';
 
 @Injectable()
@@ -23,6 +28,7 @@ export class CarService implements ICarService {
 
   constructor(
     @Inject(ICarRepositoryToken) private readonly repository: ICarRepository,
+    @Inject(ITripRepositoryToken) private readonly trips: ITripRepository,
   ) {}
 
   async findAll(includeDeleted: boolean): Promise<CarRead[]> {
@@ -78,6 +84,14 @@ export class CarService implements ICarService {
       if (!existing) {
         this.logger.error(`Car with id ${id} not found`);
         throw new CarNotFoundException(`Автомобиль с id ${id} не найден`);
+      }
+      const active = await this.trips.findActiveByCarId(id);
+      if (active) {
+        throw new CarInActiveTripException(
+          `Нельзя изменить автомобиль: активная поездка ${active.id}`,
+          id,
+          active.id,
+        );
       }
       const patch = CarMapper.toPartialCarEntity({
         ...car,

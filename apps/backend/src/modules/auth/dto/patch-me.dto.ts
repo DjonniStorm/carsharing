@@ -1,10 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { FIELD_LIMITS } from '@carsharing/validation';
+import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class PatchMeDto {
-  @ApiProperty({ description: 'Отображаемое имя' })
+  @ApiProperty({
+    description: 'Отображаемое имя',
+    maxLength: FIELD_LIMITS.USER_DISPLAY_NAME_MAX,
+  })
   @IsString()
   @IsNotEmpty()
-  @MaxLength(120)
+  @MinLength(FIELD_LIMITS.USER_DISPLAY_NAME_MIN)
+  @MaxLength(FIELD_LIMITS.USER_DISPLAY_NAME_MAX)
   name!: string;
 }

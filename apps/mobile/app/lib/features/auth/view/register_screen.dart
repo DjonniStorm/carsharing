@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
 
 import '../../../app/router/app_routes.dart';
+import '../../../shared/validation/field_limits.dart';
 import '../../../shared/validation/input_validators.dart';
 import '../../../shared/widgets/password_text_field.dart';
 import '../../profile/cubit/profile_cubit.dart';
@@ -104,6 +105,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   TextFormField(
                     controller: _nameCtrl,
                     decoration: InputDecoration(labelText: 'auth.name'.tr()),
+                    maxLength: FieldLimits.userDisplayNameMax,
                     textInputAction: TextInputAction.next,
                     onChanged: (_) => _clearServerErrors(),
                     validator: validateRegisterName,
@@ -116,6 +118,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       errorText: _emailServerError,
                     ),
                     keyboardType: TextInputType.emailAddress,
+                    maxLength: FieldLimits.emailMax,
                     textInputAction: TextInputAction.next,
                     autocorrect: false,
                     onChanged: (_) => _clearServerErrors(),
@@ -134,6 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       errorText: _phoneServerError,
                     ),
                     keyboardType: TextInputType.phone,
+                    maxLength: FieldLimits.phoneMax,
                     textInputAction: TextInputAction.next,
                     autocorrect: false,
                     onChanged: (_) => _clearServerErrors(),
@@ -148,6 +152,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     labelText: 'auth.password'.tr(),
                     helperText: 'auth.password_rules'.tr(),
                     helperMaxLines: 2,
+                    maxLength: FieldLimits.userPasswordMax,
                     textInputAction: TextInputAction.done,
                     validator: validateRegisterPassword,
                   ),

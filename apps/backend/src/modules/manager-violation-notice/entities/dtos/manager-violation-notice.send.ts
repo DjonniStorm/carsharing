@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { FIELD_LIMITS } from '@carsharing/validation';
 import {
   ArrayMinSize,
   IsArray,
@@ -6,6 +7,7 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  MinLength,
 } from 'class-validator';
 
 /**
@@ -26,18 +28,23 @@ export class ManagerViolationNoticeSendDto {
   @IsUUID('4', { each: true })
   violationIds: string[];
 
-  @ApiProperty({ example: 'Важно: нарушения по поездке', maxLength: 500 })
+  @ApiProperty({
+    example: 'Важно: нарушения по поездке',
+    maxLength: FIELD_LIMITS.NOTICE_SUBJECT_MAX,
+  })
   @IsString()
   @IsNotEmpty()
-  @MaxLength(500)
+  @MinLength(FIELD_LIMITS.NOTICE_SUBJECT_MIN)
+  @MaxLength(FIELD_LIMITS.NOTICE_SUBJECT_MAX)
   subject: string;
 
   @ApiProperty({
     description: 'Текст письма водителю',
-    maxLength: 20_000,
+    maxLength: FIELD_LIMITS.NOTICE_MESSAGE_MAX,
   })
   @IsString()
   @IsNotEmpty()
-  @MaxLength(20_000)
+  @MinLength(FIELD_LIMITS.NOTICE_MESSAGE_MIN)
+  @MaxLength(FIELD_LIMITS.NOTICE_MESSAGE_MAX)
   message: string;
 }

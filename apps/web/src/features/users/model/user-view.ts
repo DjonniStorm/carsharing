@@ -5,8 +5,10 @@ import type { ViolationRead } from "@/entities/violation";
 import { usersApi } from "@/features/auth/api";
 import { tripHistoryApi } from "@/features/trips/api";
 import { violationsFromTripHistoryRows } from "@/features/trips/lib/violations-from-trip-history";
+import { resolveApiErrorMessage } from "@/shared/api";
+import { LANG_KEYS } from "@/shared/i18n/keys";
 import type { AsyncStatus } from "@/shared/model/async-status";
-import { notification } from "@/shared/lib/notification";
+import { notifyApiError } from "@/shared/lib/notify-api-error";
 
 const DRIVER_HISTORY_LIMIT = 500;
 
@@ -75,16 +77,14 @@ export const loadUserViewPage = action(async (userId: string) => {
     } catch (e) {
       userViewViolationsAtom.set([]);
       userViewViolationsStatusAtom.set("error");
-      userViewViolationsErrorAtom.set(
-        e instanceof Error ? e.message : String(e),
-      );
+      userViewViolationsErrorAtom.set(resolveApiErrorMessage(e));
 
-      notification.error("error", e instanceof Error ? e.message : String(e));
+      notifyApiError(LANG_KEYS.errors.loadFailed, e);
     }
   } catch (e) {
     userViewProfileAtom.set(null);
     userViewProfileStatusAtom.set("error");
-    userViewProfileErrorAtom.set(e instanceof Error ? e.message : String(e));
+    userViewProfileErrorAtom.set(resolveApiErrorMessage(e));
     userViewViolationsAtom.set([]);
     userViewViolationsStatusAtom.set("idle");
   }

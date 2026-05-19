@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
 
 import '../../../app/router/app_routes.dart';
+import '../../../shared/validation/field_limits.dart';
 import '../../../shared/validation/input_validators.dart';
 import '../../auth/cubit/auth_cubit.dart';
 import '../cubit/profile_cubit.dart';
@@ -112,6 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       labelText: 'auth.name'.tr(),
                       hintText: 'profile.update_name_hint'.tr(),
                     ),
+                    maxLength: FieldLimits.userDisplayNameMax,
                     validator: (v) =>
                         user == null ? null : validateProfileName(v),
                   ),

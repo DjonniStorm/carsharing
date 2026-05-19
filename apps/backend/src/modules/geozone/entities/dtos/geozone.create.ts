@@ -1,3 +1,4 @@
+import { FIELD_LIMITS } from '@carsharing/validation';
 import {
   IsEnum,
   IsNotEmpty,
@@ -13,6 +14,8 @@ import {
   ValidateIf,
 } from 'class-validator';
 
+import { MaxJsonSerializedLength } from 'src/shared/validation/max-json-serialized-length.validator';
+
 import type { GeoJSONMultiPolygon } from '../geozone.geometry';
 import { GeozoneType } from '../geozone.type';
 
@@ -23,8 +26,8 @@ import { GeozoneType } from '../geozone.type';
 export class GeozoneCreate {
   @IsNotEmpty()
   @IsString()
-  @MinLength(1)
-  @MaxLength(255)
+  @MinLength(FIELD_LIMITS.GEOZONE_NAME_MIN)
+  @MaxLength(FIELD_LIMITS.GEOZONE_NAME_MAX)
   name: string;
 
   @IsNotEmpty()
@@ -33,8 +36,8 @@ export class GeozoneCreate {
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(1)
-  @MaxLength(32)
+  @MinLength(FIELD_LIMITS.GEOZONE_COLOR_MIN)
+  @MaxLength(FIELD_LIMITS.GEOZONE_COLOR_MAX)
   color: string;
 
   @IsNotEmpty()
@@ -43,6 +46,7 @@ export class GeozoneCreate {
 
   @IsOptional()
   @IsObject()
+  @MaxJsonSerializedLength(FIELD_LIMITS.GEOZONE_RULES_JSON_MAX)
   rules?: Record<string, unknown> | null;
 
   /** Если задан — ставки копируются из шаблона; поля price* ниже не обязательны. */

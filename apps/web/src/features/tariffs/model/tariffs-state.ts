@@ -10,7 +10,7 @@ import {
   tariffEditIsDeletedAtom,
   tariffEditSnapshotAtom,
 } from "@/features/tariffs/model/tariff-edit-view";
-import { HttpApiError } from "@/shared/api/http-api-error";
+import { HttpApiError, resolveApiErrorMessage } from "@/shared/api";
 
 import type { AsyncStatus } from "@/shared/model/async-status";
 
@@ -96,9 +96,7 @@ export const loadTariffsCatalog = action(
       tariffsCatalogStatusAtom.set("idle");
     } catch (error) {
       tariffsCatalogStatusAtom.set("error");
-      tariffsCatalogErrorAtom.set(
-        error instanceof Error ? error.message : String(error),
-      );
+      tariffsCatalogErrorAtom.set(resolveApiErrorMessage(error));
     }
   },
   "loadTariffsCatalog",

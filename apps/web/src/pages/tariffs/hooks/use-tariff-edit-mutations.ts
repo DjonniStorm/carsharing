@@ -19,7 +19,7 @@ import {
   refreshTariffsCatalogAfterMutation,
   saveTariffFromEdit,
 } from "@/features/tariffs/model/tariffs-state";
-import { HttpApiError } from "@/shared/api/http-api-error";
+import { resolveApiErrorMessage } from "@/shared/api";
 import { ROUTES } from "@/shared/config/routes-paths";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 
@@ -106,13 +106,7 @@ export function useTariffEditMutations(form: FormSlice) {
       await refreshCatalog();
       await navigate({ to: ROUTES.dashboard.tariffs });
     } catch (error) {
-      const msg =
-        error instanceof HttpApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : String(error);
-      setFormError(msg);
+      setFormError(resolveApiErrorMessage(error));
     } finally {
       setSubmitting(false);
     }
@@ -149,13 +143,7 @@ export function useTariffEditMutations(form: FormSlice) {
       await refreshCatalog();
       await navigate({ to: ROUTES.dashboard.tariffs });
     } catch (error) {
-      const msg =
-        error instanceof HttpApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : String(error);
-      setFormError(msg);
+      setFormError(resolveApiErrorMessage(error));
     } finally {
       setSubmitting(false);
     }

@@ -1,3 +1,4 @@
+import { FIELD_LIMITS } from "@carsharing/validation";
 import { z } from "zod";
 
 import { ViolationStatus } from "@/entities/violation";
@@ -31,10 +32,10 @@ export const violationCreateFormSchema = z.object({
     .pipe(
       z
         .string()
-        .min(1, {
+        .min(FIELD_LIMITS.VIOLATION_DESCRIPTION_MIN, {
           message: translate(LANG_KEYS.pages.violationsColDesc),
         })
-        .max(1000, {
+        .max(FIELD_LIMITS.VIOLATION_DESCRIPTION_MAX, {
           message: translate(LANG_KEYS.pages.violationsColDescMaxLength),
         }),
     ),

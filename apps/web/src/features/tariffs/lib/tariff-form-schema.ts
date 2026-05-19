@@ -1,3 +1,4 @@
+import { FIELD_LIMITS } from "@carsharing/validation";
 import { z } from "zod";
 
 import type { TariffEditSnapshot } from "@/features/tariffs/model/tariff-edit-view";
@@ -26,10 +27,10 @@ export const tariffFormSchema = z.object({
     .pipe(
       z
         .string()
-        .min(1, {
+        .min(FIELD_LIMITS.TARIFF_NAME_MIN, {
           message: translate(LANG_KEYS.pages.tariffsCreateNameRequired),
         })
-        .max(1000, {
+        .max(FIELD_LIMITS.TARIFF_NAME_MAX, {
           message: translate(LANG_KEYS.pages.tariffsCreateNameMaxLength),
         }),
     ),

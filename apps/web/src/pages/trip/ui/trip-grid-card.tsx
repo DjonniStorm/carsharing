@@ -1,8 +1,6 @@
 import {
   ActionIcon,
   Badge,
-  Button,
-  CopyButton,
   Group,
   Paper,
   Stack,

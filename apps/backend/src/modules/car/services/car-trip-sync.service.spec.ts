@@ -120,16 +120,16 @@ describe('CarTripSyncService', () => {
     const trip = sampleTrip({ distanceMeters: 5000 });
     const cars = {
       findById: vi.fn().mockResolvedValue(car),
-      update: vi
+      updateFinishMetrics: vi
         .fn()
-        .mockResolvedValueOnce({ ...car, mileage: 1005, fuelLevel: 22 })
-        .mockResolvedValueOnce({
-          ...car,
-          mileage: 1005,
-          fuelLevel: 22,
-          carStatus: CarStatus.AVAILABLE,
-          isAvailable: true,
-        }),
+        .mockResolvedValueOnce({ ...car, mileage: 1005, fuelLevel: 22 }),
+      update: vi.fn().mockResolvedValueOnce({
+        ...car,
+        mileage: 1005,
+        fuelLevel: 22,
+        carStatus: CarStatus.AVAILABLE,
+        isAvailable: true,
+      }),
     };
     const trips = {
       findById: vi.fn().mockResolvedValue(trip),
@@ -158,11 +158,10 @@ describe('CarTripSyncService', () => {
 
     await service.onTripFinished('trip-1');
 
-    expect(cars.update).toHaveBeenNthCalledWith(
-      1,
+    expect(cars.updateFinishMetrics).toHaveBeenCalledWith(
       'car-1',
       expect.objectContaining({
-        mileage: 1005,
+        mileageIncrementKm: 5,
         fuelLevel: 22,
         lastKnownLat: 55.76,
         lastKnownLon: 37.62,
@@ -176,14 +175,14 @@ describe('CarTripSyncService', () => {
     const trip = sampleTrip();
     const cars = {
       findById: vi.fn().mockResolvedValue(car),
-      update: vi
+      updateFinishMetrics: vi
         .fn()
-        .mockResolvedValueOnce({ ...car, mileage: 1012.345 })
-        .mockResolvedValueOnce({
-          ...car,
-          carStatus: CarStatus.OUT_OF_SERVICE,
-          isAvailable: false,
-        }),
+        .mockResolvedValueOnce({ ...car, mileage: 1012.345 }),
+      update: vi.fn().mockResolvedValueOnce({
+        ...car,
+        carStatus: CarStatus.OUT_OF_SERVICE,
+        isAvailable: false,
+      }),
     };
     const violation: ViolationEntity = {
       id: 'v-1',

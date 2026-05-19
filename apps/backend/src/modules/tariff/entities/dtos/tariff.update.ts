@@ -1,3 +1,4 @@
+import { FIELD_LIMITS } from '@carsharing/validation';
 import {
   IsBoolean,
   IsNumber,
@@ -14,8 +15,8 @@ import {
 export class TariffUpdate {
   @IsOptional()
   @IsString()
-  @MinLength(1)
-  @MaxLength(2048)
+  @MinLength(FIELD_LIMITS.TARIFF_NAME_MIN)
+  @MaxLength(FIELD_LIMITS.TARIFF_NAME_MAX)
   name?: string;
 
   @IsOptional()

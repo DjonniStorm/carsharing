@@ -27,6 +27,30 @@ export class CarRepository implements ICarRepository {
   update(id: string, car: Partial<CarEntity>): Promise<CarEntity> {
     return this.prisma.car.update({ where: { id }, data: car });
   }
+
+  updateFinishMetrics(
+    id: string,
+    data: {
+      mileageIncrementKm: number;
+      updatedAt: string;
+      lastKnownLat?: number | null;
+      lastKnownLon?: number | null;
+      lastPositionAt?: string | null;
+      fuelLevel?: number;
+    },
+  ): Promise<CarEntity> {
+    return this.prisma.car.update({
+      where: { id },
+      data: {
+        mileage: { increment: data.mileageIncrementKm },
+        updatedAt: data.updatedAt,
+        lastKnownLat: data.lastKnownLat ?? undefined,
+        lastKnownLon: data.lastKnownLon ?? undefined,
+        lastPositionAt: data.lastPositionAt ?? undefined,
+        ...(data.fuelLevel !== undefined ? { fuelLevel: data.fuelLevel } : {}),
+      },
+    });
+  }
   async updatePosition(
     id: string,
     lastKnownLat: number,

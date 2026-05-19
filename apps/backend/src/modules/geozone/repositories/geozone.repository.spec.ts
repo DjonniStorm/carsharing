@@ -2,9 +2,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { v4 as uuidv4 } from 'uuid';
 
 import { GeozoneNotFoundException } from '../common/errors';
-import type {
-  GeoJSONMultiPolygon,
-} from '../entities/geozone.geometry';
+import type { GeoJSONMultiPolygon } from '../entities/geozone.geometry';
 import { GeozoneType } from '../entities/geozone.type';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
@@ -33,9 +31,9 @@ describe('GeozoneRepository', () => {
     const suffix = uuidv4().replace(/-/g, '');
     const user = await prisma.user.create({
       data: {
-        name: Repo geozone ${suffix.slice(0, 12)},
-        email: geozone-repo-${suffix}@test.local,
-        phone: +77${suffix.replace(/[a-f]/gi, '2').slice(0, 10)},
+        name: `Repo geozone ${suffix.slice(0, 12)}`,
+        email: `geozone-repo-${suffix}@test.local`,
+        phone: `+77${suffix.replace(/[a-f]/gi, '2').slice(0, 10)}`,
         passwordHash: 'hash',
         role: 0,
         isActive: true,
@@ -115,7 +113,7 @@ describe('GeozoneRepository', () => {
       for (let i = 0; i < 3; i++) {
         await repository.createWithInitialVersion(
           buildCreateInput(createdByUserId, {
-            name: Z-${i},
+            name: `Z-${i}`,
             geometry: sampleMultiPolygon(20 + i),
           }),
         );

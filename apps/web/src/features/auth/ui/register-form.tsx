@@ -13,6 +13,8 @@ import { useAction } from "@reatom/react";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
+import { FIELD_LIMITS } from "@carsharing/validation";
+
 import type { PublicRegisterBody, RegisterFormOutput } from "@/entities/auth";
 import { publicRegisterFormSchema } from "@/entities/auth";
 import { UserRole } from "@/entities/user";
@@ -21,6 +23,7 @@ import { applyAccessToken } from "@/features/auth/model/session";
 import { ROUTES } from "@/shared/config/routes-paths";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 import { safeInternalPath } from "@/shared/lib/navigation/safe-internal-path";
+import { notifyApiError } from "@/shared/lib/notify-api-error";
 import { notification } from "@/shared/lib/notification";
 
 const OPEN_MANAGER_SELF_REGISTER =
@@ -60,11 +63,9 @@ export const RegisterFormView = () => {
       const nextPath = safeInternalPath(redirect, ROUTES.dashboard.overview);
       navigate({ to: nextPath });
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : t(LANG_KEYS.auth.notifyRegisterErrorFallback);
-      notification.error(t(LANG_KEYS.auth.notifyRegisterErrorTitle), msg);
+      notifyApiError(LANG_KEYS.auth.notifyRegisterErrorTitle, err, {
+        fallbackKey: LANG_KEYS.auth.notifyRegisterErrorFallback,
+      });
     }
   });
 
@@ -80,6 +81,8 @@ export const RegisterFormView = () => {
         <TextInput
           label={t(LANG_KEYS.auth.name)}
           placeholder={t(LANG_KEYS.auth.namePlaceholder)}
+          minLength={FIELD_LIMITS.USER_DISPLAY_NAME_MIN}
+          maxLength={FIELD_LIMITS.USER_DISPLAY_NAME_MAX}
           key={form.key("name")}
           {...form.getInputProps("name")}
         />
@@ -88,6 +91,7 @@ export const RegisterFormView = () => {
           placeholder={t(LANG_KEYS.auth.emailPlaceholder)}
           type="email"
           autoComplete="email"
+          maxLength={FIELD_LIMITS.EMAIL_MAX}
           key={form.key("email")}
           {...form.getInputProps("email")}
         />
@@ -95,12 +99,15 @@ export const RegisterFormView = () => {
           label={t(LANG_KEYS.auth.phone)}
           placeholder={t(LANG_KEYS.auth.phonePlaceholder)}
           autoComplete="tel"
+          maxLength={FIELD_LIMITS.PHONE_MAX}
           key={form.key("phone")}
           {...form.getInputProps("phone")}
         />
         <PasswordInput
           label={t(LANG_KEYS.auth.password)}
           autoComplete="new-password"
+          minLength={FIELD_LIMITS.USER_PASSWORD_MIN}
+          maxLength={FIELD_LIMITS.USER_PASSWORD_MAX}
           key={form.key("password")}
           {...form.getInputProps("password")}
         />

@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 
 import {
   DatabaseTripErrorException,
+  TripCarAlreadyInUseException,
   TripNotFoundException,
   TripPublishFailedException,
   TripRelationNotFoundException,
@@ -12,6 +13,7 @@ function isDomainTripError(error: unknown): boolean {
     error instanceof TripNotFoundException ||
     error instanceof TripRelationNotFoundException ||
     error instanceof TripPublishFailedException ||
+    error instanceof TripCarAlreadyInUseException ||
     error instanceof DatabaseTripErrorException
   );
 }

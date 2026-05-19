@@ -4,6 +4,7 @@ import type { GeozoneRead } from "@/entities/geozone";
 import { geozonesApi } from "@/features/geozones/api";
 import type { GeozoneBoundingBoxQuery } from "@/features/geozones/api";
 
+import { resolveApiErrorMessage } from "@/shared/api";
 import type { AsyncStatus } from "@/shared/model/async-status";
 
 export const mapGeozoneBBoxAtom = atom<GeozoneBoundingBoxQuery | null>(
@@ -48,9 +49,7 @@ export const loadDashboardGeozonesForBBox = action(
       dashboardGeozonesStatusAtom.set("idle");
     } catch (e) {
       dashboardGeozonesStatusAtom.set("error");
-      dashboardGeozonesErrorAtom.set(
-        e instanceof Error ? e.message : String(e),
-      );
+      dashboardGeozonesErrorAtom.set(resolveApiErrorMessage(e));
     }
   },
   "loadDashboardGeozonesForBBox",
@@ -86,6 +85,6 @@ export const loadGeozonesCatalog = action(async (includeDeleted = false) => {
     geozonesCatalogStatusAtom.set("idle");
   } catch (e) {
     geozonesCatalogStatusAtom.set("error");
-    geozonesCatalogErrorAtom.set(e instanceof Error ? e.message : String(e));
+    geozonesCatalogErrorAtom.set(resolveApiErrorMessage(e));
   }
 }, "loadGeozonesCatalog");
