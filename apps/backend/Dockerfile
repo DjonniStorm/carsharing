@@ -16,6 +16,7 @@ COPY apps/web/package.json         apps/web/
 COPY apps/telemetry/package.json   apps/telemetry/
 COPY apps/mobile/package.json      apps/mobile/
 COPY packages/notification/package.json packages/notification/
+COPY packages/validation/package.json   packages/validation/
 COPY packages/types/package.json        packages/types/
 COPY packages/utils/package.json        packages/utils/
 
@@ -30,6 +31,7 @@ COPY apps/backend apps/backend
 
 # Сначала собираем общие пакеты, потом prisma generate и nest build
 RUN pnpm --filter @carsharing/notification build \
+ && pnpm --filter @carsharing/validation build \
  && pnpm --filter @carsharing/backend exec prisma generate \
  && pnpm --filter @carsharing/backend build
 

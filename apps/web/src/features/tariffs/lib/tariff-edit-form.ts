@@ -30,4 +30,8 @@ export function tariffSnapshotFromForm(
   return tariffSnapshotFromParsed(result.data);
 }
 
-export { firstTariffFormErrorMessage, parseTariffFormInput, tariffSnapshotFromParsed };
+export {
+  firstTariffFormErrorMessage,
+  parseTariffFormInput,
+  tariffSnapshotFromParsed,
+};

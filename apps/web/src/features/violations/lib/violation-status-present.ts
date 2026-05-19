@@ -66,5 +66,8 @@ export function buildViolationStatusSelectData(
 export function buildViolationCreatableStatusSelectData(
   t: TFunction,
 ): ViolationSelectOption[] {
-  return buildViolationStatusSelectData(t, VIOLATION_CREATABLE_STATUSES_ORDERED);
+  return buildViolationStatusSelectData(
+    t,
+    VIOLATION_CREATABLE_STATUSES_ORDERED,
+  );
 }

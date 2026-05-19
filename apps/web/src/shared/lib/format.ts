@@ -12,10 +12,7 @@ export function formatCardDateTime(
   return d.toLocaleString(locale);
 }
 
-export function formatCoord(
-  lat: number | null,
-  lon: number | null,
-): string {
+export function formatCoord(lat: number | null, lon: number | null): string {
   if (lat == null || lon == null) {
     return "—";
   }

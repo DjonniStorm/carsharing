@@ -82,8 +82,11 @@ export class CarTripSyncService implements ICarTripSyncService {
       return;
     }
 
-    const patch = await this.buildFinishCarPatch(car, trip);
-    const withMetrics = await this.cars.update(trip.carId, patch);
+    const finishMetrics = await this.buildFinishCarMetrics(car, trip);
+    const withMetrics = await this.cars.updateFinishMetrics(
+      trip.carId,
+      finishMetrics,
+    );
 
     await this.applyAvailabilityForTrip(tripId, trip.carId, withMetrics);
   }
@@ -125,10 +128,17 @@ export class CarTripSyncService implements ICarTripSyncService {
     await this.publishCarStateSafe(updated);
   }
 
-  private async buildFinishCarPatch(
+  private async buildFinishCarMetrics(
     car: CarEntity,
     trip: TripEntity,
-  ): Promise<Partial<CarEntity>> {
+  ): Promise<{
+    mileageIncrementKm: number;
+    updatedAt: string;
+    lastKnownLat?: number | null;
+    lastKnownLon?: number | null;
+    lastPositionAt?: string | null;
+    fuelLevel?: number;
+  }> {
     const points = await this.telemetry.findManyByTripId(
       trip.id,
       undefined,
@@ -151,7 +161,7 @@ export class CarTripSyncService implements ICarTripSyncService {
     let lastKnownLon = trip.finishLng ?? lastPoint?.lon ?? car.lastKnownLon;
 
     return {
-      mileage: car.mileage + kmDelta,
+      mileageIncrementKm: kmDelta,
       updatedAt: finishedAtIso,
       lastKnownLat,
       lastKnownLon,
@@ -187,7 +197,10 @@ export class CarTripSyncService implements ICarTripSyncService {
         fuelLevel: car.fuelLevel,
       });
     } catch (error) {
-      this.logger.warn(`publish car.state.changed failed carId=${car.id}`, error);
+      this.logger.warn(
+        `publish car.state.changed failed carId=${car.id}`,
+        error,
+      );
     }
   }
 }

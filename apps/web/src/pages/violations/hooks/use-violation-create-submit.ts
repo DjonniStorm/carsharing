@@ -12,7 +12,7 @@ import {
   parseViolationCreateForm,
 } from "@/features/violations/lib/violation-create-form-schema";
 import { loadViolationsAdminList } from "@/features/violations/model/violations-state";
-import { HttpApiError } from "@/shared/api/http-api-error";
+import { resolveApiErrorMessage } from "@/shared/api";
 import { ROUTES } from "@/shared/config/routes-paths";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 
@@ -53,13 +53,7 @@ export function useViolationCreateSubmit() {
       void reloadList({ includeResolved: true });
       void navigate({ to: ROUTES.dashboard.violations });
     } catch (error) {
-      const msg =
-        error instanceof HttpApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : String(error);
-      setFormError(msg);
+      setFormError(resolveApiErrorMessage(error));
     } finally {
       setSubmitting(false);
     }

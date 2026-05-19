@@ -1,4 +1,12 @@
-import { Button, Divider, Group, Paper, ScrollArea, Stack, Text } from "@mantine/core";
+import {
+  Button,
+  Divider,
+  Group,
+  Paper,
+  ScrollArea,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import type { ViolationRead } from "@/entities/violation";

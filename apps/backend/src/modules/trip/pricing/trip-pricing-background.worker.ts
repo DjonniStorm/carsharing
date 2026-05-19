@@ -1,5 +1,12 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 
+import { SerializedTickRunner } from 'src/shared/background/serialized-tick.runner';
 import {
   ITripPricingJobQueueToken,
   type ITripPricingJobQueue,
@@ -15,41 +22,49 @@ import {
   type ITripPricingService,
 } from './trip-pricing.service.interface';
 
+const TICK_INTERVAL_MS = 250;
+
 @Injectable()
-export class TripPricingBackgroundWorker implements OnModuleInit {
+export class TripPricingBackgroundWorker
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(TripPricingBackgroundWorker.name);
 
-  private timer: NodeJS.Timeout | null = null;
+  private readonly tickRunner: SerializedTickRunner;
 
   constructor(
     @Inject(ITripPricingJobQueueToken)
     private readonly queue: ITripPricingJobQueue,
     @Inject(ITripPricingServiceToken)
     private readonly pricingService: ITripPricingService,
-  ) {}
-
-  onModuleInit(): void {
-    this.timer = setInterval(() => void this.tick(), 250);
-    this.timer.unref?.();
+  ) {
+    this.tickRunner = new SerializedTickRunner(
+      () => this.runOneJob(),
+      (error) => this.logger.error('pricing tick failed', error),
+    );
   }
 
-  private async tick(): Promise<void> {
+  onModuleInit(): void {
+    this.tickRunner.startInterval(TICK_INTERVAL_MS);
+  }
+
+  onModuleDestroy(): void {
+    this.tickRunner.dispose();
+  }
+
+  private async runOneJob(): Promise<void> {
     const job = this.queue.dequeue();
     if (!job) {
       return;
     }
 
-    try {
-      if (job.name === TripPricingJobName.Recalc) {
-        await executeTripPricingRecalc(
-          job.payload as TripPricingRecalcJob,
-          { pricingService: this.pricingService },
-        );
-        return;
-      }
-      this.logger.debug(`skip unknown pricing job=${job.name}`);
-    } catch (error) {
-      this.logger.error(`pricing job failed name=${job.name}`, error);
+    if (job.name === TripPricingJobName.Recalc) {
+      await executeTripPricingRecalc(job.payload as TripPricingRecalcJob, {
+        pricingService: this.pricingService,
+      });
+      return;
     }
+
+    this.logger.debug(`skip unknown pricing job=${job.name}`);
   }
 }

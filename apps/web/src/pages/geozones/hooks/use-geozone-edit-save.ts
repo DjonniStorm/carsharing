@@ -29,7 +29,7 @@ import type {
   GeozoneEditLoadPhase,
 } from "@/features/geozones/model/geozone-edit-view";
 import { loadGeozonesCatalog } from "@/features/geozones/model/geozones-state";
-import { HttpApiError } from "@/shared/api/http-api-error";
+import { resolveApiErrorMessage } from "@/shared/api";
 import { ROUTES } from "@/shared/config/routes-paths";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 
@@ -149,7 +149,10 @@ export function useGeozoneEditSave({
     if (versionDirty) {
       const rulesParsed = parseGeozoneRulesJson(rulesJson);
       if (!rulesParsed.ok) {
-        setFormError(t(LANG_KEYS.pages.geozonesCreateRulesInvalidJson));
+        setFormError(
+          rulesParsed.message ??
+            t(LANG_KEYS.pages.geozonesCreateRulesInvalidJson),
+        );
         return;
       }
       if (!closedRing || !isValidClosedRing(closedRing)) {
@@ -202,13 +205,7 @@ export function useGeozoneEditSave({
       void reloadCatalog();
       void navigate({ to: ROUTES.dashboard.geozones });
     } catch (error) {
-      const msg =
-        error instanceof HttpApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : String(error);
-      setFormError(msg);
+      setFormError(resolveApiErrorMessage(error));
     } finally {
       setSubmitting(false);
     }

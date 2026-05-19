@@ -23,7 +23,9 @@ export function useDashboardMapViewport() {
   const [showParkingGeozones, setShowParkingGeozones] = useState(true);
 
   const viewportBBoxRef = useRef<GeozoneBoundingBoxQuery | null>(null);
-  const viewportDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const viewportDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const showRentalRef = useRef(showRentalGeozones);
   const showParkingRef = useRef(showParkingGeozones);
   showRentalRef.current = showRentalGeozones;

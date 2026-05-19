@@ -46,3 +46,15 @@ export class CarAlreadyRestoredException extends Error {
     this.name = 'CarAlreadyRestoredException';
   }
 }
+
+/** Админский PATCH запрещён, пока на машине есть незавершённая поездка. */
+export class CarInActiveTripException extends Error {
+  constructor(
+    message: string,
+    public readonly carId: string,
+    public readonly activeTripId: string,
+  ) {
+    super(message);
+    this.name = 'CarInActiveTripException';
+  }
+}

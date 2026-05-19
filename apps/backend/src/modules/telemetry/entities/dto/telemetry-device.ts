@@ -1,5 +1,14 @@
+import { FIELD_LIMITS } from '@carsharing/validation';
 import { Type } from 'class-transformer';
-import { IsDateString, IsNumber, IsOptional, Max, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class TelemetryDevicePoint {
   @IsDateString()
@@ -33,6 +42,8 @@ export class TelemetryDevicePoint {
   fuelLevel: number;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(FIELD_LIMITS.TELEMETRY_SOURCE_MAX)
   source?: string;
 }
 

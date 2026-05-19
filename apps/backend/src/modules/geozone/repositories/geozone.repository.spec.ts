@@ -2,10 +2,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { v4 as uuidv4 } from 'uuid';
 
 import { GeozoneNotFoundException } from '../common/errors';
-import type {
-  GeoJSONMultiPolygon,
-  GeoJSONPosition,
-} from '../entities/geozone.geometry';
+import type { GeoJSONMultiPolygon } from '../entities/geozone.geometry';
 import { GeozoneType } from '../entities/geozone.type';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
@@ -16,7 +13,7 @@ import {
 import { GeozoneRepository } from './geozone.repository';
 
 /**
- * Приватные `buildListWhere`, `geometryByVersionIds`, `attachCurrentVersions`
+ * Приватные buildListWhere, geometryByVersionIds, attachCurrentVersions
  * проверяются через публичные методы репозитория.
  */
 describe('GeozoneRepository', () => {
@@ -405,9 +402,9 @@ describe('GeozoneRepository', () => {
       const testLon = base + 0.05;
       const testLat = 55.775;
 
-      expect(await repository.isPointInsideVersion(v1Id, testLon, testLat)).toBe(
-        true,
-      );
+      expect(
+        await repository.isPointInsideVersion(v1Id, testLon, testLat),
+      ).toBe(true);
 
       const afterPublish = await repository.publishNewVersion(zone.id, {
         geometry: sampleMultiPolygon(260),

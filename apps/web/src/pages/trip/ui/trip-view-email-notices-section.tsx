@@ -158,11 +158,7 @@ export function TripViewEmailNoticesSection({
                               align="center"
                               gap="xs"
                             >
-                              <Text
-                                size="sm"
-                                c="dimmed"
-                                style={{ flex: 1 }}
-                              >
+                              <Text size="sm" c="dimmed" style={{ flex: 1 }}>
                                 {t(
                                   LANG_KEYS.pages
                                     .tripDetailEmailNoticeViolationMissing,

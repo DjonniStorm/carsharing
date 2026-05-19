@@ -1,3 +1,4 @@
+import { FIELD_LIMITS } from "@carsharing/validation";
 import { z } from "zod";
 
 import { GeozoneType } from "@/entities/geozone";
@@ -10,22 +11,34 @@ export const geozoneMetaFormSchema = z.object({
     .string()
     .transform((value) => value.trim())
     .pipe(
-      z.string().min(1, {
-        message: translate(LANG_KEYS.pages.geozonesCreateNameRequired),
-      }),
+      z
+        .string()
+        .min(FIELD_LIMITS.GEOZONE_NAME_MIN, {
+          message: translate(LANG_KEYS.pages.geozonesCreateNameRequired),
+        })
+        .max(FIELD_LIMITS.GEOZONE_NAME_MAX, {
+          message: translate(LANG_KEYS.validation.geozoneNameMax),
+        }),
     ),
   type: z.nativeEnum(GeozoneType),
   color: z
     .string()
     .transform((value) => normalizeGeozoneColorHex(value))
-    .pipe(z.string().min(1)),
+    .pipe(
+      z
+        .string()
+        .min(FIELD_LIMITS.GEOZONE_COLOR_MIN)
+        .max(FIELD_LIMITS.GEOZONE_COLOR_MAX, {
+          message: translate(LANG_KEYS.validation.geozoneColorMax),
+        }),
+    ),
 });
 
 export const geozoneTariffPresetIdSchema = z
   .string()
   .transform((value) => value.trim())
   .pipe(
-    z.string().min(1, {
+    z.string().min(FIELD_LIMITS.NON_EMPTY_STRING_MIN, {
       message: translate(LANG_KEYS.pages.geozonesCreateTariffPresetRequired),
     }),
   );

@@ -80,10 +80,7 @@ const UserViewPage = () => {
     };
   }, [userId, loadPage, reset]);
 
-  const typeSelectData = useMemo(
-    () => buildViolationStatusSelectData(t),
-    [t],
-  );
+  const typeSelectData = useMemo(() => buildViolationStatusSelectData(t), [t]);
 
   const filteredViolations = useMemo(() => {
     return filterViolationsList(driverViolations, {

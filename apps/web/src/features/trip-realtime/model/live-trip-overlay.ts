@@ -36,10 +36,7 @@ export const liveTripOverlayAtom = atom<Record<string, LiveTripOverlay>>(
 const metricsThrottleMsByTrip = new Map<string, number>();
 const METRICS_UI_THROTTLE_MS = 150;
 
-function patchOverlay(
-  tripId: string,
-  patch: Partial<LiveTripOverlay>,
-): void {
+function patchOverlay(tripId: string, patch: Partial<LiveTripOverlay>): void {
   const prev = liveTripOverlayAtom();
   const current = prev[tripId];
   liveTripOverlayAtom.set({
@@ -47,7 +44,8 @@ function patchOverlay(
     [tripId]: {
       ...current,
       ...patch,
-      updatedAt: patch.updatedAt ?? current?.updatedAt ?? new Date().toISOString(),
+      updatedAt:
+        patch.updatedAt ?? current?.updatedAt ?? new Date().toISOString(),
     },
   });
 }

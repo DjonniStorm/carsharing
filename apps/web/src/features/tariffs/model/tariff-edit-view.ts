@@ -1,7 +1,7 @@
 import { action, atom, wrap } from "@reatom/core";
 
 import { tariffsApi } from "@/features/tariffs/api";
-import { HttpApiError } from "@/shared/api/http-api-error";
+import { HttpApiError, resolveApiErrorMessage } from "@/shared/api";
 
 export type TariffEditSnapshot = {
   name: string;
@@ -100,9 +100,7 @@ export const loadTariffEditPage = action(async (tariffId: string) => {
     const msg =
       e instanceof HttpApiError && e.status === 404
         ? "not_found"
-        : e instanceof Error
-          ? e.message
-          : String(e);
+        : resolveApiErrorMessage(e);
     tariffEditLoadErrorAtom.set(msg);
     tariffEditLoadPhaseAtom.set("error");
   }

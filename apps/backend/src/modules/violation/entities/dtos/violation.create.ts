@@ -1,4 +1,12 @@
-import { IsEnum, IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import { FIELD_LIMITS } from '@carsharing/validation';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  IsUUID,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { ViolationStatus } from '../violation.status';
 
 export class ViolationCreate {
@@ -10,5 +18,7 @@ export class ViolationCreate {
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(FIELD_LIMITS.VIOLATION_DESCRIPTION_MIN)
+  @MaxLength(FIELD_LIMITS.VIOLATION_DESCRIPTION_MAX)
   description: string;
 }

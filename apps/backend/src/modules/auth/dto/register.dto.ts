@@ -10,6 +10,8 @@ import {
   MinLength,
 } from 'class-validator';
 
+import { FIELD_LIMITS } from '@carsharing/validation';
+
 import { PHONE_REGEX } from 'src/shared/regexp/email';
 import { UserRole } from 'src/modules/user/entities/user.role';
 
@@ -18,29 +20,40 @@ import { UserRole } from 'src/modules/user/entities/user.role';
  * Поле `role: MANAGER` учитывается только при `OPEN_MANAGER_SELF_REGISTER=true` (см. auth service).
  */
 export class RegisterDto {
-  @ApiProperty({ example: 'Иван Иванов' })
+  @ApiProperty({
+    example: 'Иван Иванов',
+    maxLength: FIELD_LIMITS.USER_DISPLAY_NAME_MAX,
+  })
   @IsString()
   @IsNotEmpty()
-  @MinLength(3)
-  @MaxLength(255)
+  @MinLength(FIELD_LIMITS.USER_DISPLAY_NAME_MIN)
+  @MaxLength(FIELD_LIMITS.USER_DISPLAY_NAME_MAX)
   name!: string;
 
-  @ApiProperty()
+  @ApiProperty({ maxLength: FIELD_LIMITS.EMAIL_MAX })
   @IsEmail()
   @IsNotEmpty()
+  @MaxLength(FIELD_LIMITS.EMAIL_MAX)
   email!: string;
 
-  @ApiProperty({ description: 'E.164, например +79991234567' })
+  @ApiProperty({
+    description: 'E.164, например +79991234567',
+    maxLength: FIELD_LIMITS.PHONE_MAX,
+  })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(FIELD_LIMITS.PHONE_MAX)
   @Matches(PHONE_REGEX, { message: 'Phone is not valid' })
   phone!: string;
 
-  @ApiProperty({ minLength: 8 })
+  @ApiProperty({
+    minLength: FIELD_LIMITS.USER_PASSWORD_MIN,
+    maxLength: FIELD_LIMITS.USER_PASSWORD_MAX,
+  })
   @IsString()
   @IsNotEmpty()
-  @MinLength(8)
-  @MaxLength(255)
+  @MinLength(FIELD_LIMITS.USER_PASSWORD_MIN)
+  @MaxLength(FIELD_LIMITS.USER_PASSWORD_MAX)
   password!: string;
 
   @ApiPropertyOptional({

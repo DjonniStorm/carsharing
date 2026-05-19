@@ -2,7 +2,7 @@ import { action, atom, wrap } from "@reatom/core";
 
 import { ViolationStatus } from "@/entities/violation";
 import { violationsApi } from "@/features/violations/api";
-import { HttpApiError } from "@/shared/api/http-api-error";
+import { HttpApiError, resolveApiErrorMessage } from "@/shared/api";
 
 export type ViolationEditLoadPhase = "loading" | "ok" | "error";
 
@@ -72,9 +72,7 @@ export const loadViolationEditPage = action(async (violationId: string) => {
     const msg =
       e instanceof HttpApiError && e.status === 404
         ? "not_found"
-        : e instanceof Error
-          ? e.message
-          : String(e);
+        : resolveApiErrorMessage(e);
     violationEditLoadErrorAtom.set(msg);
     violationEditLoadPhaseAtom.set("error");
   }

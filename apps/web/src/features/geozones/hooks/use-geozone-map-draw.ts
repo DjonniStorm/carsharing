@@ -12,7 +12,9 @@ type CompletePolygonOptions = {
   onSuccess?: () => void;
 };
 
-export function useGeozoneMapDraw(opts?: { resetGeometryOnDrawModeChange?: boolean }) {
+export function useGeozoneMapDraw(opts?: {
+  resetGeometryOnDrawModeChange?: boolean;
+}) {
   const resetOnModeChange = opts?.resetGeometryOnDrawModeChange ?? false;
 
   const [drawMode, setDrawMode] = useState<GeozoneDrawMode>("rectangle");
@@ -43,11 +45,14 @@ export function useGeozoneMapDraw(opts?: { resetGeometryOnDrawModeChange?: boole
     setClosedRing(null);
   }, []);
 
-  const setClosedRingFromHydration = useCallback((ring: YMapLngLat[] | null) => {
-    setClosedRing(ring);
-    setPolygonVertices([]);
-    setRectangleAnchor(null);
-  }, []);
+  const setClosedRingFromHydration = useCallback(
+    (ring: YMapLngLat[] | null) => {
+      setClosedRing(ring);
+      setPolygonVertices([]);
+      setRectangleAnchor(null);
+    },
+    [],
+  );
 
   const handleMapClick = useCallback(
     (lngLat: YMapLngLat) => {

@@ -42,8 +42,11 @@ const TariffsPage = () => {
   const [error] = useAtom(tariffsCatalogErrorAtom);
   const loadTariffs = useAction(loadTariffsCatalog);
 
-  const { query: searchQuery, setQuery: setSearchQuery, debouncedQuery: debouncedSearch } =
-    useDebouncedSearch();
+  const {
+    query: searchQuery,
+    setQuery: setSearchQuery,
+    debouncedQuery: debouncedSearch,
+  } = useDebouncedSearch();
   const [presetFilter, setPresetFilter] = useState<TariffPresetFilter>("");
   const [hideDeleted, setHideDeleted] = useState(true);
 

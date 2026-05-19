@@ -7,10 +7,10 @@ export interface ICarTripSyncService {
 
   onTripCancelled(carId: string): Promise<void>;
 
-  /** Пересчёт статуса/доступности по нарушениям (после async parking-check). */
+  /** Пересчёт статуса/доступности по нарушениям. */
   recalcAvailabilityForTrip(tripId: string): Promise<void>;
 
-  /** Live-топливо из телеметрии (throttle снаружи). */
+  /** Live-топливо из телеметрии. */
   syncLiveFuel(carId: string, fuelLevel: number): Promise<void>;
 }
 

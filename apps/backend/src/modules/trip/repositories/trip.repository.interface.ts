@@ -64,7 +64,24 @@ export interface ITripRepository {
 
   create(input: TripRepositoryCreateInput): Promise<TripEntity>;
 
+  /**
+   * Атомарно: lock car → проверка ongoing → create trip → car IN_USE.
+   * @throws TripCarAlreadyInUseException
+   */
+  createStartingTripWithCarLock(
+    input: TripRepositoryCreateInput,
+  ): Promise<TripEntity>;
+
   update(id: string, patch: TripRepositoryUpdatePatch): Promise<TripEntity>;
+
+  /**
+   * Перевод в FINISHED только если поездка ещё не FINISHED.
+   * @returns applied — true, если этот вызов первым завершил поездку
+   */
+  transitionToFinishedIfNotFinished(
+    id: string,
+    patch: TripRepositoryUpdatePatch,
+  ): Promise<{ entity: TripEntity; applied: boolean }>;
 
   /** Поездка + авто + агрегированные нарушения (один SQL). */
   findHistoryShortByUserId(

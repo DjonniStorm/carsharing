@@ -15,9 +15,7 @@ export type RentalMovementZoneCheckHandlerDeps = {
   /** Дедуп по ключу вида `speeding:${tripId}` — см. `Throttle`. */
   dedupeAllow: (scope: string) => boolean;
   geozoneRepository: Pick<IGeozoneRepository, 'isPointInsideVersion'>;
-  findTripGeoZoneVersion: (
-    tripId: string,
-  ) => Promise<TripGeoZoneVersionLookup>;
+  findTripGeoZoneVersion: (tripId: string) => Promise<TripGeoZoneVersionLookup>;
   createViolation: (input: {
     tripId: string;
     type: ViolationStatus;

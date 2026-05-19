@@ -1,11 +1,11 @@
 import { GeozoneType } from './geozone.type';
 
 /**
- * Стабильная сущность геозоны (метаданные без геометрии).
+ * Стабильная сущность геозоны.
  * Актуальная геометрия и правила — в {@link GeozoneVersionEntity} с id = currentVersionId.
  *
- * Обновление контура: закрыть предыдущую версию (`disabledAt`), создать новую,
- * выставить `currentVersionId`. Поездки ссылаются на версию на момент старта.
+ * Обновление контура: закрыть предыдущую версию (disabledAt), создать новую,
+ * выставить currentVersionId. Поездки ссылаются на версию на момент старта.
  */
 export class GeozoneEntity {
   constructor(
@@ -17,7 +17,6 @@ export class GeozoneEntity {
     /** id активной {@link GeozoneVersionEntity}. */
     public readonly currentVersionId: string,
     public readonly createdAt: Date,
-    /** Софт-удаление зоны целиком; `null` — зона жива. */
     public readonly deletedAt: Date | null,
     public readonly createdByUserId: string,
   ) {}

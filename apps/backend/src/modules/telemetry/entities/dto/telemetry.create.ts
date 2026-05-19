@@ -1,10 +1,13 @@
+import { FIELD_LIMITS } from '@carsharing/validation';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsNumber,
   IsOptional,
+  IsString,
   IsUUID,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 
@@ -43,5 +46,7 @@ export class TelemetryCreate {
   tripId: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(FIELD_LIMITS.TELEMETRY_SOURCE_MAX)
   source?: string;
 }

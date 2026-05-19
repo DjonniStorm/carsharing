@@ -10,10 +10,12 @@ import {
   CarAlreadyDeletedException,
   CarAlreadyExistsException,
   CarAlreadyRestoredException,
+  CarInActiveTripException,
   CarNotFoundException,
   LicensePlateAlreadyExistsException,
 } from '../common/errors';
 import { Car } from '../entities/dtos/car';
+import { CarUpdateDto } from '../entities/dtos/car.update';
 import { CarRead } from '../entities/dtos/car.read';
 import { CarService } from '../services/car.service';
 import { ICarController } from './car.controller.interface';
@@ -128,7 +130,7 @@ export class CarController implements ICarController {
   @ApiResponse({ status: 200, type: CarRead })
   async update(
     @Param('id') id: string,
-    @Body() car: Partial<Car>,
+    @Body() car: CarUpdateDto,
   ): Promise<CarRead> {
     try {
       this.logger.log(`Updating car: ${id}`);
@@ -141,6 +143,9 @@ export class CarController implements ICarController {
         throw new NotFoundException(error.message);
       }
       if (error instanceof LicensePlateAlreadyExistsException) {
+        throw new ConflictException(error.message);
+      }
+      if (error instanceof CarInActiveTripException) {
         throw new ConflictException(error.message);
       }
       throw new BadRequestException(error.message);

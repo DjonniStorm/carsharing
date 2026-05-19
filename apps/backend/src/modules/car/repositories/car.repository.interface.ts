@@ -6,6 +6,19 @@ export interface ICarRepository {
   findByLicensePlate(licensePlate: string): Promise<CarEntity | null>;
   create(car: CarEntity): Promise<CarEntity>;
   update(id: string, car: Partial<CarEntity>): Promise<CarEntity>;
+
+  /** Пробег после finish: атомарный increment, остальные поля — assign. */
+  updateFinishMetrics(
+    id: string,
+    data: {
+      mileageIncrementKm: number;
+      updatedAt: string;
+      lastKnownLat?: number | null;
+      lastKnownLon?: number | null;
+      lastPositionAt?: string | null;
+      fuelLevel?: number;
+    },
+  ): Promise<CarEntity>;
   delete(id: string): Promise<CarEntity>;
   restore(id: string): Promise<CarEntity>;
   updatePosition(

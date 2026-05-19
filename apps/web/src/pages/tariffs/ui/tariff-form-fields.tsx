@@ -1,6 +1,8 @@
 import { NumberInput, Switch, Text, TextInput } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
+import { FIELD_LIMITS } from "@carsharing/validation";
+
 import { LANG_KEYS } from "@/shared/i18n/keys";
 
 export type TariffFormValues = {
@@ -40,6 +42,8 @@ export function TariffFormFields({
         onChange={(e) => {
           onNameChange(e.currentTarget.value);
         }}
+        minLength={FIELD_LIMITS.TARIFF_NAME_MIN}
+        maxLength={FIELD_LIMITS.TARIFF_NAME_MAX}
         required
         readOnly={readOnly}
       />

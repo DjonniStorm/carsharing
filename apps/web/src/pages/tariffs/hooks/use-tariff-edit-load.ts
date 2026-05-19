@@ -28,7 +28,9 @@ export function useTariffEditLoad() {
   const [loadErrorRaw] = useAtom(tariffEditLoadErrorAtom);
   const [isDeleted] = useAtom(tariffEditIsDeletedAtom);
   const [name, setName] = useAtom(tariffEditNameAtom);
-  const [pricePerMinute, setPricePerMinute] = useAtom(tariffEditPricePerMinuteAtom);
+  const [pricePerMinute, setPricePerMinute] = useAtom(
+    tariffEditPricePerMinuteAtom,
+  );
   const [pricePerKm, setPricePerKm] = useAtom(tariffEditPricePerKmAtom);
   const [pausePricePerMinute, setPausePricePerMinute] = useAtom(
     tariffEditPausePricePerMinuteAtom,

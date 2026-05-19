@@ -1,4 +1,12 @@
-import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { CarService } from './car.service';
 import { CarRepository } from '../repositories/car.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -14,21 +22,34 @@ import { CarMapper } from '../common/mapper';
 import { v4 as uuidv4 } from 'uuid';
 import {
   CarAlreadyExistsException,
+  CarInActiveTripException,
   CarNotFoundException,
   LicensePlateAlreadyExistsException,
 } from '../common/errors';
+import type { ITripRepository } from '../../trip/repositories/trip.repository.interface';
+import type { TripEntity } from '../../trip/entities/trip.entity';
+
+function createTripsMock(
+  findActiveByCarId: ITripRepository['findActiveByCarId'] = vi
+    .fn()
+    .mockResolvedValue(null),
+): ITripRepository {
+  return { findActiveByCarId } as ITripRepository;
+}
 
 describe('CarService', () => {
   let service: CarService;
   let repository: CarRepository;
   let prisma: PrismaService;
+  let tripsMock: ITripRepository;
 
   beforeEach(async () => {
     loadBackendDevEnv();
     prisma = createTestPrismaService();
     await prisma.$connect();
     repository = new CarRepository(prisma);
-    service = new CarService(repository);
+    tripsMock = createTripsMock();
+    service = new CarService(repository, tripsMock);
   });
 
   afterEach(async () => {
@@ -168,6 +189,23 @@ describe('CarService', () => {
       await expect(service.update(id, car)).rejects.toThrow(
         CarNotFoundException,
       );
+    });
+
+    it('should throw if car has active trip', async () => {
+      const car = createCar();
+      const carEntity = CarMapper.toCarEntity(car);
+      await repository.create(carEntity);
+      const activeTripId = uuidv4();
+      vi.mocked(tripsMock.findActiveByCarId).mockResolvedValueOnce({
+        id: activeTripId,
+        carId: carEntity.id,
+      } as TripEntity);
+
+      await expect(
+        service.update(carEntity.id, { color: 'Blue' }),
+      ).rejects.toThrow(CarInActiveTripException);
+
+      expect(tripsMock.findActiveByCarId).toHaveBeenCalledWith(carEntity.id);
     });
   });
 

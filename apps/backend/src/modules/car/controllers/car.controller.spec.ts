@@ -1,6 +1,14 @@
 import { CarController } from './car.controller';
 import { CarService } from '../services/car.service';
-import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import {
   createTestPrismaService,
   loadBackendDevEnv,
@@ -14,12 +22,23 @@ import { Car } from '../entities/dtos/car';
 import { CarRead } from '../entities/dtos/car.read';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
+import type { ITripRepository } from '../../trip/repositories/trip.repository.interface';
+import type { TripEntity } from '../../trip/entities/trip.entity';
+
+function createTripsMock(
+  findActiveByCarId: ITripRepository['findActiveByCarId'] = vi
+    .fn()
+    .mockResolvedValue(null),
+): ITripRepository {
+  return { findActiveByCarId } as ITripRepository;
+}
 
 describe('CarController', () => {
   let controller: CarController;
   let service: CarService;
   let prisma: PrismaService;
   let repository: CarRepository;
+  let tripsMock: ITripRepository;
 
   beforeEach(async () => {
     loadBackendDevEnv();
@@ -27,7 +46,8 @@ describe('CarController', () => {
     await prisma.$connect();
     await truncateApplicationTable(prisma, 'car');
     repository = new CarRepository(prisma);
-    service = new CarService(repository);
+    tripsMock = createTripsMock();
+    service = new CarService(repository, tripsMock);
     controller = new CarController(service);
   });
 
@@ -417,6 +437,35 @@ describe('CarController', () => {
         controller.update(createdCar.id, {
           licensePlate: car.licensePlate,
         }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('Получает ошибку, если на машине активная поездка', async () => {
+      const car: Car = {
+        brand: 'Toyota',
+        model: 'Camry',
+        licensePlate: '1234567890',
+        color: 'Red',
+        mileage: 100000,
+        fuelLevel: 50,
+        isAvailable: true,
+        carStatus: CarStatus.IN_USE,
+        isDeleted: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastKnownLat: 100,
+        lastKnownLon: 100,
+        lastPositionAt: new Date(),
+      };
+      const createdCar = await service.create(car);
+      const activeTripId = uuidv4();
+      vi.mocked(tripsMock.findActiveByCarId).mockResolvedValueOnce({
+        id: activeTripId,
+        carId: createdCar.id,
+      } as TripEntity);
+
+      await expect(
+        controller.update(createdCar.id, { color: 'Blue' }),
       ).rejects.toThrow(ConflictException);
     });
   });

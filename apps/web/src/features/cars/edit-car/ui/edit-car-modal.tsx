@@ -12,6 +12,7 @@ import {
   type EditCarBasicsFormOutput,
 } from "@/features/cars/edit-car/lib/edit-car-basics-form-schema";
 import { LANG_KEYS } from "@/shared/i18n/keys";
+import { notifyApiError } from "@/shared/lib/notify-api-error";
 import { notification } from "@/shared/lib/notification";
 
 type EditCarModalProps = {
@@ -68,11 +69,9 @@ const EditCarModal = ({ car, opened, onClose, onSaved }: EditCarModalProps) => {
       onSaved?.();
       onClose();
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : t(LANG_KEYS.pages.carsEditErrorFallback);
-      notification.error(t(LANG_KEYS.pages.carsEditErrorTitle), msg);
+      notifyApiError(LANG_KEYS.pages.carsEditErrorTitle, err, {
+        fallbackKey: LANG_KEYS.pages.carsEditErrorFallback,
+      });
     } finally {
       setSubmitting(false);
     }

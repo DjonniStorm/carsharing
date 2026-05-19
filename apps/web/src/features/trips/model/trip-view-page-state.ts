@@ -4,6 +4,7 @@ import type { TripNotificationRead } from "@/entities/manager-violation-notice";
 import type { ReadUser } from "@/entities/user";
 import { usersApi } from "@/features/auth/api";
 import { managerViolationNoticeApi } from "@/features/manager-violation-notice/api";
+import { resolveApiErrorMessage } from "@/shared/api";
 import type { AsyncStatus } from "@/shared/model/async-status";
 
 export const tripViewEmailNoticesAtom = atom<TripNotificationRead[]>(
@@ -54,9 +55,7 @@ export const loadTripViewEmailNotices = action(async (tripId: string) => {
   } catch (e) {
     tripViewEmailNoticesAtom.set([]);
     tripViewEmailNoticesStatusAtom.set("error");
-    tripViewEmailNoticesErrorAtom.set(
-      e instanceof Error ? e.message : String(e),
-    );
+    tripViewEmailNoticesErrorAtom.set(resolveApiErrorMessage(e));
   }
 }, "loadTripViewEmailNotices");
 

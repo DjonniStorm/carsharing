@@ -1,4 +1,5 @@
 import { HttpApiError } from "@/shared/api/http-api-error";
+import { pickMessageFromResponse } from "@/shared/api/message-from-response-body";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 import { translate } from "@/shared/i18n/translate";
 
@@ -12,20 +13,6 @@ export type JsonRequestOptions = Omit<RequestInit, "body"> & {
    * Для `POST /auth/login` задайте `false`.
    */
   bearer?: boolean;
-};
-
-const pickMessage = (data: unknown, fallback: string): string => {
-  if (typeof data !== "object" || data === null || !("message" in data)) {
-    return fallback;
-  }
-  const raw = (data as { message: unknown }).message;
-  if (typeof raw === "string") {
-    return raw;
-  }
-  if (Array.isArray(raw)) {
-    return raw.map(String).join(", ");
-  }
-  return fallback;
 };
 
 /**
@@ -83,7 +70,7 @@ export class BaseApiClient {
 
     if (!res.ok) {
       throw new HttpApiError(
-        pickMessage(
+        pickMessageFromResponse(
           data,
           translate(LANG_KEYS.api.requestFailedWithStatus, {
             status: res.status,

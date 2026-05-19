@@ -12,8 +12,8 @@ export type WsSubscriptionAction =
   (typeof TripWsCommand)[keyof typeof TripWsCommand];
 
 /**
- * Базовая обёртка любого события в WS-шине.
- * Зачем: единый envelope упрощает логирование, дедупликацию и отладку.
+ * Базовая обёртка любого события в WS.
+ * Зачем: упрощает логирование, дедупликацию и отладку.
  */
 export class TripWsEnvelope<
   TName extends TripWsEventName,

@@ -8,7 +8,7 @@ import { ViolationStatus } from "@/entities/violation";
 import { violationsApi } from "@/features/violations/api";
 import type { ViolationEditLoadPhase } from "@/features/violations/model/violation-edit-view";
 import { loadViolationsAdminList } from "@/features/violations/model/violations-state";
-import { HttpApiError } from "@/shared/api/http-api-error";
+import { resolveApiErrorMessage } from "@/shared/api";
 import { ROUTES } from "@/shared/config/routes-paths";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 
@@ -60,13 +60,7 @@ export function useViolationEditMutations({
       void reloadList({ includeResolved: true });
       void navigate({ to: ROUTES.dashboard.violations });
     } catch (error) {
-      const msg =
-        error instanceof HttpApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : String(error);
-      setFormError(msg);
+      setFormError(resolveApiErrorMessage(error));
     } finally {
       setSubmitting(false);
     }
@@ -100,13 +94,7 @@ export function useViolationEditMutations({
       void reloadList({ includeResolved: true });
       void navigate({ to: ROUTES.dashboard.violations });
     } catch (error) {
-      const msg =
-        error instanceof HttpApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : String(error);
-      setFormError(msg);
+      setFormError(resolveApiErrorMessage(error));
     } finally {
       setSubmitting(false);
     }

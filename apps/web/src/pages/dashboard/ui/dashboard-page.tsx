@@ -20,7 +20,10 @@ import {
 } from "@/features/cars/model/cars-list";
 import { liveCarPositionsAtom } from "@/features/trip-realtime/model/live-car-positions";
 import { getYandexMapsApiKey } from "@/shared/config/env";
-import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from "@/shared/config/map-defaults";
+import {
+  DEFAULT_MAP_CENTER,
+  DEFAULT_MAP_ZOOM,
+} from "@/shared/config/map-defaults";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 
 import { useDashboardCarSelection } from "@/pages/dashboard/hooks/use-dashboard-car-selection";

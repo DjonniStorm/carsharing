@@ -1,3 +1,4 @@
+import { FIELD_LIMITS } from '@carsharing/validation';
 import {
   IsEnum,
   IsOptional,
@@ -12,8 +13,8 @@ import { GeozoneType } from '../geozone.type';
 export class GeozoneUpdate {
   @IsOptional()
   @IsString()
-  @MinLength(1)
-  @MaxLength(255)
+  @MinLength(FIELD_LIMITS.GEOZONE_NAME_MIN)
+  @MaxLength(FIELD_LIMITS.GEOZONE_NAME_MAX)
   name?: string;
 
   @IsOptional()
@@ -22,7 +23,7 @@ export class GeozoneUpdate {
 
   @IsOptional()
   @IsString()
-  @MinLength(1)
-  @MaxLength(32)
+  @MinLength(FIELD_LIMITS.GEOZONE_COLOR_MIN)
+  @MaxLength(FIELD_LIMITS.GEOZONE_COLOR_MAX)
   color?: string;
 }

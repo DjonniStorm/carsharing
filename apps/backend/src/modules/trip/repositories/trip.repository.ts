@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
+import { CarStatus } from 'src/modules/car/entities/car-status';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { TripCarAlreadyInUseException } from '../common/errors';
 import { TripMapper } from '../common/mapper';
 import type {
   TripFindByIdOptions,
   TripHistoryShortListOptions,
   TripListParams,
 } from '../entities/trip-query.types';
-import { TripStatus } from '../entities/trip.status';
+import { ONGOING_TRIP_STATUSES, TripStatus } from '../entities/trip.status';
 import { TripEntity } from '../entities/trip.entity';
 import type {
   ITripRepository,
@@ -77,16 +79,10 @@ export class TripRepository implements ITripRepository {
     carId: string,
     excludeTripId?: string,
   ): Promise<TripEntity | null> {
-    const ongoing: TripStatus[] = [
-      TripStatus.PENDING,
-      TripStatus.STARTED,
-      TripStatus.ACTIVE,
-      TripStatus.PAUSED,
-    ];
     const row = await this.prisma.trip.findFirst({
       where: {
         carId,
-        status: { in: ongoing },
+        status: { in: ONGOING_TRIP_STATUSES },
         ...(excludeTripId ? { id: { not: excludeTripId } } : {}),
       },
       orderBy: { startedAt: 'desc' },
@@ -96,27 +92,124 @@ export class TripRepository implements ITripRepository {
 
   async create(input: TripRepositoryCreateInput): Promise<TripEntity> {
     const row = await this.prisma.trip.create({
-      data: {
-        userId: input.userId,
-        carId: input.carId,
-        geoZoneVersionId: input.geoZoneVersionId,
-        status: input.status ?? TripStatus.PENDING,
-        startedAt: input.startedAt ?? new Date(),
-        distance: input.distance ?? 0,
-        duration: input.duration ?? 0,
-        startLat: input.startLat ?? undefined,
-        startLng: input.startLng ?? undefined,
-        carPlateSnapshot: input.carPlateSnapshot ?? undefined,
-        carDisplayNameSnapshot: input.carDisplayNameSnapshot ?? undefined,
-      },
+      data: this.buildCreateData(input),
     });
     return TripMapper.fromDbToEntity(row);
+  }
+
+  async createStartingTripWithCarLock(
+    input: TripRepositoryCreateInput,
+  ): Promise<TripEntity> {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw(
+          Prisma.sql`SELECT id FROM car WHERE id = ${input.carId}::uuid FOR UPDATE`,
+        );
+
+        const active = await tx.trip.findFirst({
+          where: {
+            carId: input.carId,
+            status: { in: ONGOING_TRIP_STATUSES },
+          },
+          orderBy: { startedAt: 'desc' },
+        });
+        if (active) {
+          throw new TripCarAlreadyInUseException(
+            `Car ${input.carId} already has active trip ${active.id}`,
+            input.carId,
+            active.id,
+          );
+        }
+
+        const row = await tx.trip.create({
+          data: this.buildCreateData(input),
+        });
+
+        const nowIso = new Date().toISOString();
+        await tx.car.update({
+          where: { id: input.carId },
+          data: {
+            carStatus: CarStatus.IN_USE,
+            isAvailable: false,
+            updatedAt: nowIso,
+          },
+        });
+
+        return TripMapper.fromDbToEntity(row);
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const active = await this.findActiveByCarId(input.carId);
+        throw new TripCarAlreadyInUseException(
+          `Car ${input.carId} already has an ongoing trip`,
+          input.carId,
+          active?.id ?? '',
+        );
+      }
+      throw error;
+    }
   }
 
   async update(
     id: string,
     patch: TripRepositoryUpdatePatch,
   ): Promise<TripEntity> {
+    const row = await this.prisma.trip.update({
+      where: { id },
+      data: this.buildUpdateData(patch),
+    });
+    return TripMapper.fromDbToEntity(row);
+  }
+
+  async transitionToFinishedIfNotFinished(
+    id: string,
+    patch: TripRepositoryUpdatePatch,
+  ): Promise<{ entity: TripEntity; applied: boolean }> {
+    const data = this.buildUpdateData({
+      ...patch,
+      status: TripStatus.FINISHED,
+    });
+
+    const result = await this.prisma.trip.updateMany({
+      where: {
+        id,
+        status: { not: TripStatus.FINISHED },
+      },
+      data,
+    });
+
+    const entity = await this.findById(id);
+    if (!entity) {
+      throw new Error(`Trip ${id} not found after transitionToFinished`);
+    }
+
+    return { entity, applied: result.count === 1 };
+  }
+
+  private buildCreateData(
+    input: TripRepositoryCreateInput,
+  ): Prisma.TripUncheckedCreateInput {
+    return {
+      userId: input.userId,
+      carId: input.carId,
+      geoZoneVersionId: input.geoZoneVersionId,
+      status: input.status ?? TripStatus.PENDING,
+      startedAt: input.startedAt ?? new Date(),
+      distance: input.distance ?? 0,
+      duration: input.duration ?? 0,
+      startLat: input.startLat ?? undefined,
+      startLng: input.startLng ?? undefined,
+      carPlateSnapshot: input.carPlateSnapshot ?? undefined,
+      carDisplayNameSnapshot: input.carDisplayNameSnapshot ?? undefined,
+    };
+  }
+
+  private buildUpdateData(
+    patch: TripRepositoryUpdatePatch,
+  ): Prisma.TripUncheckedUpdateInput {
     const data: Prisma.TripUncheckedUpdateInput = {};
     if (patch.status !== undefined) {
       data.status = patch.status;
@@ -178,11 +271,7 @@ export class TripRepository implements ITripRepository {
     if (patch.carDisplayNameSnapshot !== undefined) {
       data.carDisplayNameSnapshot = patch.carDisplayNameSnapshot;
     }
-    const row = await this.prisma.trip.update({
-      where: { id },
-      data,
-    });
-    return TripMapper.fromDbToEntity(row);
+    return data;
   }
 
   async findHistoryShortByUserId(

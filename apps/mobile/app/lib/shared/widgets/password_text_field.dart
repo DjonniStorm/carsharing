@@ -9,6 +9,7 @@ class PasswordTextField extends StatefulWidget {
     this.labelText,
     this.helperText,
     this.helperMaxLines = 1,
+    this.maxLength,
     this.textInputAction,
     this.onFieldSubmitted,
   });
@@ -18,6 +19,7 @@ class PasswordTextField extends StatefulWidget {
   final String? labelText;
   final String? helperText;
   final int helperMaxLines;
+  final int? maxLength;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
 
@@ -33,6 +35,7 @@ class _PasswordTextFieldState extends State<PasswordTextField> {
     return TextFormField(
       controller: widget.controller,
       obscureText: _obscure,
+      maxLength: widget.maxLength,
       validator: widget.validator,
       textInputAction: widget.textInputAction,
       onFieldSubmitted: widget.onFieldSubmitted,

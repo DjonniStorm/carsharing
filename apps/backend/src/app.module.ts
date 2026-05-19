@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
@@ -19,6 +19,7 @@ import { NotificationModule } from './shared/notification/notification.module';
 import { ManagerViolationNoticeModule } from './modules/manager-violation-notice/manager-violation-notice.module';
 import { HttpMetricsInterceptor } from './modules/metrics/http-metrics.interceptor';
 import { MetricsModule } from './modules/metrics/metrics.module';
+import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { MetricsModule } from './modules/metrics/metrics.module';
     ManagerViolationNoticeModule,
   ],
   providers: [
+    { provide: APP_FILTER, useClass: GlobalExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: HttpMetricsInterceptor },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
 
 import '../../../app/router/app_routes.dart';
+import '../../../shared/validation/field_limits.dart';
 import '../../../shared/validation/input_validators.dart';
 import '../../../shared/widgets/password_text_field.dart';
 import '../../profile/cubit/profile_cubit.dart';
@@ -73,6 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       helperText: 'auth.login_hint'.tr(),
                       helperMaxLines: 2,
                     ),
+                    maxLength: FieldLimits.loginMax,
                     textInputAction: TextInputAction.next,
                     validator: validateLogin,
                   ),
@@ -80,6 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   PasswordTextField(
                     controller: _passwordCtrl,
                     labelText: 'auth.password'.tr(),
+                    maxLength: FieldLimits.userPasswordMax,
                     textInputAction: TextInputAction.done,
                     validator: validatePasswordLogin,
                   ),

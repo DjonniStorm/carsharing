@@ -12,6 +12,8 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
+import { FIELD_LIMITS } from "@carsharing/validation";
+
 import { ViolationStatus } from "@/entities/violation";
 import { buildViolationCreatableStatusSelectData } from "@/features/violations/lib/violation-status-present";
 import { ROUTES } from "@/shared/config/routes-paths";
@@ -70,6 +72,8 @@ const ViolationCreatePage = () => {
           label={t(LANG_KEYS.pages.violationsCreateFieldDescription)}
           value={form.description}
           onChange={(event) => form.setDescription(event.currentTarget.value)}
+          minLength={FIELD_LIMITS.VIOLATION_DESCRIPTION_MIN}
+          maxLength={FIELD_LIMITS.VIOLATION_DESCRIPTION_MAX}
           required
           autosize
           minRows={3}

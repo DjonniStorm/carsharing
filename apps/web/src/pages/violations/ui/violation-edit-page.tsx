@@ -89,7 +89,11 @@ const ViolationEditPage = () => {
         </Group>
 
         {vm.formError ? (
-          <Alert color="red" onClose={() => vm.setFormError(null)} withCloseButton>
+          <Alert
+            color="red"
+            onClose={() => vm.setFormError(null)}
+            withCloseButton
+          >
             {vm.formError}
           </Alert>
         ) : null}

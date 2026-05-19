@@ -1,3 +1,4 @@
+import { FIELD_LIMITS } from '@carsharing/validation';
 import {
   IsNotEmpty,
   IsNumber,
@@ -8,11 +9,13 @@ import {
   Min,
 } from 'class-validator';
 
+import { MaxJsonSerializedLength } from 'src/shared/validation/max-json-serialized-length.validator';
+
 import type { GeoJSONMultiPolygon } from '../geozone.geometry';
 
 /**
- * Публикация новой версии: после сохранения — закрыть предыдущую (`disabledAt`),
- * обновить `Geozone.currentVersionId` на id этой версии.
+ * Публикация новой версии: после сохранения — закрыть предыдущую (disabledAt),
+ * обновить Geozone.currentVersionId на id этой версии.
  */
 export class GeozoneVersionCreate {
   @IsNotEmpty()
@@ -21,14 +24,15 @@ export class GeozoneVersionCreate {
 
   @IsOptional()
   @IsObject()
+  @MaxJsonSerializedLength(FIELD_LIMITS.GEOZONE_RULES_JSON_MAX)
   rules?: Record<string, unknown> | null;
 
-  /** Если задан — ставки берутся из шаблона (имеет приоритет над полями `price*`). */
+  /** Если задан — ставки берутся из шаблона (имеет приоритет над полями price*). */
   @IsOptional()
   @IsUUID()
   tariffPresetId?: string;
 
-  /** Если не задан `tariffPresetId`, можно передать ставки явно или скопировать с текущей версии на сервере. */
+  /** Если не задан tariffPresetId, можно передать ставки явно или скопировать с текущей версии на сервере. */
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)

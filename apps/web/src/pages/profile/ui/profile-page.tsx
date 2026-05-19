@@ -16,7 +16,9 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { parseProfileName } from "@/entities/auth/model/profile-name-schema";
 import { authApi } from "@/features/auth/api";
+import { FIELD_LIMITS } from "@carsharing/validation";
 import {
   sessionProfileAtom,
   setSessionProfile,
@@ -24,6 +26,7 @@ import {
 import { ShellLanguageControl } from "@/widgets/dashboard-shell/ui/shell-language-control";
 import { ShellThemeControl } from "@/widgets/dashboard-shell/ui/shell-theme-control";
 import { ROUTES } from "@/shared/config/routes-paths";
+import { resolveApiErrorMessage } from "@/shared/api";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 
 const ProfilePage = () => {
@@ -41,10 +44,17 @@ const ProfilePage = () => {
   }, [profile?.name]);
 
   const handleSaveName = async () => {
-    const name = draftName.trim();
-    if (!name) {
+    const parsed = parseProfileName(draftName);
+    if (!parsed.success) {
+      notifications.show({
+        title: t(LANG_KEYS.pages.profileNameErrorTitle),
+        message:
+          parsed.error.issues[0]?.message ?? t(LANG_KEYS.validation.nameMin),
+        color: "red",
+      });
       return;
     }
+    const name = parsed.data;
     setSaving(true);
     try {
       const updated = await authApi.patchMe({ name });
@@ -58,7 +68,7 @@ const ProfilePage = () => {
     } catch (e) {
       notifications.show({
         title: t(LANG_KEYS.pages.profileNameErrorTitle),
-        message: e instanceof Error ? e.message : String(e),
+        message: resolveApiErrorMessage(e),
         color: "red",
       });
     } finally {
@@ -135,6 +145,8 @@ const ProfilePage = () => {
               setDraftName(e.currentTarget.value);
             }}
             placeholder={t(LANG_KEYS.auth.namePlaceholder)}
+            minLength={FIELD_LIMITS.USER_DISPLAY_NAME_MIN}
+            maxLength={FIELD_LIMITS.USER_DISPLAY_NAME_MAX}
           />
           <Group justify="flex-end">
             <Button variant="default" onClick={close}>

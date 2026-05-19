@@ -235,7 +235,9 @@ export class TelemetryService implements ITelemetryService {
     }
   }
 
-  private async syncCarFuelFromTelemetry(input: TelemetryCreate): Promise<void> {
+  private async syncCarFuelFromTelemetry(
+    input: TelemetryCreate,
+  ): Promise<void> {
     const { periodSec } = getTelemetryConfig();
     const windowMs = periodSec * 1000;
     if (

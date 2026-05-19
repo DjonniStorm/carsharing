@@ -1,3 +1,4 @@
+import { FIELD_LIMITS } from "@carsharing/validation";
 import { z } from "zod";
 
 import { ViolationStatus } from "@/entities/violation";
@@ -5,7 +6,9 @@ import { VIOLATION_CREATABLE_STATUSES_ORDERED } from "@/features/violations/lib/
 import { LANG_KEYS } from "@/shared/i18n/keys";
 import { translate } from "@/shared/i18n/translate";
 
-const creatableStatusSet = new Set<number>(VIOLATION_CREATABLE_STATUSES_ORDERED);
+const creatableStatusSet = new Set<number>(
+  VIOLATION_CREATABLE_STATUSES_ORDERED,
+);
 
 export const violationCreateFormSchema = z.object({
   tripId: z
@@ -27,14 +30,23 @@ export const violationCreateFormSchema = z.object({
     .string()
     .transform((value) => value.trim())
     .pipe(
-      z.string().min(1, {
-        message: translate(LANG_KEYS.pages.violationsColDesc),
-      }),
+      z
+        .string()
+        .min(FIELD_LIMITS.VIOLATION_DESCRIPTION_MIN, {
+          message: translate(LANG_KEYS.pages.violationsColDesc),
+        })
+        .max(FIELD_LIMITS.VIOLATION_DESCRIPTION_MAX, {
+          message: translate(LANG_KEYS.pages.violationsColDescMaxLength),
+        }),
     ),
 });
 
-export type ViolationCreateFormInput = z.input<typeof violationCreateFormSchema>;
-export type ViolationCreateFormParsed = z.output<typeof violationCreateFormSchema>;
+export type ViolationCreateFormInput = z.input<
+  typeof violationCreateFormSchema
+>;
+export type ViolationCreateFormParsed = z.output<
+  typeof violationCreateFormSchema
+>;
 
 export function parseViolationCreateForm(input: ViolationCreateFormInput) {
   return violationCreateFormSchema.safeParse(input);

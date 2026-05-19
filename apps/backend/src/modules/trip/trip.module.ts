@@ -14,6 +14,7 @@ import { Module, forwardRef } from '@nestjs/common';
  * цикла с `TelemetryModule` нет — он не импортируется.
  */
 import { CarModule } from '../car/car.module';
+import { TripPersistenceModule } from './trip-persistence.module';
 import { CarTripSyncService } from '../car/services/car-trip-sync.service';
 import { ICarTripSyncServiceToken } from '../car/services/car-trip-sync.service.interface';
 import { GeozoneModule } from '../geozone/geozone.module';
@@ -25,8 +26,6 @@ import { TripPricingBackgroundWorker } from './pricing/trip-pricing-background.w
 import { TripPricingService } from './pricing/trip-pricing.service';
 import { ITripPricingServiceToken } from './pricing/trip-pricing.service.interface';
 import { TripRealtimeModule } from './trip-realtime.module';
-import { TripRepository } from './repositories/trip.repository';
-import { ITripRepositoryToken } from './repositories/trip.repository.interface';
 import { ITripRealtimePublisherToken } from './services/trip-realtime.publisher.interface';
 import { TripRealtimePublisher } from './services/trip-realtime.publisher';
 import { TripService } from './services/trip.service';
@@ -34,6 +33,7 @@ import { TripService } from './services/trip.service';
 @Module({
   imports: [
     TripRealtimeModule,
+    TripPersistenceModule,
     GeozoneModule,
     CarModule,
     forwardRef(() => TelemetryModule),
@@ -46,7 +46,6 @@ import { TripService } from './services/trip.service';
       provide: ITripRealtimePublisherToken,
       useClass: TripRealtimePublisher,
     },
-    { provide: ITripRepositoryToken, useClass: TripRepository },
     {
       provide: ITripPricingServiceToken,
       useClass: TripPricingService,
@@ -60,7 +59,7 @@ import { TripService } from './services/trip.service';
   ],
   exports: [
     TripRealtimeModule,
-    ITripRepositoryToken,
+    TripPersistenceModule,
     TripService,
     ITripPricingServiceToken,
     ICarTripSyncServiceToken,

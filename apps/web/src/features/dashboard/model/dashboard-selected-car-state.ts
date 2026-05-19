@@ -8,7 +8,10 @@ import { carsApi } from "@/features/cars/api";
 import { pickOngoingTrip } from "@/features/dashboard/lib/pick-ongoing-trip";
 import { tripsApi } from "@/features/trips/api";
 import { violationsApi } from "@/features/violations/api";
+import { resolveApiErrorMessage } from "@/shared/api";
+import { LANG_KEYS } from "@/shared/i18n/keys";
 import type { AsyncStatus } from "@/shared/model/async-status";
+import { notifyApiError } from "@/shared/lib/notify-api-error";
 
 export type DashboardSelectedCarData = {
   car: CarRead | null;
@@ -17,12 +20,15 @@ export type DashboardSelectedCarData = {
   violationsCount: number | null;
 };
 
-export const dashboardSelectedCarAtom = atom<DashboardSelectedCarData>({
-  car: null,
-  ongoingTrip: null,
-  driver: null,
-  violationsCount: null,
-}, "dashboardSelectedCar");
+export const dashboardSelectedCarAtom = atom<DashboardSelectedCarData>(
+  {
+    car: null,
+    ongoingTrip: null,
+    driver: null,
+    violationsCount: null,
+  },
+  "dashboardSelectedCar",
+);
 
 export const dashboardSelectedCarStatusAtom = atom<AsyncStatus>(
   "idle",
@@ -89,9 +95,8 @@ export const loadDashboardSelectedCar = action(async (carId: string) => {
     if (seq !== dashboardSelectedCarLoadSeq) {
       return;
     }
-    dashboardSelectedCarErrorAtom.set(
-      e instanceof Error ? e.message : String(e),
-    );
+    dashboardSelectedCarErrorAtom.set(resolveApiErrorMessage(e));
+    notifyApiError(LANG_KEYS.errors.loadFailed, e);
     dashboardSelectedCarAtom.set({
       car: null,
       ongoingTrip: null,

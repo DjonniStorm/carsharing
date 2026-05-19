@@ -3,7 +3,7 @@ import { action, atom, wrap } from "@reatom/core";
 import { GeozoneType } from "@/entities/geozone";
 import { geozonesApi } from "@/features/geozones/api";
 import { multiPolygonFirstOuterRing } from "@/features/geozones/lib/geojson-ring";
-import { HttpApiError } from "@/shared/api/http-api-error";
+import { HttpApiError, resolveApiErrorMessage } from "@/shared/api";
 import type { YMapLngLat } from "@/shared/lib/yandex-maps/ymaps3";
 
 function normalizeColorHex(raw: string): string {
@@ -88,9 +88,7 @@ export const loadGeozoneEditPage = action(async (geozoneId: string) => {
     };
 
     const ring =
-      version !== null
-        ? multiPolygonFirstOuterRing(version.geometry)
-        : null;
+      version !== null ? multiPolygonFirstOuterRing(version.geometry) : null;
     const presetId = version?.tariffPresetId ?? null;
     const rulesText =
       version?.rules != null ? JSON.stringify(version.rules, null, 2) : "";
@@ -114,9 +112,7 @@ export const loadGeozoneEditPage = action(async (geozoneId: string) => {
     const msg =
       e instanceof HttpApiError && e.status === 404
         ? "not_found"
-        : e instanceof Error
-          ? e.message
-          : String(e);
+        : resolveApiErrorMessage(e);
     geozoneEditLoadErrorAtom.set(msg);
     geozoneEditLoadPhaseAtom.set("error");
   }

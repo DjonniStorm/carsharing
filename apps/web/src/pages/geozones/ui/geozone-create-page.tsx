@@ -40,7 +40,9 @@ const GeozoneCreatePage = () => {
   const completePolygon = () => {
     map.completePolygon({
       onValidationError: () => {
-        submit.setFormError(t(LANG_KEYS.pages.geozonesCreatePolygonTooFewPoints));
+        submit.setFormError(
+          t(LANG_KEYS.pages.geozonesCreatePolygonTooFewPoints),
+        );
       },
       onSuccess: () => {
         submit.setFormError(null);

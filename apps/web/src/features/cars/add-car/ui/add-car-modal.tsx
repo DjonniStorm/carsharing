@@ -27,6 +27,7 @@ import { buildCreateCarBodyFromForm } from "@/features/cars/add-car/lib/build-cr
 
 import { LANG_KEYS } from "@/shared/i18n/keys";
 
+import { notifyApiError } from "@/shared/lib/notify-api-error";
 import { notification } from "@/shared/lib/notification";
 
 type AddCarModalProps = {
@@ -104,12 +105,9 @@ const AddCarModal = ({ opened, onClose, onCreated }: AddCarModalProps) => {
 
       onClose();
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : t(LANG_KEYS.pages.carsAddErrorFallback);
-
-      notification.error(t(LANG_KEYS.pages.carsAddErrorTitle), msg);
+      notifyApiError(LANG_KEYS.pages.carsAddErrorTitle, err, {
+        fallbackKey: LANG_KEYS.pages.carsAddErrorFallback,
+      });
     } finally {
       setSubmitting(false);
     }

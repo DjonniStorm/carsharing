@@ -2,7 +2,10 @@ import { action, atom, wrap } from "@reatom/core";
 
 import type { CarRead } from "@/entities/car";
 import { carsApi } from "@/features/cars/api";
+import { resolveApiErrorMessage } from "@/shared/api";
+import { LANG_KEYS } from "@/shared/i18n/keys";
 import type { AsyncStatus } from "@/shared/model/async-status";
+import { notifyApiError } from "@/shared/lib/notify-api-error";
 
 export const carsListAtom = atom<CarRead[] | null>(null, "carsList");
 
@@ -25,6 +28,7 @@ export const loadCarsList = action(async (includeDeleted = false) => {
     carsListStatusAtom.set("idle");
   } catch (e) {
     carsListStatusAtom.set("error");
-    carsListErrorAtom.set(e instanceof Error ? e.message : String(e));
+    carsListErrorAtom.set(resolveApiErrorMessage(e));
+    notifyApiError(LANG_KEYS.errors.loadFailed, e);
   }
 }, "loadCarsList");

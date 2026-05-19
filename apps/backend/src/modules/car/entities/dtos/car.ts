@@ -1,3 +1,4 @@
+import { FIELD_LIMITS } from '@carsharing/validation';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -19,26 +20,26 @@ import { CarStatus } from '../car-status';
 export class Car {
   @IsNotEmpty()
   @IsString()
-  @MinLength(1)
-  @MaxLength(255)
+  @MinLength(FIELD_LIMITS.CAR_STRING_MIN)
+  @MaxLength(FIELD_LIMITS.CAR_STRING_MAX)
   brand: string;
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(1)
-  @MaxLength(255)
+  @MinLength(FIELD_LIMITS.CAR_STRING_MIN)
+  @MaxLength(FIELD_LIMITS.CAR_STRING_MAX)
   model: string;
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(1)
-  @MaxLength(255)
+  @MinLength(FIELD_LIMITS.CAR_STRING_MIN)
+  @MaxLength(FIELD_LIMITS.CAR_STRING_MAX)
   licensePlate: string;
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(1)
-  @MaxLength(255)
+  @MinLength(FIELD_LIMITS.CAR_STRING_MIN)
+  @MaxLength(FIELD_LIMITS.CAR_STRING_MAX)
   color: string;
 
   @IsNotEmpty()

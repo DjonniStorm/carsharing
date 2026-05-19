@@ -14,13 +14,17 @@ import { useAction } from "@reatom/react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { FIELD_LIMITS } from "@carsharing/validation";
+
 import type { ViolationRead } from "@/entities/violation";
+import { parseViolationNoticeForm } from "@/features/manager-violation-notice/lib/violation-notice-form-schema";
 import {
   VIOLATION_STATUSES_ORDERED,
   violationStatusLangKey,
 } from "@/features/violations/lib/violation-status-present";
 import { managerViolationNoticeApi } from "@/features/manager-violation-notice/api";
 import { LANG_KEYS } from "@/shared/i18n/keys";
+import { notifyApiError } from "@/shared/lib/notify-api-error";
 import { notification } from "@/shared/lib/notification";
 
 type Props = {
@@ -72,22 +76,17 @@ const SendViolationNoticeModal = ({
       );
       return;
     }
-    const subj = subject.trim();
-    const msg = message.trim();
-    if (!subj) {
+    const noticeParsed = parseViolationNoticeForm({ subject, message });
+    if (!noticeParsed.success) {
       notification.warning(
         t(LANG_KEYS.pages.tripViolationNoticeWarnSubjectTitle),
-        t(LANG_KEYS.pages.tripViolationNoticeWarnSubjectBody),
+        noticeParsed.error.issues[0]?.message ??
+          t(LANG_KEYS.pages.tripViolationNoticeWarnMessageBody),
       );
       return;
     }
-    if (!msg) {
-      notification.warning(
-        t(LANG_KEYS.pages.tripViolationNoticeWarnMessageTitle),
-        t(LANG_KEYS.pages.tripViolationNoticeWarnMessageBody),
-      );
-      return;
-    }
+    const subj = noticeParsed.data.subject;
+    const msg = noticeParsed.data.message;
     setSubmitting(true);
     try {
       const res = await wrap(
@@ -108,11 +107,9 @@ const SendViolationNoticeModal = ({
       onSent?.();
       onClose();
     } catch (e: unknown) {
-      const msg =
-        e instanceof Error
-          ? e.message
-          : t(LANG_KEYS.pages.tripViolationNoticeErrorFallback);
-      notification.error(t(LANG_KEYS.pages.tripViolationNoticeErrorTitle), msg);
+      notifyApiError(LANG_KEYS.pages.tripViolationNoticeErrorTitle, e, {
+        fallbackKey: LANG_KEYS.pages.tripViolationNoticeErrorFallback,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -177,7 +174,8 @@ const SendViolationNoticeModal = ({
           placeholder={t(LANG_KEYS.pages.tripViolationNoticeSubjectPlaceholder)}
           value={subject}
           onChange={(e) => setSubject(e.currentTarget.value)}
-          maxLength={500}
+          minLength={FIELD_LIMITS.NOTICE_SUBJECT_MIN}
+          maxLength={FIELD_LIMITS.NOTICE_SUBJECT_MAX}
           required
         />
         <Textarea
@@ -185,7 +183,8 @@ const SendViolationNoticeModal = ({
           placeholder={t(LANG_KEYS.pages.tripViolationNoticeMessagePlaceholder)}
           value={message}
           onChange={(e) => setMessage(e.currentTarget.value)}
-          maxLength={20_000}
+          minLength={FIELD_LIMITS.NOTICE_MESSAGE_MIN}
+          maxLength={FIELD_LIMITS.NOTICE_MESSAGE_MAX}
           autosize
           minRows={4}
           required

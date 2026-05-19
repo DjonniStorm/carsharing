@@ -10,13 +10,16 @@ import {
   parseTariffFormInput,
   tariffSnapshotFromParsed,
 } from "@/features/tariffs/lib/tariff-form-schema";
-import type { TariffEditLoadPhase, TariffEditSnapshot } from "@/features/tariffs/model/tariff-edit-view";
+import type {
+  TariffEditLoadPhase,
+  TariffEditSnapshot,
+} from "@/features/tariffs/model/tariff-edit-view";
 import {
   deleteTariffFromEdit,
   refreshTariffsCatalogAfterMutation,
   saveTariffFromEdit,
 } from "@/features/tariffs/model/tariffs-state";
-import { HttpApiError } from "@/shared/api/http-api-error";
+import { resolveApiErrorMessage } from "@/shared/api";
 import { ROUTES } from "@/shared/config/routes-paths";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 
@@ -73,7 +76,10 @@ export function useTariffEditMutations(form: FormSlice) {
     }
     const next = tariffSnapshotFromParsed(parsed.data);
 
-    if (snapshot !== null && JSON.stringify(next) === JSON.stringify(snapshot)) {
+    if (
+      snapshot !== null &&
+      JSON.stringify(next) === JSON.stringify(snapshot)
+    ) {
       notifications.show({
         message: t(LANG_KEYS.pages.tariffsEditNothingToSave),
         color: "blue",
@@ -100,13 +106,7 @@ export function useTariffEditMutations(form: FormSlice) {
       await refreshCatalog();
       await navigate({ to: ROUTES.dashboard.tariffs });
     } catch (error) {
-      const msg =
-        error instanceof HttpApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : String(error);
-      setFormError(msg);
+      setFormError(resolveApiErrorMessage(error));
     } finally {
       setSubmitting(false);
     }
@@ -143,25 +143,11 @@ export function useTariffEditMutations(form: FormSlice) {
       await refreshCatalog();
       await navigate({ to: ROUTES.dashboard.tariffs });
     } catch (error) {
-      const msg =
-        error instanceof HttpApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : String(error);
-      setFormError(msg);
+      setFormError(resolveApiErrorMessage(error));
     } finally {
       setSubmitting(false);
     }
-  }, [
-    deleteTariff,
-    isDeleted,
-    navigate,
-    phase,
-    refreshCatalog,
-    t,
-    tariffId,
-  ]);
+  }, [deleteTariff, isDeleted, navigate, phase, refreshCatalog, t, tariffId]);
 
   return {
     submitting,
