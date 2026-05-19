@@ -7,6 +7,12 @@ import {
   CarNotFoundException,
 } from './errors';
 
+const USER_MSG = {
+  licensePlateExists: 'Автомобиль с таким госномером уже существует',
+  carAlreadyExists: 'Автомобиль уже существует',
+  dbError: 'Не удалось выполнить операцию с автомобилем',
+} as const;
+
 export class DbErrors {
   /** Fields from Prisma P2002 message when `meta.target` is missing (e.g. Prisma 7). */
   private static p2002FieldsFromMessage(message: string): string[] {
@@ -45,7 +51,7 @@ export class DbErrors {
           throw new CarNotFoundException('Автомобиль не найден');
 
         default:
-          throw new DatabaseCarErrorException('Ошибка базы данных автомобиля');
+          throw new DatabaseCarErrorException(USER_MSG.dbError);
       }
     }
 
@@ -55,23 +61,20 @@ export class DbErrors {
   private static handleP2002Error(
     error: Prisma.PrismaClientKnownRequestError,
   ): never {
-    const fromMeta = this.p2002TargetString(error);
-    const cause = error.meta?.cause as { originalMessage?: string } | undefined;
-    const detail = cause?.originalMessage ?? error.message;
-    const hint = `${fromMeta} ${error.message}`.toLowerCase();
+    const hint = `${this.p2002TargetString(error)} ${error.message}`.toLowerCase();
 
     if (
       hint.includes('license_plate') ||
       hint.includes('licenseplate') ||
       hint.includes('car_license_plate')
     ) {
-      throw new LicensePlateAlreadyExistsException(detail);
+      throw new LicensePlateAlreadyExistsException(USER_MSG.licensePlateExists);
     }
 
     if (hint.includes('id') || hint.includes('(id)')) {
-      throw new CarAlreadyExistsException(detail);
+      throw new CarAlreadyExistsException(USER_MSG.carAlreadyExists);
     }
 
-    throw new DatabaseCarErrorException(error.message);
+    throw new DatabaseCarErrorException(USER_MSG.dbError);
   }
 }

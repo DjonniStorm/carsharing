@@ -23,7 +23,7 @@ The simulator is written in an OOP style:
 - `FallbackRouteProvider` keeps the car moving without a map service.
 - `RouteCursor` advances along route geometry.
 - `DrivingModel` simulates speed, acceleration, fuel usage, and occasional speeding.
-- `TelemetrySimulator` owns the idle/active loop.
+- `TelemetrySimulator` owns the idle/active loop. During an active trip, if fuel reaches `0`, the car stays in place (speed `0`, position unchanged) until fuel is refilled on the backend.
 
 #### Run
 

@@ -1,6 +1,8 @@
 import {
   ActionIcon,
   Badge,
+  Button,
+  CopyButton,
   Group,
   Paper,
   Stack,
@@ -73,9 +75,31 @@ const TripGridCard = ({ trip, t, locale }: Props) => {
             <Text fw={700} size="lg" truncate="end">
               {plate}
             </Text>
-            <Text size="xs" c="dimmed" ff="monospace" truncate="end">
-              {trip.id}
-            </Text>
+            <Group gap={6} wrap="nowrap" align="center">
+              <Text
+                size="xs"
+                c="dimmed"
+                ff="monospace"
+                truncate="end"
+                style={{ flex: 1, minWidth: 0 }}
+              >
+                {trip.id}
+              </Text>
+              <CopyButton value={trip.id} timeout={2000}>
+                {({ copied, copy }) => (
+                  <Button
+                    variant="light"
+                    size="compact-xs"
+                    onClick={copy}
+                    flex="0 0 auto"
+                  >
+                    {copied
+                      ? t(LANG_KEYS.pages.carsCardCopied)
+                      : t(LANG_KEYS.pages.carsCardCopy)}
+                  </Button>
+                )}
+              </CopyButton>
+            </Group>
           </Stack>
           <Tooltip label={t(LANG_KEYS.pages.tripsViewAria)}>
             <ActionIcon
@@ -87,21 +111,6 @@ const TripGridCard = ({ trip, t, locale }: Props) => {
             >
               <ArrowIcon />
             </ActionIcon>
-            {/* TODO: fix */}
-            {/* <CopyButton value={trip.id} timeout={2000}>
-              {({ copied, copy }) => (
-                <Button
-                  variant="light"
-                  size="compact-xs"
-                  onClick={copy}
-                  flex="0 0 auto"
-                >
-                  {copied
-                    ? t(LANG_KEYS.pages.carsCardCopied)
-                    : t(LANG_KEYS.pages.carsCardCopy)}
-                </Button>
-              )}
-            </CopyButton> */}
           </Tooltip>
         </Group>
 

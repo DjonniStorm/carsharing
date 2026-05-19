@@ -88,6 +88,14 @@ export class TelemetrySimulator {
   }
 
   private async tickActive(trip: Trip): Promise<void> {
+    if (this.fuelLevel <= 0) {
+      this.fuelLevel = 0;
+      this.drivingModel.stop();
+      await this.sendStationaryTelemetry();
+      console.log(`[telemetry] active trip=${trip.id} out of fuel — stationary`);
+      return;
+    }
+
     const seconds = this.config.activeIntervalMs / 1000;
     await this.ensureRoute();
 
@@ -122,6 +130,18 @@ export class TelemetrySimulator {
       this.route = null;
       this.routeCursor = null;
     }
+  }
+
+  private async sendStationaryTelemetry(): Promise<void> {
+    await this.client.sendTelemetry({
+      timestamp: new Date().toISOString(),
+      lat: Number(this.position.lat.toFixed(6)),
+      lon: Number(this.position.lon.toFixed(6)),
+      speed: 0,
+      acceleration: 0,
+      fuelLevel: 0,
+      source: this.config.source,
+    });
   }
 
   private async ensureRoute(): Promise<void> {

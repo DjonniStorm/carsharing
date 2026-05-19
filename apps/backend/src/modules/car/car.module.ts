@@ -1,12 +1,12 @@
 import { CarRepository } from './repositories/car.repository';
 import { CarService } from './services/car.service';
 import { ICarRepositoryToken } from './repositories/car.repository.interface';
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { CarController } from './controllers/car.controller';
-import { TripModule } from '../trip/trip.module';
+import { TripPersistenceModule } from '../trip/trip-persistence.module';
 
 @Module({
-  imports: [forwardRef(() => TripModule)],
+  imports: [TripPersistenceModule],
   providers: [
     CarService,
     { provide: ICarRepositoryToken, useClass: CarRepository },
