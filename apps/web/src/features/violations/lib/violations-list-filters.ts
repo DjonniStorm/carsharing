@@ -13,8 +13,7 @@ export function filterViolationsList(
   },
 ): ViolationRead[] {
   const q = normalizeSearchQuery(opts.debouncedSearch);
-  const typesSet =
-    opts.typeFilter.length > 0 ? new Set(opts.typeFilter) : null;
+  const typesSet = opts.typeFilter.length > 0 ? new Set(opts.typeFilter) : null;
 
   return rows.filter((v) => {
     if (typesSet !== null && !typesSet.has(v.type)) {

@@ -418,6 +418,8 @@ export const en = {
     violationsColTrip: "Trip",
     violationsColType: "Type",
     violationsColDesc: "Description",
+    violationsColDescMaxLength:
+      "Description length must be less than 1000 characters",
     violationsColCreated: "Created",
     violationsKindSpeeding: "Speeding",
     violationsKindOutOfGeozone: "Out of geozone",
@@ -494,6 +496,7 @@ export const en = {
     tariffsCreateSubmit: "Create",
     tariffsCreateCancel: "Back to list",
     tariffsCreateNameRequired: "Enter a preset name.",
+    tariffsCreateNameMaxLength: "Tariff name must be less than 1000 characters",
     tariffsCreatePricesInvalid:
       "Prices must be numbers greater than or equal to zero.",
     tariffsCreateSuccess: "Preset created",

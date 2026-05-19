@@ -250,7 +250,10 @@ export class TripService implements ITripService {
         } else {
           this.pricingService.enqueueRecalc(id, 'status');
         }
-      } else if (pauseFieldsChanged && updated.status !== TripStatus.CANCELLED) {
+      } else if (
+        pauseFieldsChanged &&
+        updated.status !== TripStatus.CANCELLED
+      ) {
         this.pricingService.enqueueRecalc(id, 'status');
       }
 
@@ -266,7 +269,10 @@ export class TripService implements ITripService {
     previousStatus?: TripStatus,
   ): Promise<void> {
     try {
-      await this.realtimePublisher.publishTripStateChanged(trip, previousStatus);
+      await this.realtimePublisher.publishTripStateChanged(
+        trip,
+        previousStatus,
+      );
     } catch (error) {
       this.logger.warn(
         `publish trip.state.changed failed tripId=${trip.id}`,
@@ -279,10 +285,7 @@ export class TripService implements ITripService {
     try {
       await this.realtimePublisher.publishTripFinished(trip);
     } catch (error) {
-      this.logger.warn(
-        `publish trip.finished failed tripId=${trip.id}`,
-        error,
-      );
+      this.logger.warn(`publish trip.finished failed tripId=${trip.id}`, error);
     }
   }
 }

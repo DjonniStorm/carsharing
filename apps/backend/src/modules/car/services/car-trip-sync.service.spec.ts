@@ -66,7 +66,9 @@ function sampleTrip(overrides: Partial<TripEntity> = {}): TripEntity {
 describe('CarTripSyncService', () => {
   it('assertCarAvailableForNewTrip throws when active trip exists', async () => {
     const trips = {
-      findActiveByCarId: vi.fn().mockResolvedValue(sampleTrip({ status: TripStatus.ACTIVE })),
+      findActiveByCarId: vi
+        .fn()
+        .mockResolvedValue(sampleTrip({ status: TripStatus.ACTIVE })),
     };
     const service = new CarTripSyncService(
       { findById: vi.fn(), update: vi.fn() } as never,

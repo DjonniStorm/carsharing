@@ -1,4 +1,11 @@
-import { Button, Group, SegmentedControl, Stack, Text, Title } from "@mantine/core";
+import {
+  Button,
+  Group,
+  SegmentedControl,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
 import { useTranslation } from "react-i18next";
 
 import type { GeozoneDrawMode } from "@/features/geozones/create-geozone/ui/geozone-draw-map";

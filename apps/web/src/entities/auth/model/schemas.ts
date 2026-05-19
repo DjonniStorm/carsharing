@@ -6,10 +6,15 @@ import { translate } from "@/shared/i18n/translate";
 
 const PHONE_E164 = /^\+[1-9]\d{1,14}$/;
 
-/** Как `LoginDto`: login ≥ 3, password непустой. */
 export const loginSchema = z.object({
   login: z.string().superRefine((val, ctx) => {
     if (val.length < 3) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: translate(LANG_KEYS.validation.loginMin),
+      });
+    }
+    if (val.length > 200) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: translate(LANG_KEYS.validation.loginMin),
@@ -21,6 +26,12 @@ export const loginSchema = z.object({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: translate(LANG_KEYS.validation.passwordRequired),
+      });
+    }
+    if (val.length > 200) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: translate(LANG_KEYS.validation.loginMin),
       });
     }
   }),
@@ -73,7 +84,6 @@ const refineRegisterPassword = (val: string, ctx: z.RefinementCtx) => {
   }
 };
 
-/** Тело `POST /auth/register` (`RegisterDto`). Роль не передаём — на бэкенде будет DRIVER. */
 export const publicRegisterSchema = z.object({
   name: z.string().superRefine(refinePersonName),
   email: z.string().superRefine(refineEmail),

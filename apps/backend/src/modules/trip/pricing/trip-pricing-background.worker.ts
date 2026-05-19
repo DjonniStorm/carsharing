@@ -41,10 +41,9 @@ export class TripPricingBackgroundWorker implements OnModuleInit {
 
     try {
       if (job.name === TripPricingJobName.Recalc) {
-        await executeTripPricingRecalc(
-          job.payload as TripPricingRecalcJob,
-          { pricingService: this.pricingService },
-        );
+        await executeTripPricingRecalc(job.payload as TripPricingRecalcJob, {
+          pricingService: this.pricingService,
+        });
         return;
       }
       this.logger.debug(`skip unknown pricing job=${job.name}`);

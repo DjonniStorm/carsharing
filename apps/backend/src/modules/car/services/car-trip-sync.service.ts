@@ -187,7 +187,10 @@ export class CarTripSyncService implements ICarTripSyncService {
         fuelLevel: car.fuelLevel,
       });
     } catch (error) {
-      this.logger.warn(`publish car.state.changed failed carId=${car.id}`, error);
+      this.logger.warn(
+        `publish car.state.changed failed carId=${car.id}`,
+        error,
+      );
     }
   }
 }

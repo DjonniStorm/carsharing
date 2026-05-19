@@ -4,7 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { GeozoneNotFoundException } from '../common/errors';
 import type {
   GeoJSONMultiPolygon,
-  GeoJSONPosition,
 } from '../entities/geozone.geometry';
 import { GeozoneType } from '../entities/geozone.type';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -16,7 +15,7 @@ import {
 import { GeozoneRepository } from './geozone.repository';
 
 /**
- * Приватные `buildListWhere`, `geometryByVersionIds`, `attachCurrentVersions`
+ * Приватные buildListWhere, geometryByVersionIds, attachCurrentVersions
  * проверяются через публичные методы репозитория.
  */
 describe('GeozoneRepository', () => {
@@ -34,9 +33,9 @@ describe('GeozoneRepository', () => {
     const suffix = uuidv4().replace(/-/g, '');
     const user = await prisma.user.create({
       data: {
-        name: `Repo geozone ${suffix.slice(0, 12)}`,
-        email: `geozone-repo-${suffix}@test.local`,
-        phone: `+77${suffix.replace(/[a-f]/gi, '2').slice(0, 10)}`,
+        name: Repo geozone ${suffix.slice(0, 12)},
+        email: geozone-repo-${suffix}@test.local,
+        phone: +77${suffix.replace(/[a-f]/gi, '2').slice(0, 10)},
         passwordHash: 'hash',
         role: 0,
         isActive: true,
@@ -116,7 +115,7 @@ describe('GeozoneRepository', () => {
       for (let i = 0; i < 3; i++) {
         await repository.createWithInitialVersion(
           buildCreateInput(createdByUserId, {
-            name: `Z-${i}`,
+            name: Z-${i},
             geometry: sampleMultiPolygon(20 + i),
           }),
         );
@@ -405,9 +404,9 @@ describe('GeozoneRepository', () => {
       const testLon = base + 0.05;
       const testLat = 55.775;
 
-      expect(await repository.isPointInsideVersion(v1Id, testLon, testLat)).toBe(
-        true,
-      );
+      expect(
+        await repository.isPointInsideVersion(v1Id, testLon, testLat),
+      ).toBe(true);
 
       const afterPublish = await repository.publishNewVersion(zone.id, {
         geometry: sampleMultiPolygon(260),

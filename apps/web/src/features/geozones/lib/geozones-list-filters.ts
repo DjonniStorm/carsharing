@@ -14,8 +14,7 @@ export function filterGeozonesList(
 ): GeozoneRead[] {
   const list = rows.filter((z) => z.deletedAt == null);
   const q = normalizeSearchQuery(opts.debouncedName);
-  const typesSet =
-    opts.typeFilter.length > 0 ? new Set(opts.typeFilter) : null;
+  const typesSet = opts.typeFilter.length > 0 ? new Set(opts.typeFilter) : null;
 
   return list.filter((z) => {
     if (typesSet !== null && !typesSet.has(z.type)) {

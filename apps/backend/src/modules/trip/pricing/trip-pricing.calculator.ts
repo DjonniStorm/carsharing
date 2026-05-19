@@ -1,10 +1,7 @@
 import { pathDistanceMeters } from 'src/shared/geo/haversine';
 
 import { TripStatus } from '../entities/trip.status';
-import type {
-  TripPricingInput,
-  TripPricingResult,
-} from './trip-pricing.types';
+import type { TripPricingInput, TripPricingResult } from './trip-pricing.types';
 
 function roundMoney(value: number): number {
   return Math.round(value * 100) / 100;
@@ -18,10 +15,7 @@ function round3(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
 
-function computePauseSec(
-  trip: TripPricingInput['trip'],
-  endAt: Date,
-): number {
+function computePauseSec(trip: TripPricingInput['trip'], endAt: Date): number {
   let pauseSec = Math.max(0, trip.totalPausedSec);
   if (
     trip.status === TripStatus.PAUSED &&

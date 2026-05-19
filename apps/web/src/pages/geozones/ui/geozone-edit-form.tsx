@@ -62,8 +62,7 @@ export function GeozoneEditForm({
   submitDisabled = false,
 }: Props) {
   const { t } = useTranslation();
-  const submitText =
-    saveLabel ?? t(LANG_KEYS.pages.geozonesEditSave);
+  const submitText = saveLabel ?? t(LANG_KEYS.pages.geozonesEditSave);
 
   return (
     <Stack gap="md">
@@ -139,11 +138,7 @@ export function GeozoneEditForm({
         autosize
         minRows={2}
       />
-      <Button
-        onClick={onSave}
-        loading={submitting}
-        disabled={submitDisabled}
-      >
+      <Button onClick={onSave} loading={submitting} disabled={submitDisabled}>
         {submitText}
       </Button>
     </Stack>

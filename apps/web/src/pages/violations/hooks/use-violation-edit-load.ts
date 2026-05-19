@@ -28,7 +28,9 @@ export function useViolationEditLoad() {
   const [persistedStatus, setPersistedStatus] = useAtom(
     violationEditPersistedStatusAtom,
   );
-  const [statusChoice, setStatusChoice] = useAtom(violationEditStatusChoiceAtom);
+  const [statusChoice, setStatusChoice] = useAtom(
+    violationEditStatusChoiceAtom,
+  );
 
   const loadPage = useAction(loadViolationEditPage);
   const resetPage = useAction(resetViolationEditPage);

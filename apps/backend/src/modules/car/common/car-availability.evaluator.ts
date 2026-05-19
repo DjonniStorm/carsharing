@@ -7,9 +7,7 @@ export type CarAvailabilityDecision = {
 };
 
 function isOpenViolationType(type: ViolationStatus): boolean {
-  return (
-    type !== ViolationStatus.RESOLVED && type !== ViolationStatus.IGNORED
-  );
+  return type !== ViolationStatus.RESOLVED && type !== ViolationStatus.IGNORED;
 }
 
 /**

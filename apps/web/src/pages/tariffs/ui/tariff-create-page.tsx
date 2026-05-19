@@ -1,11 +1,4 @@
-import {
-  Alert,
-  Button,
-  Container,
-  Group,
-  Stack,
-  Title,
-} from "@mantine/core";
+import { Alert, Button, Container, Group, Stack, Title } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
@@ -35,7 +28,11 @@ const TariffCreatePage = () => {
         </Group>
 
         {form.formError ? (
-          <Alert color="red" onClose={() => form.setFormError(null)} withCloseButton>
+          <Alert
+            color="red"
+            onClose={() => form.setFormError(null)}
+            withCloseButton
+          >
             {form.formError}
           </Alert>
         ) : null}

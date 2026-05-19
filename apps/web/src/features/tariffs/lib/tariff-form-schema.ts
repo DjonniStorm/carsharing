@@ -4,27 +4,34 @@ import type { TariffEditSnapshot } from "@/features/tariffs/model/tariff-edit-vi
 import { LANG_KEYS } from "@/shared/i18n/keys";
 import { translate } from "@/shared/i18n/translate";
 
-const tariffPriceField = z.union([z.number(), z.string()]).transform((value, ctx) => {
-  const numericValue =
-    typeof value === "number" ? value : Number.parseFloat(String(value));
-  if (!Number.isFinite(numericValue) || numericValue < 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: translate(LANG_KEYS.pages.tariffsCreatePricesInvalid),
-    });
-    return z.NEVER;
-  }
-  return Math.round(numericValue * 100) / 100;
-});
+const tariffPriceField = z
+  .union([z.number(), z.string()])
+  .transform((value, ctx) => {
+    const numericValue =
+      typeof value === "number" ? value : Number.parseFloat(String(value));
+    if (!Number.isFinite(numericValue) || numericValue < 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: translate(LANG_KEYS.pages.tariffsCreatePricesInvalid),
+      });
+      return z.NEVER;
+    }
+    return Math.round(numericValue * 100) / 100;
+  });
 
 export const tariffFormSchema = z.object({
   name: z
     .string()
     .transform((value) => value.trim())
     .pipe(
-      z.string().min(1, {
-        message: translate(LANG_KEYS.pages.tariffsCreateNameRequired),
-      }),
+      z
+        .string()
+        .min(1, {
+          message: translate(LANG_KEYS.pages.tariffsCreateNameRequired),
+        })
+        .max(1000, {
+          message: translate(LANG_KEYS.pages.tariffsCreateNameMaxLength),
+        }),
     ),
   pricePerMinute: tariffPriceField,
   pricePerKm: tariffPriceField,
@@ -55,5 +62,7 @@ export function firstTariffFormErrorMessage(
   result: z.ZodSafeParseError<TariffFormInput>,
 ): string {
   const first = result.error.issues[0];
-  return first?.message ?? translate(LANG_KEYS.pages.tariffsCreatePricesInvalid);
+  return (
+    first?.message ?? translate(LANG_KEYS.pages.tariffsCreatePricesInvalid)
+  );
 }

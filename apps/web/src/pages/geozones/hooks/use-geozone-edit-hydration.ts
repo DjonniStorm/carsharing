@@ -30,23 +30,28 @@ export function useGeozoneEditHydration({
   initialMetaRef,
   initialVersionRef,
 }: Args) {
+  const { applyFromHydration } = form;
+  const { setClosedRingFromHydration } = map;
+  const { setTariffPresetId, resetPresetTracking } = tariffs;
+
   useEffect(() => {
     if (!hydration) {
       return;
     }
     initialMetaRef.current = hydration.meta;
     initialVersionRef.current = hydration.version;
-    form.applyFromHydration(hydration);
-    map.setClosedRingFromHydration(hydration.closedRing);
-    tariffs.setTariffPresetId(hydration.tariffPresetId);
-    tariffs.resetPresetTracking();
+    applyFromHydration(hydration);
+    setClosedRingFromHydration(hydration.closedRing);
+    setTariffPresetId(hydration.tariffPresetId);
+    resetPresetTracking();
   }, [
-    form,
+    applyFromHydration,
     hydration,
     initialMetaRef,
     initialVersionRef,
-    map,
-    tariffs,
+    resetPresetTracking,
+    setClosedRingFromHydration,
+    setTariffPresetId,
   ]);
 }
 

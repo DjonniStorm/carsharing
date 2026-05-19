@@ -9,21 +9,21 @@ import type { ITripPricingService } from '../../trip-pricing.service.interface';
 
 describe('shouldSkipTelemetryRecalc', () => {
   it('skips telemetry for FINISHED and CANCELLED', () => {
-    expect(
-      shouldSkipTelemetryRecalc(TripStatus.FINISHED, 'telemetry'),
-    ).toBe(true);
-    expect(
-      shouldSkipTelemetryRecalc(TripStatus.CANCELLED, 'telemetry'),
-    ).toBe(true);
+    expect(shouldSkipTelemetryRecalc(TripStatus.FINISHED, 'telemetry')).toBe(
+      true,
+    );
+    expect(shouldSkipTelemetryRecalc(TripStatus.CANCELLED, 'telemetry')).toBe(
+      true,
+    );
     expect(shouldSkipTelemetryRecalc(TripStatus.ACTIVE, 'telemetry')).toBe(
       false,
     );
   });
 
   it('does not skip status/finish triggers', () => {
-    expect(
-      shouldSkipTelemetryRecalc(TripStatus.FINISHED, 'status'),
-    ).toBe(false);
+    expect(shouldSkipTelemetryRecalc(TripStatus.FINISHED, 'status')).toBe(
+      false,
+    );
   });
 });
 

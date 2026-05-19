@@ -6,7 +6,9 @@ import type { TripRead } from "@/entities/trip";
 import { mergeTripRead } from "../lib/merge-trip-with-overlay";
 import { liveTripOverlayAtom } from "../model/live-trip-overlay";
 
-export function useLiveTrip(base: TripRead | null | undefined): TripRead | null {
+export function useLiveTrip(
+  base: TripRead | null | undefined,
+): TripRead | null {
   const [overlays] = useAtom(liveTripOverlayAtom);
 
   return useMemo(() => {

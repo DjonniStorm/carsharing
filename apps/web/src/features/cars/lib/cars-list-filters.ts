@@ -25,12 +25,7 @@ export function filterCarsList(
     if (!q) {
       return true;
     }
-    const hay = [
-      car.licensePlate,
-      car.brand,
-      car.model,
-      car.id,
-    ]
+    const hay = [car.licensePlate, car.brand, car.model, car.id]
       .filter(Boolean)
       .join("\n");
     return matchesSearchHaystack(hay, q);

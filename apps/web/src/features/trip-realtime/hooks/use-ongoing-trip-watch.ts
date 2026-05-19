@@ -3,9 +3,7 @@ import { useEffect } from "react";
 
 import type { TripRead } from "@/entities/trip";
 import { TripStatus } from "@/entities/trip";
-import {
-  useLiveTripOverlay,
-} from "@/features/trip-realtime/hooks/use-live-trip";
+import { useLiveTripOverlay } from "@/features/trip-realtime/hooks/use-live-trip";
 import {
   registerTripWatch,
   unregisterTripWatch,

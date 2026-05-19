@@ -12,10 +12,7 @@ export interface ITripPricingService {
     options: TripPricingRecalcOptions,
   ): Promise<TripRead | null>;
 
-  enqueueRecalc(
-    tripId: string,
-    trigger: TripPricingRecalcTrigger,
-  ): void;
+  enqueueRecalc(tripId: string, trigger: TripPricingRecalcTrigger): void;
 }
 
 export const ITripPricingServiceToken = Symbol('ITripPricingService');

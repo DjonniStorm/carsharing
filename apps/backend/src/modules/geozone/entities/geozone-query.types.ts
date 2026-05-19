@@ -2,9 +2,8 @@ import { GeozoneType } from './geozone.type';
 
 /** Фильтры списка стабильных зон (`GeoZone`). */
 export type GeozoneListFilters = {
-  /** По умолчанию `false` — только зоны с `deletedAt == null`. */
+  /** По умолчанию false — только зоны с `deletedAt == null`. */
   includeDeleted?: boolean;
-  /** Только софт-удалённые. Если задано вместе с `includeDeleted`, приоритет у `onlyDeleted`. */
   onlyDeleted?: boolean;
   types?: GeozoneType[];
   nameContains?: string;

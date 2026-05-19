@@ -1,6 +1,8 @@
 import {
   ActionIcon,
   Badge,
+  Button,
+  CopyButton,
   Group,
   Paper,
   Stack,
@@ -87,6 +89,21 @@ const TripGridCard = ({ trip, t, locale }: Props) => {
             >
               <ArrowIcon />
             </ActionIcon>
+            {/* TODO: fix */}
+            {/* <CopyButton value={trip.id} timeout={2000}>
+              {({ copied, copy }) => (
+                <Button
+                  variant="light"
+                  size="compact-xs"
+                  onClick={copy}
+                  flex="0 0 auto"
+                >
+                  {copied
+                    ? t(LANG_KEYS.pages.carsCardCopied)
+                    : t(LANG_KEYS.pages.carsCardCopy)}
+                </Button>
+              )}
+            </CopyButton> */}
           </Tooltip>
         </Group>
 

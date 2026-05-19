@@ -1,7 +1,3 @@
-/**
- * Временный (v1) контракт WS-событий для модуля поездок.
- * Пока без авторизации: используем метки audience/channelScope как договорённость.
- */
 import type { TripWsEventName } from './trip-events.payloads';
 import { TripWsEvent } from '../entities/realtime/trip-event';
 import { UserRole } from '../../user/entities/user.role';

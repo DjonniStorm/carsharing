@@ -24,7 +24,5 @@ export function shouldSkipTelemetryRecalc(
   if (trigger !== 'telemetry') {
     return false;
   }
-  return (
-    status === TripStatus.FINISHED || status === TripStatus.CANCELLED
-  );
+  return status === TripStatus.FINISHED || status === TripStatus.CANCELLED;
 }

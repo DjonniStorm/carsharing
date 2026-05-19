@@ -88,9 +88,7 @@ export const loadGeozoneEditPage = action(async (geozoneId: string) => {
     };
 
     const ring =
-      version !== null
-        ? multiPolygonFirstOuterRing(version.geometry)
-        : null;
+      version !== null ? multiPolygonFirstOuterRing(version.geometry) : null;
     const presetId = version?.tariffPresetId ?? null;
     const rulesText =
       version?.rules != null ? JSON.stringify(version.rules, null, 2) : "";

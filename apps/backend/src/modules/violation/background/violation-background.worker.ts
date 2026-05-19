@@ -47,41 +47,20 @@ export class ViolationBackgroundWorker implements OnModuleInit {
   private timer: NodeJS.Timeout | null = null;
 
   /**
-
    * Пример того, как job попадает сюда:
-
-   *
-
-   * ```ts
-
    * // TelemetryService.create(...)
-
    * jobQueue.enqueue({
-
    *   name: ViolationJobName.RentalMovementZoneCheck,
-
    *   payload: {
-
    *     tripId,
-
    *     recordedAt: timestampIso,
-
    *     lat,
-
    *     lon,
-
    *     speed,
-
    *     fuelLevel,
-
    *   },
-
    *   createdAtMs: Date.now(),
-
    * });
-
-   * ```
-
    */
 
   constructor(
@@ -103,8 +82,6 @@ export class ViolationBackgroundWorker implements OnModuleInit {
 
   onModuleInit(): void {
     // Простейший фоновой цикл: один воркер, небольшой интервал, без параллельности.
-
-    // Для курсового этого достаточно, а потом можно заменить на outbox/broker.
 
     this.timer = setInterval(() => this.tick(), 250);
 

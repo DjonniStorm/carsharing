@@ -10,7 +10,10 @@ import {
   parseTariffFormInput,
   tariffSnapshotFromParsed,
 } from "@/features/tariffs/lib/tariff-form-schema";
-import type { TariffEditLoadPhase, TariffEditSnapshot } from "@/features/tariffs/model/tariff-edit-view";
+import type {
+  TariffEditLoadPhase,
+  TariffEditSnapshot,
+} from "@/features/tariffs/model/tariff-edit-view";
 import {
   deleteTariffFromEdit,
   refreshTariffsCatalogAfterMutation,
@@ -73,7 +76,10 @@ export function useTariffEditMutations(form: FormSlice) {
     }
     const next = tariffSnapshotFromParsed(parsed.data);
 
-    if (snapshot !== null && JSON.stringify(next) === JSON.stringify(snapshot)) {
+    if (
+      snapshot !== null &&
+      JSON.stringify(next) === JSON.stringify(snapshot)
+    ) {
       notifications.show({
         message: t(LANG_KEYS.pages.tariffsEditNothingToSave),
         color: "blue",
@@ -153,15 +159,7 @@ export function useTariffEditMutations(form: FormSlice) {
     } finally {
       setSubmitting(false);
     }
-  }, [
-    deleteTariff,
-    isDeleted,
-    navigate,
-    phase,
-    refreshCatalog,
-    t,
-    tariffId,
-  ]);
+  }, [deleteTariff, isDeleted, navigate, phase, refreshCatalog, t, tariffId]);
 
   return {
     submitting,

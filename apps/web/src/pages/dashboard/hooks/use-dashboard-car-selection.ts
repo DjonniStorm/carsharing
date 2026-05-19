@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 
-import { stripWidth, panelWidth } from "@/pages/dashboard/ui/dashboard-selected-car-panel";
+import {
+  stripWidth,
+  panelWidth,
+} from "@/pages/dashboard/ui/dashboard-selected-car-panel";
 
 const OVERLAY_EDGE_PX = 16;
 

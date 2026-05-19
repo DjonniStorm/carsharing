@@ -6,7 +6,10 @@ import { sortTripsByStartedDesc } from "@/features/trips/lib/trips-list-filters"
 
 import type { AsyncStatus } from "@/shared/model/async-status";
 
-export const tripsAdminListAtom = atom<TripRead[] | null>(null, "tripsAdminList");
+export const tripsAdminListAtom = atom<TripRead[] | null>(
+  null,
+  "tripsAdminList",
+);
 
 export const tripsAdminListStatusAtom = atom<AsyncStatus>(
   "idle",

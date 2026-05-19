@@ -17,12 +17,15 @@ export type DashboardSelectedCarData = {
   violationsCount: number | null;
 };
 
-export const dashboardSelectedCarAtom = atom<DashboardSelectedCarData>({
-  car: null,
-  ongoingTrip: null,
-  driver: null,
-  violationsCount: null,
-}, "dashboardSelectedCar");
+export const dashboardSelectedCarAtom = atom<DashboardSelectedCarData>(
+  {
+    car: null,
+    ongoingTrip: null,
+    driver: null,
+    violationsCount: null,
+  },
+  "dashboardSelectedCar",
+);
 
 export const dashboardSelectedCarStatusAtom = atom<AsyncStatus>(
   "idle",

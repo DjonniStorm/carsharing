@@ -94,10 +94,7 @@ export class TripPricingService implements ITripPricingService {
       return null;
     }
 
-    if (
-      trip.status === TripStatus.CANCELLED &&
-      options.trigger !== 'finish'
-    ) {
+    if (trip.status === TripStatus.CANCELLED && options.trigger !== 'finish') {
       return null;
     }
 

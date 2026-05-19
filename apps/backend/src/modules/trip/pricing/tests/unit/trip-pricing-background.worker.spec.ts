@@ -15,10 +15,7 @@ describe('TripPricingBackgroundWorker', () => {
     };
     const queue: ITripPricingJobQueue = {
       enqueue: vi.fn(),
-      dequeue: vi
-        .fn()
-        .mockReturnValueOnce(job)
-        .mockReturnValue(null),
+      dequeue: vi.fn().mockReturnValueOnce(job).mockReturnValue(null),
     };
     const pricingService: ITripPricingService = {
       recalcAndPersist: vi.fn().mockResolvedValue(null),

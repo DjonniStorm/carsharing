@@ -96,7 +96,13 @@ export function parseTripStateChanged(
   const carId = readString(p.carId);
   const ts = readString(p.ts);
   const status = readTripStatus(p.status);
-  if (!tripId || !carId || !ts || status === null || !VALID_STATUSES.has(status)) {
+  if (
+    !tripId ||
+    !carId ||
+    !ts ||
+    status === null ||
+    !VALID_STATUSES.has(status)
+  ) {
     return null;
   }
   const previousStatus = readTripStatus(p.previousStatus);
@@ -150,12 +156,7 @@ export function parseCarLocationEnvelope(raw: unknown): {
   const lat = readNullableNumber(p.lat);
   const lng = readNullableNumber(p.lng);
   const positionAt = readString(p.positionAt);
-  if (
-    !carId ||
-    lat === null ||
-    lng === null ||
-    !positionAt
-  ) {
+  if (!carId || lat === null || lng === null || !positionAt) {
     return null;
   }
   return { carId, lat, lng, positionAt };

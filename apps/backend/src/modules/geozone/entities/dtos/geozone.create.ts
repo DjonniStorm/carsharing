@@ -18,7 +18,7 @@ import { GeozoneType } from '../geozone.type';
 
 /**
  * Создание зоны: стабильные поля + начальная геометрия (первая версия).
- * `createdByUserId` обычно проставляется из контекста авторизации, не из тела.
+ * createdByUserId обычно проставляется из контекста авторизации, не из тела.
  */
 export class GeozoneCreate {
   @IsNotEmpty()
@@ -45,7 +45,7 @@ export class GeozoneCreate {
   @IsObject()
   rules?: Record<string, unknown> | null;
 
-  /** Если задан — ставки копируются из шаблона; поля `price*` ниже не обязательны. */
+  /** Если задан — ставки копируются из шаблона; поля price* ниже не обязательны. */
   @IsOptional()
   @IsUUID()
   tariffPresetId?: string;

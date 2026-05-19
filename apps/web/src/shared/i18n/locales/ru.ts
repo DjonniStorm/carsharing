@@ -425,6 +425,8 @@ export const ru = {
     violationsColTrip: "Поездка",
     violationsColType: "Тип",
     violationsColDesc: "Описание",
+    violationsColDescMaxLength:
+      "Длина описания не может быть более 1000 символов",
     violationsColCreated: "Создано",
     violationsKindSpeeding: "Превышение скорости",
     violationsKindOutOfGeozone: "Выезд из геозоны",
@@ -502,6 +504,8 @@ export const ru = {
     tariffsCreateSubmit: "Создать",
     tariffsCreateCancel: "Назад к списку",
     tariffsCreateNameRequired: "Укажите название тарифа.",
+    tariffsCreateNameMaxLength:
+      "Длина названия не может быть более 1000 символов",
     tariffsCreatePricesInvalid: "Цены должны быть числами не ниже нуля.",
     tariffsCreateSuccess: "Тариф создан",
     tariffsEditLoading: "Загрузка тарифа…",
