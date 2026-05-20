@@ -12,14 +12,9 @@ import type {
 } from "@/shared/lib/yandex-maps/ymaps3";
 
 export type YandexMapOverlayMarker = {
-  /**
-   * Стабильный идентификатор для in-place обновления координат через `marker.update`.
-   * Если не задан — маркер при каждом изменении массива пересоздаётся (старое поведение).
-   */
   id?: string;
   coordinates: YMapLngLat;
   label: string;
-  /** Цвет индикатора на маркере (как в легенде карты). */
   tone?: "available" | "inUse" | "offline" | "tripStart" | "tripFinish";
 };
 
@@ -30,22 +25,14 @@ export type YandexSchemeMapOptions = {
 
 export type YandexMapMountHandle = {
   destroy: () => void;
-  /** Экземпляр карты для навешивания маркеров без полного перемонтирования. */
   map: YMaps3MapInstance;
-};
-
-/** @deprecated используйте {@link mountSchemeMapOnly} + {@link attachOverlayMarkers} */
-export type YandexBasicMapOptions = YandexSchemeMapOptions & {
-  overlayMarkers?: YandexMapOverlayMarker[];
 };
 
 const toneColor: Record<NonNullable<YandexMapOverlayMarker["tone"]>, string> = {
   available: "#22c55e",
   inUse: "#228be6",
   offline: "#adb5bd",
-  /** Зелёный «флаг» начала поездки. */
   tripStart: "#16a34a",
-  /** Розовый «флаг» финиша — сочетается с цветом линии трека. */
   tripFinish: "#c2255c",
 };
 
@@ -94,7 +81,6 @@ function destroyUnknown(entity: unknown): void {
   }
 }
 
-/** Снять дочерний объект карты: сначала `removeChild` (актуально для JS API 3), иначе `destroy()` если есть. */
 function detachMapChild(map: YMaps3MapInstance, entity: unknown): void {
   const removeChild = map.removeChild;
   if (typeof removeChild === "function") {
@@ -123,12 +109,6 @@ export type GeozonePolygonsController = {
   destroy: () => void;
 };
 
-/**
- * Полигоны текущих версий геозон (каждый полигон MultiPolygon — отдельный {@link YMaps3Global.YMapFeature}).
- *
- * ВАЖНО: общий {@link attachDefaultFeaturesLayer} должен быть создан **один раз** на уровне карты
- * (см. {@link YandexMapCanvas}); этот контроллер только управляет фичами.
- */
 export function createGeozonePolygonsController(
   map: YMaps3MapInstance,
 ): GeozonePolygonsController {
@@ -197,10 +177,6 @@ export type TripRoutePolylineController = {
   destroy: () => void;
 };
 
-/**
- * Линия маршрута по телеметрии. Использует общий {@link YMaps3Global.YMapDefaultFeaturesLayer}
- * с карты — собственного слоя не создаёт.
- */
 export function createTripRoutePolylineController(
   map: YMaps3MapInstance,
 ): TripRoutePolylineController {
@@ -246,7 +222,6 @@ export function createTripRoutePolylineController(
   return { setRoute, destroy };
 }
 
-/** Слой объектов для полигонов/линий (JS API 3.0). Без него {@link YMapFeature} может не отображаться. */
 export function attachDefaultFeaturesLayer(map: YMaps3MapInstance): () => void {
   const ymaps3 = window.ymaps3;
   const Features = ymaps3?.YMapDefaultFeaturesLayer;
@@ -260,13 +235,6 @@ export function attachDefaultFeaturesLayer(map: YMaps3MapInstance): () => void {
   };
 }
 
-/**
- * Добавляет слой объектов и маркеры. Возвращает функцию отключения (без уничтожения карты).
- *
- * Подходит, когда массив маркеров **меняется редко** (например, рендерится один раз).
- * Для частых обновлений координат используйте {@link createOverlayMarkersController},
- * чтобы не пересоздавать маркеры на каждом тике.
- */
 export function attachOverlayMarkers(
   map: YMaps3MapInstance,
   markers: YandexMapOverlayMarker[] | undefined,
@@ -302,16 +270,11 @@ export function attachOverlayMarkers(
 }
 
 export type OverlayMarkersController = {
-  /** Применить новый набор маркеров: добавить/удалить/`update({ coordinates })` существующие. */
   setMarkers: (markers: YandexMapOverlayMarker[] | undefined) => void;
-  /** Снять все маркеры (карта остаётся жива). */
   destroy: () => void;
 };
 
 export type OverlayMarkersControllerOptions = {
-  /**
-   * Фабрика колбэка клика по маркеру с полем `id` (актуальный обработчик из React — через ref).
-   */
   resolveMarkerClick?: () => ((carId: string) => void) | undefined;
 };
 
@@ -322,16 +285,7 @@ type ManagedMarker = {
   markerClickHandler?: (e: MouseEvent) => void;
 };
 
-/**
- * Контроллер маркеров с in-place обновлениями. Создаётся один раз вместе с картой.
- *
- * - Слой объектов создаётся **один раз**.
- * - Для маркеров с `id` смена координат идёт через `marker.update({ coordinates })`.
- * - Маркер пересоздаётся только при смене `label` или `tone` (изменение DOM-содержимого).
- * - Маркеры без `id` пересоздаются при каждом вызове (старое поведение для совместимости).
- *
- * Это исключает мерцание/«стояние» при частых апдейтах локаций (телеметрия по сокету).
- */
+// Маркеры с id обновляют координаты без пересоздания DOM.
 export function createOverlayMarkersController(
   map: YMaps3MapInstance,
   options?: OverlayMarkersControllerOptions,
@@ -367,7 +321,7 @@ export function createOverlayMarkersController(
       };
       el.addEventListener("click", markerClickHandler);
     }
-    const instance = new Marker!({ coordinates: m.coordinates }, el);
+    const instance = new Marker({ coordinates: m.coordinates }, el);
     map.addChild(instance);
     return {
       marker: instance,
@@ -439,10 +393,6 @@ export function createOverlayMarkersController(
   return { setMarkers, destroy };
 }
 
-/**
- * Один экземпляр на приложение: координирует создание карт поверх уже дедуплицированной
- * загрузки скрипта (`loadYandexMapsApi`).
- */
 export class YandexMapsRenderService {
   private static instance: YandexMapsRenderService | undefined;
 
@@ -455,12 +405,10 @@ export class YandexMapsRenderService {
 
   private constructor() {}
 
-  /** Скрипт JS API 3.0 + `ymaps3.ready` (идемпотентно для одного ключа на вкладку). */
   ensureApiLoaded(apiKey: string): Promise<void> {
     return loadYandexMapsApi(apiKey);
   }
 
-  /** Карта со схемой без маркеров — маркеры вешайте через {@link attachOverlayMarkers}. */
   mountSchemeMapOnly(
     container: HTMLElement,
     options: YandexSchemeMapOptions,
@@ -487,7 +435,6 @@ export class YandexMapsRenderService {
     };
   }
 
-  /** Загрузка API и монтаж только схемы. */
   async mountSchemeMapOnlyAsync(
     apiKey: string,
     container: HTMLElement,
@@ -495,38 +442,6 @@ export class YandexMapsRenderService {
   ): Promise<YandexMapMountHandle> {
     await this.ensureApiLoaded(apiKey);
     return this.mountSchemeMapOnly(container, options);
-  }
-
-  /**
-   * Карта со схемой по умолчанию и опциональными маркерами (одним монтированием).
-   * Предпочтительнее для React разделять схему и маркеры, чтобы не пересоздавать карту.
-   */
-  mountBasicSchemeMap(
-    container: HTMLElement,
-    options: YandexBasicMapOptions,
-  ): YandexMapMountHandle {
-    const { overlayMarkers, ...scheme } = options;
-    const handle = this.mountSchemeMapOnly(container, scheme);
-    let detachMarkers = attachOverlayMarkers(handle.map, overlayMarkers);
-    const destroy = handle.destroy;
-    return {
-      map: handle.map,
-      destroy: () => {
-        detachMarkers();
-        detachMarkers = () => {};
-        destroy();
-      },
-    };
-  }
-
-  /** Загрузка API и монтаж карты одним вызовом (типовой сценарий для React-effect). */
-  async mountBasicSchemeMapAsync(
-    apiKey: string,
-    container: HTMLElement,
-    options: YandexBasicMapOptions,
-  ): Promise<YandexMapMountHandle> {
-    await this.ensureApiLoaded(apiKey);
-    return this.mountBasicSchemeMap(container, options);
   }
 }
 

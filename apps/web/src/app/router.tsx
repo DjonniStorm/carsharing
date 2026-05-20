@@ -1,10 +1,3 @@
-/**
- * --- TanStack Router: дерево маршрутов (код, без file-based генерации) ---
- *
- * Зачем так: `@tanstack/router-plugin` ожидает каталог с файлами роутов (`routesDirectory`).
- * У нас одно место правды — этот файл, `app/routes/*` и {@link ROUTES} в `shared/config/routes-paths.ts`.
- */
-
 import { createRouter } from "@tanstack/react-router";
 
 import {
@@ -59,7 +52,13 @@ const routeTree = rootRoute.addChildren([
   registerRoute,
 ]);
 
-export const router = createRouter({ routeTree });
+/** Совпадает с `base` в Vite (GitHub Pages: /имя-репозитория/). */
+const basepath =
+  import.meta.env.BASE_URL === "/"
+    ? "/"
+    : import.meta.env.BASE_URL.replace(/\/$/, "");
+
+export const router = createRouter({ routeTree, basepath });
 
 declare module "@tanstack/react-router" {
   interface Register {

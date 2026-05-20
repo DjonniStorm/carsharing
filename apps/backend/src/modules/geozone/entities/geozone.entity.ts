@@ -1,20 +1,12 @@
 import { GeozoneType } from './geozone.type';
 
-/**
- * Стабильная сущность геозоны.
- * Актуальная геометрия и правила — в {@link GeozoneVersionEntity} с id = currentVersionId.
- *
- * Обновление контура: закрыть предыдущую версию (disabledAt), создать новую,
- * выставить currentVersionId. Поездки ссылаются на версию на момент старта.
- */
+// Стабильная геозона; геометрия и правила — в GeozoneVersionEntity (currentVersionId).
 export class GeozoneEntity {
   constructor(
     public readonly id: string,
     public readonly name: string,
     public readonly type: GeozoneType,
-    /** Цвет отрисовки на карте (например `#RRGGBB` или ключ темы). */
     public readonly color: string,
-    /** id активной {@link GeozoneVersionEntity}. */
     public readonly currentVersionId: string,
     public readonly createdAt: Date,
     public readonly deletedAt: Date | null,

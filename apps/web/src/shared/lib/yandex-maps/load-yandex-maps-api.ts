@@ -3,7 +3,6 @@ import { translate } from "@/shared/i18n/translate";
 
 const SCRIPT_SELECTOR = 'script[data-yandex-maps-api="v3"]';
 
-/** URL загрузки JS API 3.0 (ключ только в query, Referer ограничивается в кабинете ключа). */
 export function buildYandexMapsScriptUrl(apiKey: string): string {
   const params = new URLSearchParams({
     apikey: apiKey,
@@ -14,16 +13,12 @@ export function buildYandexMapsScriptUrl(apiKey: string): string {
 
 let loading: Promise<void> | undefined;
 
-/**
- * Динамически подключает скрипт JS API 3.0 и ждёт `ymaps3.ready`.
- * Повторные вызовы с тем же ключом переиспользуют загрузку.
- */
 export function loadYandexMapsApi(apiKey: string): Promise<void> {
   if (!apiKey.trim()) {
     return Promise.reject(new Error(translate(LANG_KEYS.mapsLoader.emptyKey)));
   }
 
-  if (typeof window === undefined) {
+  if (typeof window === "undefined") {
     return Promise.reject(
       new Error(translate(LANG_KEYS.mapsLoader.browserOnly)),
     );

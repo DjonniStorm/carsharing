@@ -1,6 +1,5 @@
 import type { CarStatus } from "@/entities/car/model/car-status";
 
-/** Ответ `GET /cars` — даты приходят ISO-строками из JSON. */
 export type CarRead = {
   id: string;
   brand: string;

@@ -7,7 +7,6 @@ export function carToMapMarker(car: CarRead): YandexMapOverlayMarker | null {
   return carToMapMarkerWithLive(car, null);
 }
 
-/** Live-координаты с WS (`car.location.updated`) перекрывают последние из REST. */
 export function carToMapMarkerWithLive(
   car: CarRead,
   live: { lat: number; lng: number } | null | undefined,

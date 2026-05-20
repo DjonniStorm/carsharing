@@ -47,8 +47,8 @@ export class CarUpdateDto {
 
   @IsOptional()
   @IsNumber()
-  @Min(0)
-  @Max(100)
+  @Min(FIELD_LIMITS.CAR_FUEL_MIN)
+  @Max(FIELD_LIMITS.CAR_FUEL_MAX)
   fuelLevel?: number;
 
   @IsOptional()

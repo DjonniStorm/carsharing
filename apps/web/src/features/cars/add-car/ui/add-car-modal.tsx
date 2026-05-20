@@ -180,7 +180,7 @@ const AddCarModal = ({ opened, onClose, onCreated }: AddCarModalProps) => {
             <Grid.Col span={{ base: 12, sm: 6 }}>
               <NumberInput
                 label={t(LANG_KEYS.pages.carsAddFieldFuel)}
-                min={0}
+                min={1}
                 max={100}
                 key={form.key("fuelLevel")}
                 placeholder="100"

@@ -16,7 +16,6 @@ import {
 
 import { CarStatus } from '../car-status';
 
-// Create and update car dto
 export class Car {
   @IsNotEmpty()
   @IsString()
@@ -49,8 +48,8 @@ export class Car {
 
   @IsNotEmpty()
   @IsNumber()
-  @Min(0)
-  @Max(100)
+  @Min(FIELD_LIMITS.CAR_FUEL_MIN)
+  @Max(FIELD_LIMITS.CAR_FUEL_MAX)
   fuelLevel: number;
 
   @IsNotEmpty()

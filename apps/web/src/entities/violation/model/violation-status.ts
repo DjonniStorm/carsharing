@@ -1,4 +1,3 @@
-/** Совпадает с `ViolationStatus` на бэкенде (тип нарушения + служебные статусы). */
 export enum ViolationStatus {
   SPEEDING = 1,
   OUT_OF_GEOZONE = 2,

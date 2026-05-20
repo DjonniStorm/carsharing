@@ -35,6 +35,7 @@ import { TripCreate } from '../entities/dtos/trip.create';
 import { TripRead } from '../entities/dtos/trip.read';
 import { TripUpdate } from '../entities/dtos/trip.update';
 import { TripStatus } from '../entities/trip.status';
+import { parseDateQuery } from 'src/shared/query/parse-date-query';
 import { TripService } from '../services/trip.service';
 import { ITripController } from './trip.controller.interface';
 
@@ -50,20 +51,6 @@ function parseTripStatusQuery(raw: string | undefined): TripStatus | undefined {
     throw new BadRequestException('status has invalid value');
   }
   return value as TripStatus;
-}
-
-function parseDateQuery(
-  raw: string | undefined,
-  field: string,
-): Date | undefined {
-  if (raw == null || raw.trim() === '') {
-    return undefined;
-  }
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) {
-    throw new BadRequestException(`${field} must be a valid date`);
-  }
-  return parsed;
 }
 
 @Controller('trips')

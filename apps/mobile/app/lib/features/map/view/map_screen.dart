@@ -34,6 +34,7 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   YandexMapController? _mapController;
   Timer? _zoneDebounce;
+  Timer? _carsDebounce;
   final CarChipIconCache _carIcons = CarChipIconCache();
   bool _carIconJobInFlight = false;
 
@@ -60,6 +61,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     _zoneDebounce?.cancel();
+    _carsDebounce?.cancel();
     super.dispose();
   }
 
@@ -86,6 +88,15 @@ class _MapScreenState extends State<MapScreen> {
     _zoneDebounce = Timer(const Duration(milliseconds: 450), () {
       // ignore: discarded_futures
       _reloadZonesForVisibleArea();
+    });
+  }
+
+  void _debouncedCarsReload() {
+    _carsDebounce?.cancel();
+    _carsDebounce = Timer(const Duration(seconds: 5), () {
+      if (!mounted) return;
+      // ignore: discarded_futures
+      context.read<MapCubit>().refresh();
     });
   }
 
@@ -282,10 +293,12 @@ class _MapScreenState extends State<MapScreen> {
                             ),
                           );
                           await _reloadZonesForVisibleArea();
+                          _debouncedCarsReload();
                         },
                         onCameraPositionChanged: (camera, reason, finished) {
                           if (finished) {
                             _debouncedZonesReload();
+                            _debouncedCarsReload();
                           }
                         },
                       );

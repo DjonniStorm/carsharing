@@ -12,10 +12,12 @@ import { getApiBaseUrl } from "@/shared/config/env";
 import { TripWsCommand, TripWsEvent } from "../constants";
 import {
   parseCarLocationEnvelope,
+  parseCarStateChanged,
   parseTripFinished,
   parseTripMetricsUpdated,
   parseTripStateChanged,
 } from "../lib/parse-trip-ws";
+import { applyCarStateFromWs } from "../model/live-car-fleet";
 import { applyCarLocationFromWs } from "../model/live-car-positions";
 import {
   applyTripFinishedFromWs,
@@ -65,10 +67,6 @@ function syncTripSubscriptions(
   }
 }
 
-/**
- * Держит Socket.IO к `/trip`: позиции машин + live-биллинг поездок.
- * Без UI — монтируется в layout дашборда.
- */
 const DashboardTripRealtimeSync = () => {
   const [token] = useAtom(accessTokenAtom);
   const [cars] = useAtom(carsListAtom);
@@ -107,6 +105,14 @@ const DashboardTripRealtimeSync = () => {
       rootFrame.run(() => applyCarLocationFromWs(parsed));
     };
 
+    const onCarState = (raw: unknown) => {
+      const parsed = parseCarStateChanged(raw);
+      if (!parsed) {
+        return;
+      }
+      rootFrame.run(() => applyCarStateFromWs(parsed));
+    };
+
     const onMetrics = (raw: unknown) => {
       const parsed = parseTripMetricsUpdated(raw);
       if (!parsed) {
@@ -142,6 +148,7 @@ const DashboardTripRealtimeSync = () => {
 
     socket.on("connect", onConnect);
     socket.on(TripWsEvent.CarLocationUpdated, onLocation);
+    socket.on(TripWsEvent.CarStateChanged, onCarState);
     socket.on(TripWsEvent.TripMetricsUpdated, onMetrics);
     socket.on(TripWsEvent.TripStateChanged, onStateChanged);
     socket.on(TripWsEvent.TripFinished, onFinished);
@@ -158,6 +165,7 @@ const DashboardTripRealtimeSync = () => {
     return () => {
       socket.off("connect", onConnect);
       socket.off(TripWsEvent.CarLocationUpdated, onLocation);
+      socket.off(TripWsEvent.CarStateChanged, onCarState);
       socket.off(TripWsEvent.TripMetricsUpdated, onMetrics);
       socket.off(TripWsEvent.TripStateChanged, onStateChanged);
       socket.off(TripWsEvent.TripFinished, onFinished);

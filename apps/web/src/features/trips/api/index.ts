@@ -11,7 +11,5 @@ export const tripHistoryApi = new TripHistoryApi(
   getStoredAccessToken,
 );
 
-export { TripsApi } from "./trips.api";
-export { TripHistoryApi } from "./trip-history.api";
-export type { TripByIdQuery, TripListQuery } from "./trips.api";
+export type { TripListQuery } from "./trips.api";
 export type { TripHistoryListQuery } from "./trip-history.api";

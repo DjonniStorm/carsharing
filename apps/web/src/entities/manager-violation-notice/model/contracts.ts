@@ -1,4 +1,3 @@
-/** Ответ `POST /notifications/manager/violation-notice`. */
 export type ManagerNoticeDeliveryStatus = "PENDING" | "SENT" | "FAILED";
 
 export type ManagerViolationNoticeRead = {
@@ -16,7 +15,6 @@ export type ManagerViolationNoticeSendBody = {
   message: string;
 };
 
-/** Элемент `GET /notifications/trip/:tripId`. */
 export type TripNotificationRead = {
   id: number;
   userId: string;

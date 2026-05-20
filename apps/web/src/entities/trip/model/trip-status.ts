@@ -1,4 +1,3 @@
-/** Совпадает с `TripStatus` на бэкенде. */
 export enum TripStatus {
   PENDING = 0,
   STARTED = 1,

@@ -5,5 +5,4 @@ import { TariffsApi } from "./tariffs.api";
 
 export const tariffsApi = new TariffsApi(getApiBaseUrl(), getStoredAccessToken);
 
-export { TariffsApi } from "./tariffs.api";
 export type { TariffListQuery } from "./tariffs.api";

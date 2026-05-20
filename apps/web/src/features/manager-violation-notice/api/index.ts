@@ -7,5 +7,3 @@ export const managerViolationNoticeApi = new ManagerViolationNoticeApi(
   getApiBaseUrl(),
   getStoredAccessToken,
 );
-
-export { ManagerViolationNoticeApi } from "./manager-violation-notice.api";

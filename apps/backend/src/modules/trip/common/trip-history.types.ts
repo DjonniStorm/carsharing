@@ -5,7 +5,6 @@ export type TripHistorySqlRow = {
   violations_json: unknown;
 };
 
-/** Как {@link TripHistorySqlRow}, плюс агрегированная телеметрия по поездке. */
 export type TripHistoryFullSqlRow = TripHistorySqlRow & {
   telemetry_json: unknown;
 };

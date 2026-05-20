@@ -7,6 +7,7 @@ export const TripWsEvent = {
   TripStateChanged: "trip.state.changed",
   TripMetricsUpdated: "trip.metrics.updated",
   TripFinished: "trip.finished",
+  CarStateChanged: "car.state.changed",
   CarLocationUpdated: "car.location.updated",
 } as const;
 

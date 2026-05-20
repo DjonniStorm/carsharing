@@ -1,9 +1,6 @@
 import type { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 
-/**
- * `DATABASE_URL` после {@link loadTestEnvironment} / {@link loadBackendDevEnv}.
- */
 export function getTestDatabaseUrl(): string {
   const url = process.env.DATABASE_URL?.trim();
   if (!url) {
@@ -29,9 +26,6 @@ function stubConfigForDatabaseUrl(databaseUrl: string): StubConfig {
   };
 }
 
-/**
- * Тот же {@link PrismaService}, что в приложении (`PrismaPg`), без Nest DI.
- */
 export function createTestPrismaService(
   databaseUrl: string = getTestDatabaseUrl(),
 ): PrismaService {

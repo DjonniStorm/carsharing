@@ -6,8 +6,15 @@ import { defineConfig } from 'vite'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(__dirname, '../..')
 
+/** GitHub Pages project site: VITE_BASE_PATH=/repo-name/ ; корень сайта: / */
+const base =
+  process.env.VITE_BASE_PATH?.replace(/\/?$/, '/') ??
+  process.env.BASE_URL ??
+  '/'
+
 // https://vite.dev/config/
 export default defineConfig({
+  base,
   plugins: [react()],
   resolve: {
     alias: {

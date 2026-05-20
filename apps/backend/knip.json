@@ -1,0 +1,43 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/main.ts",
+    "src/**/*.module.ts",
+    "vitest.setup.ts",
+    "src/**/*.spec.ts"
+  ],
+  "project": ["src/**/*.ts"],
+  "ignore": ["prisma/**", "scripts/**", "coverage/**", "dist/**"],
+  "ignoreDependencies": [
+    "reflect-metadata",
+    "@nestjs/platform-express",
+    "swagger-ui-express",
+    "source-map-support",
+    "@nestjs/testing",
+    "ts-loader",
+    "ts-node",
+    "tsconfig-paths",
+    "supertest",
+    "@types/supertest",
+    "@types/express",
+    "@types/passport-jwt",
+    "@nestjs/schematics",
+    "@eslint/eslintrc",
+    "eslint-config-prettier",
+    "eslint-plugin-prettier",
+    "cross-env",
+    "dotenv",
+    "@carsharing/notification",
+    "@carsharing/validation",
+    "pg",
+    "@types/pg"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "ignoreIssues": {
+    "src/modules/car/common/errors.ts": ["exports"],
+    "src/modules/trip/common/trip-realtime.contract.ts": ["exports"],
+    "src/modules/user/common/errors.ts": ["exports"],
+    "src/shared/testing/test-jwt.ts": ["exports"],
+    "src/modules/geozone/entities/geozone.geometry.ts": ["types"]
+  }
+}

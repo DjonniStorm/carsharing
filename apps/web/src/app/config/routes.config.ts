@@ -1,6 +1,3 @@
-/**
- * Навигация shell-дэшборда. `labelKey` — {@link LANG_KEYS} / ключи i18n.
- */
 import type { DashboardShellNavItem } from "@/widgets/dashboard-shell";
 
 import { ROUTES } from "@/shared/config/routes-paths";

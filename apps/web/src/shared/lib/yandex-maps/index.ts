@@ -7,11 +7,11 @@ export {
   yandexMapsRenderService,
 } from "@/shared/lib/yandex-maps/yandex-maps-render-service";
 export type {
-  YandexBasicMapOptions,
   YandexMapMountHandle,
   YandexMapOverlayMarker,
   OverlayMarkersController,
   OverlayMarkersControllerOptions,
+  YandexSchemeMapOptions,
 } from "@/shared/lib/yandex-maps/yandex-maps-render-service";
 export { createOverlayMarkersController } from "@/shared/lib/yandex-maps/yandex-maps-render-service";
 export type {

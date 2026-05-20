@@ -1,6 +1,5 @@
 import type { ViolationStatus } from "@/entities/violation/model/violation-status";
 
-/** Поле `type` в JSON совпадает с бэкендом (`ViolationRead`). */
 export type ViolationRead = {
   id: string;
   tripId: string;

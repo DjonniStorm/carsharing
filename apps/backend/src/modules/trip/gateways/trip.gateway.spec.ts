@@ -258,13 +258,4 @@ describe('TripGateway', () => {
       expect(emit).not.toHaveBeenCalled();
     });
   });
-
-  describe('Бизнес-правила подписки и доступа', () => {
-    it.todo('reject subscribe.trip с невалидным tripId');
-    it.todo('reject subscribe.car с невалидным UUID carId');
-    it.todo('reject subscribe.trip если trip не существует');
-    it.todo('reject subscribe.car если car не существует');
-    it.todo('reject manager scopes для роли driver');
-    it.todo('emit subscription.error с кодом причины');
-  });
 });

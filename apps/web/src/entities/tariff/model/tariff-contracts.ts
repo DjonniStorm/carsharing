@@ -1,4 +1,3 @@
-/** Ответ API: глобальный шаблон тарифа (TariffPreset). */
 export type TariffRead = {
   id: string;
   name: string;

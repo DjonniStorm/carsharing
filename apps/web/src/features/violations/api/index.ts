@@ -8,5 +8,4 @@ export const violationsApi = new ViolationsApi(
   getStoredAccessToken,
 );
 
-export { ViolationsApi } from "./violations.api";
 export type { ViolationListQuery } from "./violations.api";
