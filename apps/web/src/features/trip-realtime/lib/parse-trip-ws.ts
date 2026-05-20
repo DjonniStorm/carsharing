@@ -1,7 +1,10 @@
+import type { CarStatus } from "@/entities/car/model/car-status";
+import { CarStatus as CarStatusEnum } from "@/entities/car/model/car-status";
 import type { TripStatus } from "@/entities/trip";
 import { TripStatus as TripStatusEnum } from "@/entities/trip";
 
 import type {
+  CarStateChangedPayload,
   TripFinishedPayload,
   TripMetricsUpdatedPayload,
   TripStateChangedPayload,
@@ -52,11 +55,30 @@ function readTripStatus(v: unknown): TripStatus | null {
   return null;
 }
 
-const VALID_STATUSES = new Set<number>(
+const VALID_TRIP_STATUSES = new Set<number>(
   Object.values(TripStatusEnum).filter(
     (v): v is number => typeof v === "number",
   ),
 );
+
+const VALID_CAR_STATUSES = new Set<number>(
+  Object.values(CarStatusEnum).filter(
+    (v): v is number => typeof v === "number",
+  ),
+);
+
+function readCarStatus(v: unknown): CarStatus | null {
+  if (typeof v === "number" && Number.isInteger(v)) {
+    return v as CarStatus;
+  }
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    if (Number.isInteger(n)) {
+      return n as CarStatus;
+    }
+  }
+  return null;
+}
 
 export function parseTripMetricsUpdated(
   raw: unknown,
@@ -101,7 +123,7 @@ export function parseTripStateChanged(
     !carId ||
     !ts ||
     status === null ||
-    !VALID_STATUSES.has(status)
+    !VALID_TRIP_STATUSES.has(status)
   ) {
     return null;
   }
@@ -111,9 +133,37 @@ export function parseTripStateChanged(
     carId,
     status,
     previousStatus:
-      previousStatus !== null && VALID_STATUSES.has(previousStatus)
+      previousStatus !== null && VALID_TRIP_STATUSES.has(previousStatus)
         ? previousStatus
         : undefined,
+    ts,
+  };
+}
+
+export function parseCarStateChanged(
+  raw: unknown,
+): CarStateChangedPayload | null {
+  const p = readPayload(raw);
+  if (!p) {
+    return null;
+  }
+  const carId = readString(p.carId);
+  const ts = readString(p.ts);
+  const carStatus = readCarStatus(p.status);
+  if (!carId || !ts || carStatus === null || !VALID_CAR_STATUSES.has(carStatus)) {
+    return null;
+  }
+  const availRaw = p.isAvailable;
+  const isAvailable =
+    typeof availRaw === "boolean"
+      ? availRaw
+      : String(availRaw).toLowerCase() === "true";
+  const fuel = readNullableNumber(p.fuelLevel);
+  return {
+    carId,
+    carStatus,
+    isAvailable,
+    ...(fuel !== null ? { fuelLevel: fuel } : {}),
     ts,
   };
 }

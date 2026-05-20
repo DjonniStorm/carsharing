@@ -52,6 +52,7 @@ export function TariffFormFields({
         value={values.pricePerMinute}
         onChange={onPricePerMinuteChange}
         min={0}
+        max={FIELD_LIMITS.TARIFF_PRICE_MAX}
         decimalScale={2}
         fixedDecimalScale
         readOnly={readOnly}
@@ -61,6 +62,7 @@ export function TariffFormFields({
         value={values.pricePerKm}
         onChange={onPricePerKmChange}
         min={0}
+        max={FIELD_LIMITS.TARIFF_PRICE_MAX}
         decimalScale={2}
         fixedDecimalScale
         readOnly={readOnly}
@@ -70,6 +72,7 @@ export function TariffFormFields({
         value={values.pausePricePerMinute}
         onChange={onPausePricePerMinuteChange}
         min={0}
+        max={FIELD_LIMITS.TARIFF_PRICE_MAX}
         decimalScale={2}
         fixedDecimalScale
         readOnly={readOnly}

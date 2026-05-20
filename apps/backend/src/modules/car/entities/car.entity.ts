@@ -1,3 +1,5 @@
+import { FIELD_LIMITS } from '@carsharing/validation';
+
 import { BaseEntity } from 'src/shared/types/entities/base-entity';
 import { DateError } from 'src/shared/types/errors/date.error';
 import { EmptyFieldError } from 'src/shared/types/errors/empty-field.error';
@@ -50,6 +52,14 @@ export class CarEntity extends BaseEntity<string> {
     }
     if (typeof car.fuelLevel !== 'number') {
       throw new EmptyFieldError('field fuelLevel is required');
+    }
+    if (
+      car.fuelLevel < FIELD_LIMITS.CAR_FUEL_MIN ||
+      car.fuelLevel > FIELD_LIMITS.CAR_FUEL_MAX
+    ) {
+      throw new EmptyFieldError(
+        `field fuelLevel must be between ${FIELD_LIMITS.CAR_FUEL_MIN} and ${FIELD_LIMITS.CAR_FUEL_MAX}`,
+      );
     }
     if (typeof car.isAvailable !== 'boolean') {
       throw new EmptyFieldError('field isAvailable is required');

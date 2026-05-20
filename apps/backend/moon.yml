@@ -9,6 +9,8 @@ tasks:
     command: pnpm start:prod
   lint:
     command: pnpm lint
+  knip:
+    command: pnpm knip
   format:
     command: pnpm format
   test:

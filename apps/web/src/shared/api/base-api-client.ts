@@ -6,18 +6,10 @@ import { translate } from "@/shared/i18n/translate";
 export type AccessTokenGetter = () => string | null | undefined;
 
 export type JsonRequestOptions = Omit<RequestInit, "body"> & {
-  /** Тело как JSON-объект. */
   json?: unknown;
-  /**
-   * Подставлять Bearer из `getAccessToken`, если он есть.
-   * Для `POST /auth/login` задайте `false`.
-   */
   bearer?: boolean;
 };
 
-/**
- * Базовый HTTP-клиент для API сущностей: один экземпляр на домен (auth, users, …).
- */
 export class BaseApiClient {
   constructor(
     protected readonly baseUrl: string,

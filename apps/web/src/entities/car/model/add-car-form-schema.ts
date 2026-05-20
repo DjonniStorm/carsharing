@@ -47,7 +47,7 @@ const refineFuel = (val: number, ctx: z.RefinementCtx) => {
     });
     return;
   }
-  if (val < 0 || val > 100) {
+  if (val < FIELD_LIMITS.CAR_FUEL_MIN || val > FIELD_LIMITS.CAR_FUEL_MAX) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: translate(LANG_KEYS.pages.carsAddValidateFuel),
@@ -55,7 +55,6 @@ const refineFuel = (val: number, ctx: z.RefinementCtx) => {
   }
 };
 
-/** Поля формы «новый автомобиль» (без статуса и флага доступности — задаются при сборке тела запроса). */
 export const addCarFormSchema = z.object({
   brand: z
     .string()

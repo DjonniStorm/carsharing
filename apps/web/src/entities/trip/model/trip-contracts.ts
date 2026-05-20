@@ -4,7 +4,6 @@ export type TripRead = {
   id: string;
   userId: string;
   carId: string;
-  /** Историческое поле в типах; API может отдавать только {@link geoZoneVersionId}. */
   tariffVersionId?: string;
   geoZoneVersionId?: string;
   status: TripStatus;
@@ -30,44 +29,3 @@ export type TripRead = {
   carPlateSnapshot: string | null;
   carDisplayNameSnapshot: string | null;
 };
-
-export type TripCreateBody = {
-  userId: string;
-  carId: string;
-  tariffVersionId: string;
-  status?: TripStatus;
-  startLat?: number;
-  startLng?: number;
-  carPlateSnapshot?: string;
-  carDisplayNameSnapshot?: string;
-};
-
-export type TripUpdateBody = Partial<{
-  status: TripStatus;
-  finishedAt: string;
-  pauseStartedAt: string | null;
-  totalPausedSec: number;
-  startLat: number | null;
-  startLng: number | null;
-  finishLat: number | null;
-  finishLng: number | null;
-  distance: number;
-  duration: number;
-  /** @deprecated Сервер пересчитывает сам; в PATCH игнорируется. */
-  distanceMeters?: number | null;
-  /** @deprecated Сервер пересчитывает сам; в PATCH игнорируется. */
-  chargedMinutes?: number | null;
-  /** @deprecated Сервер пересчитывает сам; в PATCH игнорируется. */
-  chargedKm?: number | null;
-  /** @deprecated Сервер пересчитывает сам; в PATCH игнорируется. */
-  priceTime?: number | null;
-  /** @deprecated Сервер пересчитывает сам; в PATCH игнорируется. */
-  priceDistance?: number | null;
-  /** @deprecated Сервер пересчитывает сам; в PATCH игнорируется. */
-  pricePause?: number | null;
-  /** @deprecated Сервер пересчитывает сам; в PATCH игнорируется. */
-  priceTotal?: number | null;
-  tariffVersionId: string;
-  carPlateSnapshot: string | null;
-  carDisplayNameSnapshot: string | null;
-}>;

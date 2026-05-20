@@ -1,6 +1,5 @@
 import type { CarStatus } from "@/entities/car/model/car-status";
 
-/** Тело `POST /cars` / частичное `PATCH /cars/:id` (как на бэкенде `Car`). */
 export type CarCreateBody = {
   brand: string;
   model: string;

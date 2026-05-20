@@ -106,7 +106,6 @@ export const publicRegisterSchema = z.object({
   password: z.string().superRefine(refineRegisterPassword),
 });
 
-/** Поля UI: те же поля + опциональная роль (показывается при `VITE_OPEN_MANAGER_SELF_REGISTER`). */
 export const publicRegisterFormSchema = publicRegisterSchema
   .extend({
     role: z.nativeEnum(UserRole).optional(),
@@ -125,7 +124,6 @@ export const publicRegisterFormSchema = publicRegisterSchema
     }
   });
 
-/** Как `CreateUserEntity` для `POST /users` (менеджер). */
 export const createUserSchema = z.object({
   name: z.string().superRefine(refinePersonName),
   email: z.string().superRefine(refineEmail),

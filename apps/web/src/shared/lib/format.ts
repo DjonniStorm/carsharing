@@ -61,7 +61,6 @@ export function formatQuantity(
   return `${formatted} ${unit}`;
 }
 
-/** Дистанция в км с двумя знаками; при отсутствии метров — fallback на legacy `distance`. */
 export function formatTripDistanceKm(
   distanceMeters: number | null | undefined,
   legacyDistance?: number | null,

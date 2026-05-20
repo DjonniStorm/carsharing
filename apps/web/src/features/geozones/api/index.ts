@@ -8,7 +8,6 @@ export const geozonesApi = new GeozonesApi(
   getStoredAccessToken,
 );
 
-export { GeozonesApi } from "./geozones.api";
 export type {
   GeozoneBoundingBoxQuery,
   GeozoneContainingPointQuery,

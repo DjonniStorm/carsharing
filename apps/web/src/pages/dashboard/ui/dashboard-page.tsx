@@ -31,7 +31,6 @@ import { useDashboardMapViewport } from "@/pages/dashboard/hooks/use-dashboard-m
 import { DashboardSelectedCarPanel } from "@/pages/dashboard/ui/dashboard-selected-car-panel";
 import { YandexMapPlain } from "@/widgets/yandex-map";
 
-/** Как `header={{ height: 56 }}` у {@link DashboardShell}. */
 const APP_SHELL_HEADER_PX = 56;
 
 const OVERLAY_EDGE_PX = 16;

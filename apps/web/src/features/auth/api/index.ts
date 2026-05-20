@@ -11,6 +11,4 @@ export const usersApi = new UsersApi(getApiBaseUrl(), () =>
   localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY),
 );
 
-export { AuthApi } from "./auth.api";
 export type { AuthSessionUser } from "./auth.api";
-export { UsersApi } from "./users.api";

@@ -1,4 +1,3 @@
-/** Совпадает с `CarStatus` на бэкенде. */
 export enum CarStatus {
   AVAILABLE = 1,
   UNAVAILABLE = 2,

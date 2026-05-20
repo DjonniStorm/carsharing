@@ -17,6 +17,15 @@ const tariffPriceField = z
       });
       return z.NEVER;
     }
+    if (numericValue > FIELD_LIMITS.TARIFF_PRICE_MAX) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: translate(LANG_KEYS.pages.tariffsCreatePricesMax, {
+          max: FIELD_LIMITS.TARIFF_PRICE_MAX,
+        }),
+      });
+      return z.NEVER;
+    }
     return Math.round(numericValue * 100) / 100;
   });
 

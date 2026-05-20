@@ -1,7 +1,3 @@
-/**
- * Единый словарь UI (ru). Ключи совпадают с путями i18next: `brand.name`, `nav.overview`, …
- * Схемы Zod читают тексты из того же объекта (`ru.validation.*`), без дублирования строк.
- */
 export const ru = {
   brand: {
     name: "Каршеринг",
@@ -142,7 +138,7 @@ export const ru = {
     carsAddErrorFallback: "Ошибка запроса",
     carsAddValidateRequired: "Заполните поле",
     carsAddValidateMileage: "Пробег не может быть отрицательным",
-    carsAddValidateFuel: "От 0 до 100",
+    carsAddValidateFuel: "От 1 до 100",
     carsAddValidateMaxLen: "Не более {{max}} символов",
     carsAddCreatedIdLabel: "Идентификатор записи",
     carsAddDone: "Закрыть",
@@ -515,6 +511,7 @@ export const ru = {
     tariffsCreateNameMaxLength:
       "Длина названия не может быть более 1000 символов",
     tariffsCreatePricesInvalid: "Цены должны быть числами не ниже нуля.",
+    tariffsCreatePricesMax: "Каждая цена не может превышать {{max}}.",
     tariffsCreateSuccess: "Тариф создан",
     tariffsEditLoading: "Загрузка тарифа…",
     tariffsEditNotFound: "Тариф не найден",

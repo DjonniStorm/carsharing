@@ -9,10 +9,6 @@ import type {
 
 import { NOTIFICATION_CLIENT } from './notification.tokens';
 
-/**
- * Фасад над {@link NotificationClient} для доменных модулей (auth, violation и т.д.).
- * Дальше: флаги окружения для «режима разработки» без реальной отправки — в этом сервисе или рядом.
- */
 @Injectable()
 export class NotificationService {
   constructor(

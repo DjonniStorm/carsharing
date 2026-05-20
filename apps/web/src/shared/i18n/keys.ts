@@ -1,7 +1,3 @@
-/**
- * Стабильные ключи фраз (совпадают с путями в объектах {@link ru} / {@link en}).
- * В компонентах удобнее `t(LANG_KEYS.shell.logout)`; вне React — {@link translate}.
- */
 export const LANG_KEYS = {
   brand: {
     name: "brand.name",
@@ -511,6 +507,7 @@ export const LANG_KEYS = {
     tariffsCreateNameRequired: "pages.tariffsCreateNameRequired",
     tariffsCreateNameMaxLength: "pages.tariffsCreateNameMaxLength",
     tariffsCreatePricesInvalid: "pages.tariffsCreatePricesInvalid",
+    tariffsCreatePricesMax: "pages.tariffsCreatePricesMax",
     tariffsCreateSuccess: "pages.tariffsCreateSuccess",
     tariffsEditLoading: "pages.tariffsEditLoading",
     tariffsEditNotFound: "pages.tariffsEditNotFound",

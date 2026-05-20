@@ -26,6 +26,7 @@ import {
   TripHistoryRead,
   TripHistoryShortInfoRead,
 } from '../entities/dtos/trip.history.read';
+import { parseDateQuery } from 'src/shared/query/parse-date-query';
 import { TripService } from '../services/trip.service';
 
 @Controller('trip-history')
@@ -232,21 +233,6 @@ function parseOptionalNonNegativeInt(
     throw new BadRequestException(`${field} must be a non-negative integer`);
   }
   return n;
-}
-
-/** Как `TripController`: пустая строка → undefined. */
-function parseDateQuery(
-  raw: string | undefined,
-  field: string,
-): Date | undefined {
-  if (raw == null || raw.trim() === '') {
-    return undefined;
-  }
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) {
-    throw new BadRequestException(`${field} must be a valid date`);
-  }
-  return parsed;
 }
 
 function assertDateRangeOrder(

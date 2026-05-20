@@ -1,3 +1,4 @@
+import type { CarStatus } from "@/entities/car/model/car-status";
 import type { TripStatus } from "@/entities/trip";
 
 export type TripMetricsUpdatedPayload = {
@@ -29,5 +30,13 @@ export type TripFinishedPayload = {
   chargedMinutes: number | null;
   chargedKm: number | null;
   priceTotal: number | null;
+  ts: string;
+};
+
+export type CarStateChangedPayload = {
+  carId: string;
+  carStatus: CarStatus;
+  isAvailable: boolean;
+  fuelLevel?: number;
   ts: string;
 };

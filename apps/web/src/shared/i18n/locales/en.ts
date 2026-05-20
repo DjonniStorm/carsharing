@@ -1,4 +1,3 @@
-/** UI copy (en). Keys mirror {@link ru} for i18next paths: `brand.name`, … */
 export const en = {
   brand: {
     name: "Carsharing",
@@ -137,7 +136,7 @@ export const en = {
     carsAddErrorFallback: "Request failed",
     carsAddValidateRequired: "Required field",
     carsAddValidateMileage: "Mileage cannot be negative",
-    carsAddValidateFuel: "Must be between 0 and 100",
+    carsAddValidateFuel: "Must be between 1 and 100",
     carsAddValidateMaxLen: "At most {{max}} characters",
     carsAddCreatedIdLabel: "Record id",
     carsAddDone: "Close",
@@ -505,6 +504,7 @@ export const en = {
     tariffsCreateCancel: "Back to list",
     tariffsCreateNameRequired: "Enter a preset name.",
     tariffsCreateNameMaxLength: "Tariff name must be less than 1000 characters",
+    tariffsCreatePricesMax: "Each price must not exceed {{max}}.",
     tariffsCreatePricesInvalid:
       "Prices must be numbers greater than or equal to zero.",
     tariffsCreateSuccess: "Preset created",
