@@ -38,6 +38,9 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Build shared validation package
+        run: pnpm -F @carsharing/validation build
+
       - name: Build web
         env:
           # Project Pages: https://<owner>.github.io/<repo>/

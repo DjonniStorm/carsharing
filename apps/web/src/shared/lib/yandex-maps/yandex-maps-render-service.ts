@@ -291,13 +291,13 @@ export function createOverlayMarkersController(
   options?: OverlayMarkersControllerOptions,
 ): OverlayMarkersController {
   const ymaps3 = window.ymaps3;
-  const Marker = ymaps3?.YMapMarker;
-  if (!ymaps3 || !Marker) {
+  if (!ymaps3?.YMapMarker) {
     return {
       setMarkers: () => {},
       destroy: () => {},
     };
   }
+  const MarkerCtor = ymaps3.YMapMarker;
 
   const byId = new Map<string, ManagedMarker>();
   let anonymous: ManagedMarker[] = [];
@@ -321,7 +321,7 @@ export function createOverlayMarkersController(
       };
       el.addEventListener("click", markerClickHandler);
     }
-    const instance = new Marker({ coordinates: m.coordinates }, el);
+    const instance = new MarkerCtor({ coordinates: m.coordinates }, el);
     map.addChild(instance);
     return {
       marker: instance,
