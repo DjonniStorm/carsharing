@@ -1,0 +1,13 @@
+services:
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_YANDEX_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY}
+    image: carsharing-web:latest
+    container_name: carsharing-web
+    restart: unless-stopped
+    ports:
+      - '80:80'
