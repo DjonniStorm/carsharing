@@ -30,8 +30,9 @@ server {
 
     client_max_body_size 20m;
 
-    location /trip/ {
-        proxy_pass http://backend:3000/trip/;
+    # Socket.IO: handshake/transport идёт на /socket.io/ (namespace /trip — внутри payload).
+    location /socket.io/ {
+        proxy_pass http://backend:3000/socket.io/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
