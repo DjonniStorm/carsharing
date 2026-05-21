@@ -1,3 +1,6 @@
+# Локальная сборка/проверка образа web (без edge proxy).
+# Prod: deploy/docker-compose.prod.yml
+
 services:
   web:
     build:
@@ -6,8 +9,9 @@ services:
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
         VITE_YANDEX_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY}
+        VITE_OPEN_MANAGER_SELF_REGISTER: ${VITE_OPEN_MANAGER_SELF_REGISTER:-true}
     image: carsharing-web:latest
     container_name: carsharing-web
     restart: unless-stopped
     ports:
-      - '80:80'
+      - '8080:80'

@@ -1,0 +1,499 @@
+﻿
+
+===== D:\dev_default\uni\cousework\carsharing\deploy\.env.prod.example =====
+
+# cp deploy/.env.prod.example deploy/.env.prod
+# РћРґРёРЅ С„Р°Р№Р» РЅР° VPS: compose + backend + build web. РќРµ РєРѕРјРјРёС‚РёС‚СЊ .env.prod.
+
+# --- Р”РѕРјРµРЅ / TLS ---
+DOMAIN=carsharing-coursework.duckdns.org
+CERTBOT_EMAIL=you@example.com
+
+# --- Web build (Vite) ---
+VITE_API_BASE_URL=https://carsharing-coursework.duckdns.org
+VITE_YANDEX_MAPS_API_KEY=
+VITE_OPEN_MANAGER_SELF_REGISTER=true
+
+# --- Postgres ---
+POSTGRES_USER=carsharing
+POSTGRES_PASSWORD=change-me-strong
+POSTGRES_DB=carsharing
+POSTGRES_PUBLISH_PORT=5432
+
+# --- Backend: JWT ---
+AUTH_TOKEN_SECRET=change-me-long-random
+JWT_SECRET=change-me-long-random
+JWT_EXPIRES_IN=1d
+AUTH_TOKEN_EXPIRES_IN=1d
+
+# --- Backend: СЂРµРіРёСЃС‚СЂР°С†РёСЏ ---
+# false + SMTP РЅРёР¶Рµ = РїРёСЃСЊРјРѕ СЃ РєРѕРґРѕРј verify-email
+# true = JWT СЃСЂР°Р·Сѓ, SMTP РЅРµ РѕР±СЏР·Р°С‚РµР»РµРЅ
+AUTH_SKIP_VERIFICATION=false
+OPEN_MANAGER_SELF_REGISTER=true
+
+# --- Backend: telemetry device API ---
+TELEMETRY_DEVICE_KEY=change-me-telemetry-key
+TELEMETRY_PERIOD_SEC=5
+
+# --- Backend: SMTP (РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ РґР»СЏ РїРёСЃРµРј, РµСЃР»Рё AUTH_SKIP_VERIFICATION=false) ---
+NOTIFICATION_EMAIL_HOST=smtp.yandex.ru
+NOTIFICATION_EMAIL_PORT=587
+NOTIFICATION_EMAIL_SECURE=false
+NOTIFICATION_EMAIL_USER=your@yandex.ru
+NOTIFICATION_EMAIL_PASSWORD=app-password-from-yandex
+NOTIFICATION_EMAIL_FROM=CarSharing Service <your@yandex.ru>
+
+# --- Backend: РЅР°СЂСѓС€РµРЅРёСЏ (РѕРїС†РёРѕРЅР°Р»СЊРЅРѕ, РµСЃС‚СЊ РґРµС„РѕР»С‚С‹) ---
+# VIOLATION_SPEED_LIMIT_KMH=90
+# VIOLATION_LOW_FUEL_THRESHOLD=15
+# VIOLATION_DEDUP_WINDOW_SEC=60
+
+# --- Monitoring ---
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=change-me-grafana
+GRAFANA_ROOT_URL=http://YOUR_VPS_IP:3001
+GRAFANA_PUBLISH_PORT=3001
+PROMETHEUS_PUBLISH_PORT=9090
+
+
+
+===== D:\dev_default\uni\cousework\carsharing\deploy\docker-compose.prod.yml =====
+
+# Prod-СЃС‚РµРє: РѕРґРёРЅ env вЂ” deploy/.env.prod (compose --env-file + env_file backend).
+#   cp deploy/.env.prod.example deploy/.env.prod
+#   ./deploy/scripts/init-letsencrypt.sh
+
+name: carsharing-prod
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: carsharing-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-carsharing}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-carsharing}
+      POSTGRES_DB: ${POSTGRES_DB:-carsharing}
+    ports:
+      - '${POSTGRES_PUBLISH_PORT:-5432}:5432'
+    volumes:
+      - carsharing_pg_data:/var/lib/postgresql/data
+    networks: [carsharing]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER:-carsharing}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ..
+      dockerfile: apps/backend/Dockerfile
+    container_name: carsharing-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env.prod
+    environment:
+      # РџРµСЂРµРєСЂС‹РІР°РµС‚ DATABASE_URL РёР· .env.prod (С‚Р°Рј localhost РґР»СЏ Р»РѕРєР°Р»СЊРЅРѕР№ dev)
+      DATABASE_URL: postgresql://${POSTGRES_USER:-carsharing}:${POSTGRES_PASSWORD:-carsharing}@postgres:5432/${POSTGRES_DB:-carsharing}?schema=public
+    expose:
+      - '3000'
+    networks: [carsharing]
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?}
+        VITE_YANDEX_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY:-}
+        VITE_OPEN_MANAGER_SELF_REGISTER: ${VITE_OPEN_MANAGER_SELF_REGISTER:-false}
+    image: carsharing-web:latest
+    container_name: carsharing-web
+    restart: unless-stopped
+    expose:
+      - '80'
+    networks: [carsharing]
+
+  # Edge HTTPS. Р—Р°РїСѓСЃРєР°С‚СЊ РїРѕСЃР»Рµ init-letsencrypt.sh (РЅСѓР¶РЅС‹ СЃРµСЂС‚РёС„РёРєР°С‚С‹ РІ certbot_etc).
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: carsharing-proxy
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      DOMAIN: ${DOMAIN:?}
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - certbot_etc:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    depends_on:
+      - web
+      - backend
+    networks: [carsharing]
+
+  # РўРѕР»СЊРєРѕ renew (РєР°Р¶РґС‹Рµ 12h). РџРµСЂРІС‹Р№ РІС‹РїСѓСЃРє вЂ” deploy/scripts/init-letsencrypt.sh
+  certbot:
+    image: certbot/certbot:latest
+    container_name: carsharing-certbot
+    volumes:
+      - certbot_etc:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: /bin/sh -c
+    command: >
+      "trap exit TERM;
+      while :; do
+        certbot renew --quiet;
+        sleep 12h & wait $${!};
+      done"
+    networks: [carsharing]
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: carsharing-prometheus
+    restart: unless-stopped
+    ports:
+      - '${PROMETHEUS_PUBLISH_PORT:-9090}:9090'
+    volumes:
+      - ../apps/backend/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - carsharing_prom_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=7d'
+      - '--storage.tsdb.retention.size=512MB'
+    networks: [carsharing]
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    container_name: carsharing-grafana
+    restart: unless-stopped
+    ports:
+      - '${GRAFANA_PUBLISH_PORT:-3001}:3000'
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_DEFAULT_THEME: dark
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3001}
+    volumes:
+      - ../apps/backend/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../apps/backend/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - carsharing_grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks: [carsharing]
+
+volumes:
+  carsharing_pg_data:
+  carsharing_prom_data:
+  carsharing_grafana_data:
+  certbot_etc:
+  certbot_www:
+
+networks:
+  carsharing:
+    name: carsharing
+
+
+
+===== D:\dev_default\uni\cousework\carsharing\deploy\nginx\bootstrap-acme.conf =====
+
+# Р’СЂРµРјРµРЅРЅС‹Р№ nginx С‚РѕР»СЊРєРѕ РґР»СЏ certbot webroot (init-letsencrypt.sh)
+server {
+    listen 80;
+    server_name _;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 404;
+    }
+}
+
+
+
+===== D:\dev_default\uni\cousework\carsharing\deploy\nginx\templates\default.conf.template =====
+
+# Edge reverse proxy. ${DOMAIN} РїРѕРґСЃС‚Р°РІР»СЏРµС‚СЃСЏ С‡РµСЂРµР· envsubst (РѕР±СЂР°Р· nginx:alpine).
+# РЎРµСЂС‚РёС„РёРєР°С‚С‹: /etc/letsencrypt/live/${DOMAIN}/ вЂ” СЃРј. deploy/scripts/init-letsencrypt.sh
+
+# Socket.IO/WS: Connection: upgrade С‚РѕР»СЊРєРѕ РєРѕРіРґР° РєР»РёРµРЅС‚ СЂРµР°Р»СЊРЅРѕ С€Р»С‘С‚ Upgrade.
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen 80;
+    server_name ${DOMAIN};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    client_max_body_size 20m;
+
+    location /trip/ {
+        proxy_pass http://backend:3000/trip/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+    }
+
+    location ~ ^/(auth|cars|trips|trip-history|geozones|users|tariffs|violations|notifications|telemetry)(/|$) {
+        proxy_pass http://backend:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api {
+        proxy_pass http://backend:3000/api;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://web:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+
+
+===== D:\dev_default\uni\cousework\carsharing\deploy\README.md =====
+
+# Prod-РґРµРїР»РѕР№ (DuckDNS + HTTPS)
+
+## РћРґРёРЅ env РЅР° VPS
+
+```bash
+cp deploy/.env.prod.example deploy/.env.prod
+# Р·Р°РїРѕР»РЅРёС‚СЊ SMTP, СЃРµРєСЂРµС‚С‹, РїР°СЂРѕР»Рё, РєР»СЋС‡ РЇРЅРґРµРєСЃ.РљР°СЂС‚
+```
+
+[deploy/.env.prod](.env.prod) РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ Рё РґР»СЏ `docker compose --env-file`, Рё РєР°Рє `env_file` Сѓ backend (JWT, SMTP, telemetry, вЂ¦). Р›РѕРєР°Р»СЊРЅР°СЏ СЂР°Р·СЂР°Р±РѕС‚РєР° вЂ” РѕС‚РґРµР»СЊРЅРѕ [apps/backend/.env.example](../apps/backend/.env.example), РЅР° СЃРµСЂРІРµСЂ РЅРµ РЅСѓР¶РµРЅ.
+
+## Р§С‚Рѕ РЅР°СЂСѓР¶Сѓ
+
+| РџРѕСЂС‚ | РЎРµСЂРІРёСЃ | Р—Р°С‡РµРј | РћС‚РєСЂС‹РІР°С‚СЊ РІ firewall VPS |
+|------|--------|-------|---------------------------|
+| 80   | edge nginx | redirect в†’ 443 + ACME challenge | РґР° |
+| 443  | edge nginx | SPA + API + WebSocket `/trip/` | РґР° |
+| 5432 | postgres | DBeaver СЃ РЅРѕСѓС‚Р±СѓРєР° | РґР° (РґР»СЏ РґРµРјРѕ) |
+| 3001 | grafana  | РґР°С€Р±РѕСЂРґС‹ | РґР° (РґР»СЏ РґРµРјРѕ) |
+| 9090 | prometheus | (РѕРїС†РёРѕРЅР°Р»СЊРЅРѕ) | РјРѕР¶РЅРѕ РЅРµ РѕС‚РєСЂС‹РІР°С‚СЊ |
+
+UFW-РїСЂРёРјРµСЂ:
+
+```bash
+sudo ufw allow 22/tcp
+sudo ufw allow 80,443/tcp
+sudo ufw allow 5432/tcp
+sudo ufw allow 3001/tcp
+sudo ufw enable
+```
+
+## РџРѕС‡С‚Р° РЅР° prod
+
+Р РµРіРёСЃС‚СЂР°С†РёСЏ СЃ verify-email СЂР°Р±РѕС‚Р°РµС‚ **С‚РѕР»СЊРєРѕ РµСЃР»Рё** РІ `.env.prod` Р·Р°РїРѕР»РЅРµРЅС‹ `NOTIFICATION_EMAIL_HOST/USER/PASSWORD/FROM` Рё `AUTH_SKIP_VERIFICATION=false`.
+
+Р‘РµР· SMTP вЂ” РїРѕСЃС‚Р°РІСЊ `AUTH_SKIP_VERIFICATION=true`: JWT СЃСЂР°Р·Сѓ РїРѕСЃР»Рµ СЂРµРіРёСЃС‚СЂР°С†РёРё, РїРёСЃСЊРјР° РЅРµ С€Р»С‘Рј.
+
+## РЇРЅРґРµРєСЃ.РљР°СЂС‚С‹
+
+Р’ РєР°Р±РёРЅРµС‚Рµ developer.tech.yandex.ru Сѓ JS API РєР»СЋС‡Р° РІ Referer РѕСЃС‚Р°РІРёС‚СЊ:
+
+- `https://carsharing-coursework.duckdns.org/*` (РёР»Рё С‚РІРѕР№ DOMAIN)
+- `http://localhost:*/*` (РґР»СЏ Р»РѕРєР°Р»СЊРЅРѕР№ СЂР°Р·СЂР°Р±РѕС‚РєРё)
+
+Р”Р»СЏ РґРµРјРѕ Р±РµР· РґРѕРјРµРЅР° РїРѕР»Рµ Referer РјРѕР¶РЅРѕ РѕСЃС‚Р°РІРёС‚СЊ РїСѓСЃС‚С‹Рј.
+
+## Telemetry СЃ РЅРѕСѓС‚Р±СѓРєР°
+
+Р’ `apps/telemetry/.env` (РёР»Рё env РїСЂРё Р·Р°РїСѓСЃРєРµ):
+
+```
+BACKEND_URL=https://carsharing-coursework.duckdns.org
+TELEMETRY_DEVICE_KEY=<С‚Р°РєРѕР№ Р¶Рµ, РєР°Рє РІ deploy/.env.prod>
+```
+
+WS-РєР°РЅР°Р» С‚РµР»РµРјРµС‚СЂРёСЏ РЅРµ РѕС‚РєСЂС‹РІР°РµС‚ вЂ” С‚РѕР»СЊРєРѕ REST `/telemetry/*`, С‡РµСЂРµР· edge nginx в†’ backend.
+
+## DBeaver
+
+РҐРѕСЃС‚ = IP VPS, РїРѕСЂС‚ = `POSTGRES_PUBLISH_PORT` (`5432`), user/password/db вЂ” РёР· `POSTGRES_USER/PASSWORD/DB`.
+
+## РџРµСЂРІС‹Р№ Р·Р°РїСѓСЃРє
+
+```bash
+chmod +x deploy/scripts/init-letsencrypt.sh
+./deploy/scripts/init-letsencrypt.sh
+```
+
+РЎРєСЂРёРїС‚ СЃР°Рј:
+
+1. РџСЂРѕРІРµСЂСЏРµС‚, С‡С‚Рѕ DOMAIN СЂРµР·РѕР»РІРёС‚СЃСЏ РІ IP VPS (DuckDNS РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РѕР±РЅРѕРІР»С‘РЅ Р·Р°СЂР°РЅРµРµ).
+2. Р•СЃР»Рё СЃРµСЂС‚РёС„РёРєР°С‚Р° РµС‰С‘ РЅРµС‚ вЂ” РїРѕРґРЅРёРјР°РµС‚ РІСЂРµРјРµРЅРЅС‹Р№ nginx РЅР° :80, certbot РІС‹РїСѓСЃРєР°РµС‚ cert С‡РµСЂРµР· webroot.
+3. Р—Р°РїСѓСЃРєР°РµС‚ РїРѕР»РЅС‹Р№ СЃС‚РµРє: `docker compose ... up -d --build` (СЃРѕР±РµСЂС‘С‚ backend + web СЃ РїСЂР°РІРёР»СЊРЅС‹РјРё `VITE_*`).
+
+Р‘РµР· СЃРµСЂС‚РёС„РёРєР°С‚Р° `proxy` РЅРµ СЃС‚Р°СЂС‚СѓРµС‚ вЂ” РѕРЅ СЃРјРѕРЅС‚РёСЂСѓРµС‚ РїСѓСЃС‚РѕР№ `/etc/letsencrypt`.
+
+## РЎР±РѕСЂРєР° РѕР±СЂР°Р·РѕРІ
+
+РћРґРёРЅ `docker build` СЃРѕР±РёСЂР°РµС‚ РІСЃС‘ РЅСѓР¶РЅРѕРµ:
+
+- backend: `@carsharing/notification build` в†’ `@carsharing/validation build` в†’ `prisma generate` в†’ `nest build`
+- web: `@carsharing/validation build` в†’ `vite build` СЃ `VITE_*` РёР· `--env-file deploy/.env.prod`
+
+РџСЂРё СЃРјРµРЅРµ `VITE_*` РІ `.env.prod` РЅСѓР¶РµРЅ `up -d --build`, РёРЅР°С‡Рµ СЃС‚Р°СЂС‹Р№ bundle.
+
+## РћР±РЅРѕРІР»РµРЅРёСЏ
+
+```bash
+docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod up -d --build
+```
+
+## РћР±РЅРѕРІР»РµРЅРёРµ СЃРµСЂС‚РёС„РёРєР°С‚Р°
+
+РЎРµСЂРІРёСЃ `certbot` СЃР°Рј РґРµР»Р°РµС‚ `certbot renew --quiet` РєР°Р¶РґС‹Рµ 12 С‡. РџРѕСЃР»Рµ СЂРµР°Р»СЊРЅРѕРіРѕ РѕР±РЅРѕРІР»РµРЅРёСЏ вЂ” `restart proxy`, С‡С‚РѕР±С‹ nginx РїРѕРґС…РІР°С‚РёР» РЅРѕРІС‹Р№ cert:
+
+```bash
+docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod restart proxy
+```
+
+## РџРµСЂРµРјРµРЅРЅС‹Рµ
+
+РџРѕР»РЅС‹Р№ СЃРїРёСЃРѕРє вЂ” [`.env.prod.example`](.env.prod.example):
+
+| Р“СЂСѓРїРїР° | Р§С‚Рѕ РІ РЅРµР№ |
+|--------|-----------|
+| TLS / РґРѕРјРµРЅ | `DOMAIN`, `CERTBOT_EMAIL` |
+| Web build  | `VITE_API_BASE_URL` (Р±РµР· `/api`), `VITE_YANDEX_MAPS_API_KEY`, `VITE_OPEN_MANAGER_SELF_REGISTER` |
+| Auth       | `JWT_SECRET`, `AUTH_TOKEN_SECRET`, `JWT_EXPIRES_IN`, `AUTH_SKIP_VERIFICATION`, `OPEN_MANAGER_SELF_REGISTER` |
+| РџРѕС‡С‚Р°      | `NOTIFICATION_EMAIL_HOST/PORT/SECURE/USER/PASSWORD/FROM` |
+| Telemetry  | `TELEMETRY_DEVICE_KEY`, `TELEMETRY_PERIOD_SEC` |
+| Violations | `VIOLATION_SPEED_LIMIT_KMH`, `VIOLATION_LOW_FUEL_THRESHOLD`, `VIOLATION_DEDUP_WINDOW_SEC` |
+| Р‘Р”         | `POSTGRES_USER/PASSWORD/DB/PUBLISH_PORT` |
+| Monitoring | `GRAFANA_ADMIN_USER/PASSWORD/PUBLISH_PORT`, `GRAFANA_ROOT_URL`, `PROMETHEUS_PUBLISH_PORT` |
+
+
+
+===== D:\dev_default\uni\cousework\carsharing\deploy\scripts\init-letsencrypt.sh =====
+
+#!/bin/sh
+# РџРµСЂРІС‹Р№ РІС‹РїСѓСЃРє Let's Encrypt РґР»СЏ deploy/docker-compose.prod.yml.
+# Р‘РµР· СЌС‚РѕРіРѕ СЃРєСЂРёРїС‚Р° proxy РЅРµ СЃС‚Р°СЂС‚СѓРµС‚: РЅРµС‚ /etc/letsencrypt/live/$DOMAIN/.
+# Р—Р°РїСѓСЃРє РёР· РєРѕСЂРЅСЏ СЂРµРїРѕ: ./deploy/scripts/init-letsencrypt.sh
+
+set -eu
+
+cd "$(dirname "$0")/../.."
+
+if [ ! -f deploy/.env.prod ]; then
+  echo "РЎРѕР·РґР°Р№С‚Рµ deploy/.env.prod РёР· deploy/.env.prod.example"
+  exit 1
+fi
+
+set -a
+# shellcheck disable=SC1091
+. deploy/.env.prod
+set +a
+
+if [ -z "${DOMAIN:-}" ] || [ -z "${CERTBOT_EMAIL:-}" ]; then
+  echo "Р—Р°РґР°Р№С‚Рµ DOMAIN Рё CERTBOT_EMAIL РІ deploy/.env.prod"
+  exit 1
+fi
+
+COMPOSE="docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod"
+VOLUME_NAME="carsharing-prod_certbot_www"
+
+echo "==> РџСЂРѕРІРµСЂРєР° DNS: ${DOMAIN}..."
+if ! getent hosts "$DOMAIN" >/dev/null 2>&1; then
+  echo "РџСЂРµРґСѓРїСЂРµР¶РґРµРЅРёРµ: РЅРµ СѓРґР°Р»РѕСЃСЊ СЂР°Р·СЂРµС€РёС‚СЊ ${DOMAIN}. РЈР±РµРґРёС‚РµСЃСЊ, С‡С‚Рѕ DuckDNS СѓРєР°Р·С‹РІР°РµС‚ РЅР° IP VPS."
+fi
+
+echo "==> РЎРѕР·РґР°С‘Рј docker network Рё volume certbot (РµСЃР»Рё РµС‰С‘ РЅРµС‚)..."
+docker network inspect carsharing >/dev/null 2>&1 || docker network create carsharing
+docker volume create "$VOLUME_NAME" >/dev/null 2>&1 || true
+
+CERT_EXISTS=0
+if docker run --rm -v carsharing-prod_certbot_etc:/etc/letsencrypt:ro alpine \
+  test -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" 2>/dev/null; then
+  CERT_EXISTS=1
+  echo "==> РЎРµСЂС‚РёС„РёРєР°С‚ РґР»СЏ ${DOMAIN} СѓР¶Рµ РµСЃС‚СЊ вЂ” РїСЂРѕРїСѓСЃРєР°РµРј certonly."
+fi
+
+if [ "$CERT_EXISTS" -eq 0 ]; then
+  echo "==> Р’СЂРµРјРµРЅРЅС‹Р№ nginx РЅР° :80 РґР»СЏ ACME (webroot)..."
+  docker rm -f carsharing-acme-bootstrap 2>/dev/null || true
+  if docker run --rm -d \
+    --name carsharing-acme-bootstrap \
+    --network carsharing \
+    -p 80:80 \
+    -v "$(pwd)/deploy/nginx/bootstrap-acme.conf:/etc/nginx/conf.d/default.conf:ro" \
+    -v "${VOLUME_NAME}:/var/www/certbot" \
+    nginx:1.27-alpine; then
+    :
+  else
+    echo "РћС€РёР±РєР°: РїРѕСЂС‚ 80 Р·Р°РЅСЏС‚ РёР»Рё РЅРµС‚ РїСЂР°РІ. РћСЃРІРѕР±РѕРґРёС‚Рµ :80 (system nginx, СЃС‚Р°СЂС‹Р№ proxy)."
+    exit 1
+  fi
+
+  sleep 2
+
+  echo "==> Р—Р°РїСЂР°С€РёРІР°РµРј СЃРµСЂС‚РёС„РёРєР°С‚ Let's Encrypt РґР»СЏ ${DOMAIN}..."
+  if ! docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod \
+    run --rm --entrypoint certbot certbot certonly \
+    --webroot -w /var/www/certbot \
+    --email "$CERTBOT_EMAIL" \
+    --agree-tos --no-eff-email \
+    -d "$DOMAIN"; then
+    docker stop carsharing-acme-bootstrap >/dev/null 2>&1 || true
+    echo "certbot failed. РџСЂРѕРІРµСЂСЊС‚Рµ: DuckDNS в†’ IP VPS, РїРѕСЂС‚ 80 РѕС‚РєСЂС‹С‚ СЃ РёРЅС‚РµСЂРЅРµС‚Р°, DOMAIN РІРµСЂРЅС‹Р№."
+    exit 1
+  fi
+
+  docker stop carsharing-acme-bootstrap >/dev/null 2>&1 || true
+fi
+
+echo "==> РџРѕРґРЅРёРјР°РµРј РїРѕР»РЅС‹Р№ СЃС‚РµРє (proxy + certbot renew + build)..."
+$COMPOSE up -d --build
+
+echo ""
+echo "Р“РѕС‚РѕРІРѕ: https://${DOMAIN}/"
+echo "РћР±РЅРѕРІР»РµРЅРёРµ СЃРµСЂС‚РёС„РёРєР°С‚Р°: СЃРµСЂРІРёСЃ certbot (renew). РџРѕСЃР»Рµ renew РёРЅРѕРіРґР° РЅСѓР¶РЅРѕ:"
+echo "  docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod restart proxy"
+
