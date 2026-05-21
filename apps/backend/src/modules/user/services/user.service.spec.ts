@@ -384,7 +384,7 @@ describe('UserService', () => {
       vi.mocked(bcrypt.hash).mockResolvedValue('hashed-password' as never);
     });
 
-    it('create: P2002 по email → EmailAlreadyExistsException', async () => {
+    it('create: P2002 по email => EmailAlreadyExistsException', async () => {
       vi.mocked(mockRepo.create).mockRejectedValue(
         prismaKnown(
           'P2002',
@@ -397,7 +397,7 @@ describe('UserService', () => {
       );
     });
 
-    it('create: P2002 по телефону → PhoneAlreadyExistsException', async () => {
+    it('create: P2002 по телефону => PhoneAlreadyExistsException', async () => {
       vi.mocked(mockRepo.create).mockRejectedValue(
         prismaKnown(
           'P2002',
@@ -410,7 +410,7 @@ describe('UserService', () => {
       );
     });
 
-    it('create: P2002 по id → UserAlreadyExistsException', async () => {
+    it('create: P2002 по id => UserAlreadyExistsException', async () => {
       vi.mocked(mockRepo.create).mockRejectedValue(
         prismaKnown('P2002', 'Unique constraint failed on the fields: (`id`)'),
       );
@@ -420,7 +420,7 @@ describe('UserService', () => {
       );
     });
 
-    it('create: P2002 без распознаваемого поля → DatabaseUserErrorException', async () => {
+    it('create: P2002 без распознаваемого поля => DatabaseUserErrorException', async () => {
       vi.mocked(mockRepo.create).mockRejectedValue(
         prismaKnown(
           'P2002',
@@ -433,7 +433,7 @@ describe('UserService', () => {
       );
     });
 
-    it('update: P2025 → UserNotFoundException', async () => {
+    it('update: P2025 => UserNotFoundException', async () => {
       const existing = new UserEntity(
         uuidv4(),
         'Existing User',
@@ -454,7 +454,7 @@ describe('UserService', () => {
       ).rejects.toThrow(UserNotFoundException);
     });
 
-    it('findAll: неизвестный код Prisma → DatabaseUserErrorException', async () => {
+    it('findAll: неизвестный код Prisma => DatabaseUserErrorException', async () => {
       vi.mocked(mockRepo.findAll).mockRejectedValue(
         prismaKnown('P2011', 'Null constraint violation'),
       );
@@ -467,7 +467,7 @@ describe('UserService', () => {
       );
     });
 
-    it('delete: неизвестный код Prisma → DatabaseUserErrorException', async () => {
+    it('delete: неизвестный код Prisma => DatabaseUserErrorException', async () => {
       const existing = new UserEntity(
         uuidv4(),
         'To delete',

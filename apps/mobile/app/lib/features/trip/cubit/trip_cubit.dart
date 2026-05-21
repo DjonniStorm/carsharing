@@ -23,10 +23,10 @@ class TripCubit extends Cubit<TripState> {
     required TripsRepository tripsRepository,
     required GeozonesRepository geozonesRepository,
     required TripRealtimeClient realtime,
-  })  : _trips = tripsRepository,
-        _geozones = geozonesRepository,
-        _realtime = realtime,
-        super(const TripState(zonesInView: []));
+  }) : _trips = tripsRepository,
+       _geozones = geozonesRepository,
+       _realtime = realtime,
+       super(const TripState(zonesInView: []));
 
   static const _metricsUiThrottleMs = 150;
 
@@ -63,7 +63,8 @@ class TripCubit extends Cubit<TripState> {
         maxLat: maxLat,
       );
       final selected = state.selectedZoneId;
-      final stillThere = selected != null &&
+      final stillThere =
+          selected != null &&
           zones.any((z) => z.id == selected && z.kind == GeozoneKind.rental);
       emit(
         state.copyWith(
@@ -74,10 +75,7 @@ class TripCubit extends Cubit<TripState> {
       );
     } on DioException catch (e) {
       emit(
-        state.copyWith(
-          loadingZones: false,
-          errorMessage: dioErrorMessage(e),
-        ),
+        state.copyWith(loadingZones: false, errorMessage: dioErrorMessage(e)),
       );
     } catch (e) {
       emit(state.copyWith(loadingZones: false, errorMessage: e.toString()));
@@ -164,12 +162,7 @@ class TripCubit extends Cubit<TripState> {
         emit(state.copyWith(tripBoundZone: null));
       }
     } on DioException catch (e) {
-      emit(
-        state.copyWith(
-          tripBusy: false,
-          errorMessage: dioErrorMessage(e),
-        ),
-      );
+      emit(state.copyWith(tripBusy: false, errorMessage: dioErrorMessage(e)));
     } catch (e) {
       emit(state.copyWith(tripBusy: false, errorMessage: e.toString()));
     }
@@ -187,20 +180,22 @@ class TripCubit extends Cubit<TripState> {
       emit(state.copyWith(errorMessage: 'trip.error.active_exists'));
       return;
     }
-    emit(state.copyWith(tripBusy: true, errorMessage: null, pendingRetry: null));
+    emit(
+      state.copyWith(tripBusy: true, errorMessage: null, pendingRetry: null),
+    );
     try {
       final plate = car.licensePlate?.trim();
       final display = car.displayName.trim();
       final created = await withNetworkRetry(
         () => _trips.create(
-        userId: userId,
-        carId: car.id,
-        geoZoneVersionId: zone.geoZoneVersionId,
-        status: TripStatusCode.started,
-        startLat: _round6(car.lat),
-        startLng: _round6(car.lon),
-        carPlateSnapshot: plate != null && plate.isNotEmpty ? plate : null,
-        carDisplayNameSnapshot: display.isNotEmpty ? display : null,
+          userId: userId,
+          carId: car.id,
+          geoZoneVersionId: zone.geoZoneVersionId,
+          status: TripStatusCode.started,
+          startLat: _round6(car.lat),
+          startLng: _round6(car.lon),
+          carPlateSnapshot: plate != null && plate.isNotEmpty ? plate : null,
+          carDisplayNameSnapshot: display.isNotEmpty ? display : null,
         ),
       );
       final prevId = state.activeTrip?.id;
@@ -247,7 +242,8 @@ class TripCubit extends Cubit<TripState> {
   Future<void> beginDriving() async {
     final trip = state.activeTrip;
     if (trip == null) return;
-    final allowed = trip.status == TripStatusCode.started ||
+    final allowed =
+        trip.status == TripStatusCode.started ||
         trip.status == TripStatusCode.pending;
     if (!allowed) return;
     await _patchActive({'status': TripStatusCode.active});
@@ -262,7 +258,7 @@ class TripCubit extends Cubit<TripState> {
     });
   }
 
-  /// PAUSED → ACTIVE; `totalPausedSec` нужен бэкенду для pricing pause.
+  /// PAUSED => ACTIVE; `totalPausedSec` нужен бэкенду для pricing pause.
   Future<void> resumeTrip() async {
     final trip = state.activeTrip;
     if (trip == null || trip.status != TripStatusCode.paused) return;
@@ -287,7 +283,9 @@ class TripCubit extends Cubit<TripState> {
         trip.status == TripStatusCode.cancelled) {
       return;
     }
-    emit(state.copyWith(tripBusy: true, errorMessage: null, pendingRetry: null));
+    emit(
+      state.copyWith(tripBusy: true, errorMessage: null, pendingRetry: null),
+    );
     try {
       await withNetworkRetry(
         () => _trips.patch(trip.id, {'status': TripStatusCode.cancelled}),
@@ -312,13 +310,12 @@ class TripCubit extends Cubit<TripState> {
     }
   }
 
-  Future<void> finishTrip({
-    double? finishLat,
-    double? finishLng,
-  }) async {
+  Future<void> finishTrip({double? finishLat, double? finishLng}) async {
     final trip = state.activeTrip;
     if (trip == null || !trip.isOngoing) return;
-    emit(state.copyWith(tripBusy: true, errorMessage: null, pendingRetry: null));
+    emit(
+      state.copyWith(tripBusy: true, errorMessage: null, pendingRetry: null),
+    );
     try {
       // Billing-поля не отправляем — пересчёт на сервере (sync при FINISHED).
       final body = <String, dynamic>{
@@ -327,7 +324,9 @@ class TripCubit extends Cubit<TripState> {
         if (finishLat != null) 'finishLat': _round6(finishLat),
         if (finishLng != null) 'finishLng': _round6(finishLng),
       };
-      final finished = await withNetworkRetry(() => _trips.patch(trip.id, body));
+      final finished = await withNetworkRetry(
+        () => _trips.patch(trip.id, body),
+      );
       final prevId = trip.id;
       _lastMetricsUiMsByTrip.remove(prevId);
       emit(
@@ -356,7 +355,9 @@ class TripCubit extends Cubit<TripState> {
   Future<void> _patchActive(Map<String, dynamic> body) async {
     final trip = state.activeTrip;
     if (trip == null) return;
-    emit(state.copyWith(tripBusy: true, errorMessage: null, pendingRetry: null));
+    emit(
+      state.copyWith(tripBusy: true, errorMessage: null, pendingRetry: null),
+    );
     try {
       final updated = await withNetworkRetry(() => _trips.patch(trip.id, body));
       emit(
@@ -452,7 +453,9 @@ class TripCubit extends Cubit<TripState> {
     final parsed = parseTripMetricsUpdated(e);
     if (parsed == null) return;
 
-    final merged = (state.liveMetrics ?? const LiveTripMetrics()).mergePatch(parsed);
+    final merged = (state.liveMetrics ?? const LiveTripMetrics()).mergePatch(
+      parsed,
+    );
     final trip = state.activeTrip;
     emit(
       state.copyWith(
@@ -508,12 +511,7 @@ class TripCubit extends Cubit<TripState> {
 
   void _clearActiveTrip(String id) {
     _lastMetricsUiMsByTrip.remove(id);
-    emit(
-      state.copyWith(
-        activeTrip: null,
-        liveMetrics: null,
-      ),
-    );
+    emit(state.copyWith(activeTrip: null, liveMetrics: null));
     _syncSubscription(id, null);
   }
 
@@ -522,11 +520,7 @@ class TripCubit extends Cubit<TripState> {
       final t = await _trips.getById(id);
       if (!t.isOngoing) {
         if (state.finishSummary == null) {
-          emit(
-            state.copyWith(
-              finishSummary: TripFinishSummary.fromTrip(t),
-            ),
-          );
+          emit(state.copyWith(finishSummary: TripFinishSummary.fromTrip(t)));
         }
         _clearActiveTrip(id);
       } else {

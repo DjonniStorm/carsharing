@@ -5,7 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 
-/// Рисует chip с текстом (номер авто) → возвращает PNG-байты для BitmapDescriptor.
+/// Рисует chip с текстом (номер авто) => возвращает PNG-байты для BitmapDescriptor.
 Future<Uint8List> renderCarChipBytes(
   String text, {
   required bool selected,
@@ -89,10 +89,7 @@ Future<Uint8List> renderCarChipBytes(
   canvas.drawPath(tipPath, bgPaint);
   canvas.drawPath(tipPath, edgePaint);
 
-  tp.paint(
-    canvas,
-    Offset((width - tp.width) / 2, padV + 0.5),
-  );
+  tp.paint(canvas, Offset((width - tp.width) / 2, padV + 0.5));
 
   final picture = recorder.endRecording();
   final image = await picture.toImage(w, h);
@@ -113,8 +110,7 @@ class CarChipIconCache {
     required bool selected,
     required bool muted,
     required bool mine,
-  }) =>
-      '${plate}_${mine ? 'i' : ''}${selected ? 's' : ''}${muted ? 'm' : ''}';
+  }) => '${plate}_${mine ? 'i' : ''}${selected ? 's' : ''}${muted ? 'm' : ''}';
 
   BitmapDescriptor? get(
     String plate, {

@@ -144,7 +144,7 @@
     "faq_zone_q": "How do I pick a zone and see the tariff?",
     "faq_zone_a": "On the map enable «Rental zones», tap the zone you need — the bottom panel shows the name and rates (₽/min, ₽/km, pause). Then choose an available car inside the zone.",
     "faq_start_q": "How do I start and finish a trip?",
-    "faq_start_a": "Select a zone → car → confirm start. After booking tap «Start driving». To finish use «Finish» on the active trip panel. History is in your profile.",
+    "faq_start_a": "Select a zone => car => confirm start. After booking tap «Start driving». To finish use «Finish» on the active trip panel. History is in your profile.",
     "faq_network_q": "I lost internet during a trip",
     "faq_network_a": "A warning appears at the top. Wait for connectivity and tap «Retry» on the error message. The server recalculates the price after a successful finish.",
     "faq_contact_q": "I need an operator",

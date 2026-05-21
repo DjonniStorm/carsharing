@@ -60,7 +60,7 @@ describe('calculateTripPricing', () => {
         },
       }),
     );
-    // elapsed 15m, pause 2m stored + 10m active = 12m pause → 3m driving
+    // elapsed 15m, pause 2m stored + 10m active = 12m pause => 3m driving
     expect(result.chargedMinutes).toBe(3);
     expect(result.pricePause).toBe(12);
     expect(result.priceTime).toBe(6);

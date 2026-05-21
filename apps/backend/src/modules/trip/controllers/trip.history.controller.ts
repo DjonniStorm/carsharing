@@ -203,7 +203,7 @@ function resolveHistoryUserId(
   return queryUserId != null && queryUserId !== '' ? queryUserId : user.id;
 }
 
-/** Пустая строка / пробелы → undefined; иначе проверка UUID до SQL (`::uuid`). */
+/** Пустая строка / пробелы => undefined; иначе проверка UUID до SQL (`::uuid`). */
 function normalizeOptionalQueryUuid(
   raw: string | undefined,
   field: string,

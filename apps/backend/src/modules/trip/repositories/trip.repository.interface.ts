@@ -65,7 +65,7 @@ export interface ITripRepository {
   create(input: TripRepositoryCreateInput): Promise<TripEntity>;
 
   /**
-   * Атомарно: lock car → проверка ongoing → create trip → car IN_USE.
+   * Атомарно: lock car => проверка ongoing => create trip => car IN_USE.
    * @throws TripCarAlreadyInUseException
    */
   createStartingTripWithCarLock(

@@ -223,7 +223,7 @@ export class TripService implements ITripService {
         input.totalPausedSec !== undefined;
 
       /**
-       * Финиш поездки → проверка PARKING-геозоны асинхронно в `ViolationBackgroundWorker`.
+       * Финиш поездки => проверка PARKING-геозоны асинхронно в `ViolationBackgroundWorker`.
        *
        * Пример PATCH:
        * `{ "status": 4, "finishLat": 55.75, "finishLng": 37.61, "finishedAt": "..." }`
