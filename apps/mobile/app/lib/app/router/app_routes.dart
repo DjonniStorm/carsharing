@@ -8,6 +8,13 @@ class AppRoutes {
   static const settings = '/settings';
   static const trips = '/trips';
 
+  static String verifyAccount({
+    required String email,
+    required String phone,
+  }) {
+    return '$verifyEmail?email=${Uri.encodeComponent(email)}&phone=${Uri.encodeComponent(phone)}';
+  }
+
   static String tripHistoryDetail(String tripId) => '$trips/$tripId';
 }
 

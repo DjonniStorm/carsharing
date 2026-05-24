@@ -11,7 +11,7 @@ import {
 } from "@mantine/core";
 import { wrap } from "@reatom/core";
 import { useAction } from "@reatom/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { FIELD_LIMITS } from "@carsharing/validation";
@@ -44,22 +44,27 @@ const SendViolationNoticeModal = ({
   onSent,
 }: Props) => {
   const { t } = useTranslation();
+  const [snapshotViolations, setSnapshotViolations] = useState<ViolationRead[]>(
+    [],
+  );
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const prevOpenedRef = useRef(false);
 
   useEffect(() => {
-    if (!opened) {
-      return;
+    if (opened && !prevOpenedRef.current) {
+      const init: Record<string, boolean> = {};
+      for (const v of violations) {
+        init[v.id] = true;
+      }
+      setSnapshotViolations([...violations]);
+      setSelected(init);
+      setSubject("");
+      setMessage("");
     }
-    const init: Record<string, boolean> = {};
-    for (const v of violations) {
-      init[v.id] = true;
-    }
-    setSelected(init);
-    setSubject("");
-    setMessage("");
+    prevOpenedRef.current = opened;
   }, [opened, violations]);
 
   const selectedIds = useMemo(() => {
@@ -142,7 +147,7 @@ const SendViolationNoticeModal = ({
         </Text>
         <ScrollArea.Autosize mah={280} type="auto">
           <Stack gap="xs">
-            {violations.map((v) => (
+            {snapshotViolations.map((v) => (
               <Checkbox
                 key={v.id}
                 label={

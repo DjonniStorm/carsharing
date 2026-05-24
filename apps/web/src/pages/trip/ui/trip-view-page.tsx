@@ -18,6 +18,7 @@ const tripMapApiKey = getYandexMapsApiKey();
 const TripViewPage = () => {
   const { t } = useTranslation();
   const {
+    trip,
     shownTrip,
     car,
     violations,
@@ -51,10 +52,11 @@ const TripViewPage = () => {
           <Alert color="red" title={t(LANG_KEYS.pages.tripDetailLoadError)}>
             {errorMessage}
           </Alert>
-        ) : shownTrip && car ? (
+        ) : trip && car ? (
           <>
             <TripViewTripDetailsSection
-              trip={shownTrip}
+              trip={trip}
+              liveTrip={shownTrip ?? trip}
               t={t}
               userById={userById}
             />
@@ -64,17 +66,15 @@ const TripViewPage = () => {
               canSendViolationNotice={canSendViolationNotice}
               onNotifyDriver={openViolationNotice}
             />
-            {violations.length > 0 ? (
-              <SendViolationNoticeModal
-                opened={noticeOpened}
-                onClose={closeViolationNotice}
-                tripId={shownTrip.id}
-                violations={violations}
-                onSent={() => {
-                  void loadEmailNotices();
-                }}
-              />
-            ) : null}
+            <SendViolationNoticeModal
+              opened={noticeOpened}
+              onClose={closeViolationNotice}
+              tripId={trip.id}
+              violations={violations}
+              onSent={() => {
+                void loadEmailNotices();
+              }}
+            />
             <TripViewRouteMapSection
               apiKey={tripMapApiKey}
               points={routePoints}

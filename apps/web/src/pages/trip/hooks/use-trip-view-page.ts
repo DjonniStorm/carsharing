@@ -48,6 +48,7 @@ export function useTripViewPage() {
 
   return {
     tripId: load.tripId,
+    trip: load.trip,
     shownTrip,
     car: load.car,
     violations: load.violations,
