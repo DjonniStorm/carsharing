@@ -1,6 +1,7 @@
 import { createRouter } from "@tanstack/react-router";
 
 import {
+  dashboardCarReturnToServiceRoute,
   dashboardCarsRoute,
   dashboardGeozonesEditRoute,
   dashboardGeozonesNewRoute,
@@ -32,6 +33,7 @@ const routeTree = rootRoute.addChildren([
     dashboardHomeRoute,
     dashboardProfileRoute,
     dashboardCarsRoute,
+    dashboardCarReturnToServiceRoute,
     dashboardTripsRoute,
     dashboardTripViewRoute,
     dashboardUsersListRoute,

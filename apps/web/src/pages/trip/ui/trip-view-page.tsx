@@ -1,8 +1,11 @@
-import { Alert, Container, Group, Loader, Stack } from "@mantine/core";
+import { Alert, Button, Container, Group, Loader, Stack } from "@mantine/core";
+import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 import { SendViolationNoticeModal } from "@/features/manager-violation-notice/ui/send-violation-notice-modal";
+import { isCarEligibleForReturnWizard } from "@/features/cars/lib/car-return-to-service-present";
 import { getYandexMapsApiKey } from "@/shared/config/env";
+import { ROUTES } from "@/shared/config/routes-paths";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 
 import { useTripViewPage } from "@/pages/trip/hooks/use-trip-view-page";
@@ -60,6 +63,24 @@ const TripViewPage = () => {
               t={t}
               userById={userById}
             />
+            {isCarEligibleForReturnWizard(car) ? (
+              <Alert
+                color="orange"
+                title={t(LANG_KEYS.pages.tripDetailCarReturnBannerTitle)}
+              >
+                <Stack gap="sm">
+                  <span>{t(LANG_KEYS.pages.tripDetailCarReturnBannerBody)}</span>
+                  <Link
+                    to={ROUTES.dashboard.carReturnToService(car.id)}
+                    style={{ textDecoration: "none", alignSelf: "flex-start" }}
+                  >
+                    <Button component="span" size="xs" color="teal">
+                      {t(LANG_KEYS.pages.carsReturnToServiceButton)}
+                    </Button>
+                  </Link>
+                </Stack>
+              </Alert>
+            ) : null}
             <TripViewCarSection car={car} />
             <TripViewViolationsSection
               violations={violations}

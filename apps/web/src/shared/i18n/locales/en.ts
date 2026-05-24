@@ -166,6 +166,47 @@ export const en = {
     carsStatusOutOfService: "Do not rent",
     carsStatusCreated: "Created",
     carsStatusUnknown: "Unknown",
+    carsReturnToServiceButton: "Return to service",
+    carReturnToServiceTitle: "Return vehicle to service",
+    carReturnToServiceIntro:
+      "Review the blocking reason, confirm the vehicle is ready, and return it to the fleet.",
+    carReturnToServiceStepDiagnosis: "Diagnosis",
+    carReturnToServiceStepChecklist: "Checklist",
+    carReturnToServiceStepConfirm: "Confirmation",
+    carReturnToServiceBlockingViolations: "Blocking violations",
+    carReturnToServiceNoBlockingViolations:
+      "No open blocking violations on the last trip. On finish, the system checks whether the vehicle is inside any parking zone.",
+    carReturnToServiceViolationsHint:
+      "Resolve is optional — confirm readiness on the next step. Violations for reference:",
+    carReturnToServiceFixViolation: "Fix violation",
+    carReturnToServiceOpenTrip: "Trip details",
+    carReturnToServiceCheckParking:
+      "Parking location verified / vehicle is inside the rental zone",
+    carReturnToServiceCheckFuel: "Fuel level is sufficient for the next trip",
+    carReturnToServiceCheckVehicle:
+      "No critical damage to the body or interior",
+    carReturnToServiceCheckDriverContact:
+      "Contacted the driver / situation clarified (optional)",
+    carReturnToServiceManagerComment: "Manager comment",
+    carReturnToServiceManagerCommentHint: "At least {{min}} characters",
+    carReturnToServiceConfirmReady:
+      "I confirm the vehicle is ready for new trips",
+    carReturnToServiceCurrentStatus: "Current status",
+    carReturnToServiceCancel: "Cancel",
+    carReturnToServiceBack: "Back",
+    carReturnToServiceNext: "Next",
+    carReturnToServiceSubmit: "Return to service",
+    carReturnToServiceSuccessTitle: "Vehicle returned to service",
+    carReturnToServiceSuccessBody:
+      "{{plate}} is available for new trips again.",
+    carReturnToServiceAlreadyAvailable:
+      "{{plate}} is already available — no further action needed.",
+    carReturnToServiceBackToFleet: "Back to fleet",
+    carReturnToServiceBackToMap: "Back to map",
+    carReturnToServiceLoadError: "Failed to load vehicle data",
+    carReturnToServiceAfterResolveTitle: "Violation resolved",
+    carReturnToServiceAfterResolveBody:
+      "The vehicle is still unavailable — complete the return-to-service flow.",
     geozonesTitle: "Geozones",
     geozonesStub: "Geozones placeholder.",
     geozonesLoading: "Loading geozones…",
@@ -293,6 +334,9 @@ export const en = {
     tripsViewAria: "Open trip",
     tripDetailSectionTrip: "Trip",
     tripDetailSectionCar: "Vehicle",
+    tripDetailCarReturnBannerTitle: "Vehicle unavailable for rental",
+    tripDetailCarReturnBannerBody:
+      "After violations are handled, return the vehicle to service through the formal procedure.",
     tripDetailSectionViolations: "Violations",
     tripDetailSectionTelemetry: "Track & telemetry",
     tripDetailSectionExtra: "More",

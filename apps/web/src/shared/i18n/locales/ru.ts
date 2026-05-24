@@ -168,6 +168,48 @@ export const ru = {
     carsStatusOutOfService: "Не выдавать",
     carsStatusCreated: "Создан",
     carsStatusUnknown: "Неизвестно",
+    carsReturnToServiceButton: "Вернуть в строй",
+    carReturnToServiceTitle: "Возврат автомобиля в строй",
+    carReturnToServiceIntro:
+      "Проверьте причину блокировки, подтвердите готовность автомобиля и верните его в аренду.",
+    carReturnToServiceStepDiagnosis: "Диагностика",
+    carReturnToServiceStepChecklist: "Чеклист",
+    carReturnToServiceStepConfirm: "Подтверждение",
+    carReturnToServiceBlockingViolations: "Блокирующие нарушения",
+    carReturnToServiceNoBlockingViolations:
+      "Открытых блокирующих нарушений по последней поездке нет. При финише система проверяет попадание в любую парковочную зону.",
+    carReturnToServiceViolationsHint:
+      "Resolve не обязателен — подтвердите готовность авто на следующем шаге. Нарушения для справки:",
+    carReturnToServiceFixViolation: "Исправить нарушение",
+    carReturnToServiceOpenTrip: "Карточка поездки",
+    carReturnToServiceCheckParking:
+      "Проверил место парковки / автомобиль в зоне аренды",
+    carReturnToServiceCheckFuel:
+      "Уровень топлива достаточен для следующей поездки",
+    carReturnToServiceCheckVehicle:
+      "Кузов и салон без критичных повреждений",
+    carReturnToServiceCheckDriverContact:
+      "Связался с водителем / ситуация прояснена (необязательно)",
+    carReturnToServiceManagerComment: "Комментарий менеджера",
+    carReturnToServiceManagerCommentHint: "Минимум {{min}} символов",
+    carReturnToServiceConfirmReady:
+      "Подтверждаю, что автомобиль готов к новым поездкам",
+    carReturnToServiceCurrentStatus: "Текущий статус",
+    carReturnToServiceCancel: "Отмена",
+    carReturnToServiceBack: "Назад",
+    carReturnToServiceNext: "Далее",
+    carReturnToServiceSubmit: "Вернуть в строй",
+    carReturnToServiceSuccessTitle: "Автомобиль возвращён в строй",
+    carReturnToServiceSuccessBody:
+      "{{plate}} снова доступен для новых поездок.",
+    carReturnToServiceAlreadyAvailable:
+      "{{plate}} уже доступен — дополнительных действий не требуется.",
+    carReturnToServiceBackToFleet: "В парк",
+    carReturnToServiceBackToMap: "На карту",
+    carReturnToServiceLoadError: "Не удалось загрузить данные автомобиля",
+    carReturnToServiceAfterResolveTitle: "Нарушение закрыто",
+    carReturnToServiceAfterResolveBody:
+      "Автомобиль всё ещё недоступен — завершите возврат в строй.",
     geozonesTitle: "Геозоны",
     geozonesStub: "Заготовка работы с геозонами.",
     geozonesLoading: "Загрузка геозон…",
@@ -295,6 +337,9 @@ export const ru = {
     tripsViewAria: "Открыть поездку",
     tripDetailSectionTrip: "Поездка",
     tripDetailSectionCar: "Автомобиль",
+    tripDetailCarReturnBannerTitle: "Автомобиль недоступен для аренды",
+    tripDetailCarReturnBannerBody:
+      "После устранения нарушений верните машину в строй через формальную процедуру.",
     tripDetailSectionViolations: "Нарушения",
     tripDetailSectionTelemetry: "Трек и телеметрия",
     tripDetailSectionExtra: "Дополнительно",

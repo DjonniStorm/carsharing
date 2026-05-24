@@ -10,7 +10,11 @@ import {
 } from "@mantine/core";
 import type { ReactNode } from "react";
 
+import { Link } from "@tanstack/react-router";
+
 import type { CarRead } from "@/entities/car";
+import { isCarEligibleForReturnWizard } from "@/features/cars/lib/car-return-to-service-present";
+import { ROUTES } from "@/shared/config/routes-paths";
 import {
   carStatusBadgeColor,
   carStatusLangKey,
@@ -109,6 +113,16 @@ const CarGridCard = ({ car, t, onEdit }: Props) => {
               >
                 {t(LANG_KEYS.pages.carsEditButton)}
               </Button>
+            ) : null}
+            {isCarEligibleForReturnWizard(car) ? (
+              <Link
+                to={ROUTES.dashboard.carReturnToService(car.id)}
+                style={{ textDecoration: "none" }}
+              >
+                <Button component="span" size="compact-xs" color="teal">
+                  {t(LANG_KEYS.pages.carsReturnToServiceButton)}
+                </Button>
+              </Link>
             ) : null}
             <Badge color={carStatusBadgeColor(car.carStatus)} variant="light">
               {statusLabel}

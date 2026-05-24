@@ -5,7 +5,9 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ViolationStatus } from "@/entities/violation";
+import { isCarEligibleForReturnWizard } from "@/features/cars/lib/car-return-to-service-present";
 import { violationsApi } from "@/features/violations/api";
+import { tripHistoryApi } from "@/features/trips/api";
 import type { ViolationEditLoadPhase } from "@/features/violations/model/violation-edit-view";
 import { loadViolationsAdminList } from "@/features/violations/model/violations-state";
 import { resolveApiErrorMessage } from "@/shared/api";
@@ -14,6 +16,7 @@ import { LANG_KEYS } from "@/shared/i18n/keys";
 
 type Args = {
   violationId: string;
+  tripId: string;
   phase: ViolationEditLoadPhase;
   persistedStatus: ViolationStatus | null;
   setPersistedStatus: (status: ViolationStatus) => void;
@@ -23,6 +26,7 @@ type Args = {
 
 export function useViolationEditMutations({
   violationId,
+  tripId,
   phase,
   persistedStatus,
   setPersistedStatus,
@@ -92,6 +96,27 @@ export function useViolationEditMutations({
         color: "green",
       });
       void reloadList({ includeResolved: true });
+
+      if (tripId.trim()) {
+        try {
+          const full = await tripHistoryApi.getFull(tripId);
+          const car = full.car;
+          if (car && isCarEligibleForReturnWizard(car)) {
+            notifications.show({
+              title: t(LANG_KEYS.pages.carReturnToServiceAfterResolveTitle),
+              message: t(LANG_KEYS.pages.carReturnToServiceAfterResolveBody),
+              color: "yellow",
+            });
+            void navigate({
+              to: ROUTES.dashboard.carReturnToService(car.id),
+            });
+            return;
+          }
+        } catch {
+          // fallback to violations list
+        }
+      }
+
       void navigate({ to: ROUTES.dashboard.violations });
     } catch (error) {
       setFormError(resolveApiErrorMessage(error));
@@ -105,6 +130,7 @@ export function useViolationEditMutations({
     setPersistedStatus,
     setStatusChoice,
     t,
+    tripId,
     violationId,
   ]);
 
