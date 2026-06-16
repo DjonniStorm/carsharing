@@ -1,8 +1,13 @@
+import { FIELD_LIMITS } from "@carsharing/validation";
+
 import type { CarRead } from "@/entities/car";
 import { CarStatus } from "@/entities/car";
 import { ViolationStatus } from "@/entities/violation";
 
-const MANAGER_COMMENT_MIN_LEN = 20;
+const MANAGER_COMMENT_MIN_LEN =
+  FIELD_LIMITS.CAR_RETURN_TO_SERVICE_COMMENT_MIN;
+const MANAGER_COMMENT_MAX_LEN =
+  FIELD_LIMITS.CAR_RETURN_TO_SERVICE_COMMENT_MAX;
 
 export function isCarEligibleForReturnWizard(car: CarRead): boolean {
   return (
@@ -24,7 +29,8 @@ export function isBlockingOpenViolation(type: ViolationStatus): boolean {
 }
 
 export function isManagerCommentValid(comment: string): boolean {
-  return comment.trim().length >= MANAGER_COMMENT_MIN_LEN;
+  const length = comment.trim().length;
+  return length >= MANAGER_COMMENT_MIN_LEN && length <= MANAGER_COMMENT_MAX_LEN;
 }
 
-export { MANAGER_COMMENT_MIN_LEN };
+export { MANAGER_COMMENT_MAX_LEN, MANAGER_COMMENT_MIN_LEN };

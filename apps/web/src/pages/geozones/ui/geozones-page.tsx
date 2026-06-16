@@ -44,6 +44,7 @@ const GeozonesPage = () => {
     query: nameQuery,
     setQuery: setNameQuery,
     debouncedQuery: debouncedName,
+    maxLength: searchMaxLength,
   } = useDebouncedSearch();
   const [typeFilter, setTypeFilter] = useState<GeozoneType[]>([]);
 
@@ -147,6 +148,7 @@ const GeozonesPage = () => {
               <TextInput
                 style={{ flex: "1 1 220px", minWidth: 200 }}
                 placeholder={t(LANG_KEYS.pages.geozonesSearchPlaceholder)}
+                maxLength={searchMaxLength}
                 value={nameQuery}
                 onChange={(event) => {
                   setNameQuery(event.currentTarget.value);

@@ -20,7 +20,10 @@ import { useTranslation } from "react-i18next";
 import {
   carStatusLangKey,
 } from "@/features/cars/lib/car-status-present";
-import { MANAGER_COMMENT_MIN_LEN } from "@/features/cars/lib/car-return-to-service-present";
+import {
+  MANAGER_COMMENT_MAX_LEN,
+  MANAGER_COMMENT_MIN_LEN,
+} from "@/features/cars/lib/car-return-to-service-present";
 import { ViolationStatus } from "@/entities/violation";
 import {
   violationStatusLangKey,
@@ -256,9 +259,11 @@ const CarReturnToServicePage = () => {
                   label={t(LANG_KEYS.pages.carReturnToServiceManagerComment)}
                   description={t(LANG_KEYS.pages.carReturnToServiceManagerCommentHint, {
                     min: MANAGER_COMMENT_MIN_LEN,
+                    max: MANAGER_COMMENT_MAX_LEN,
                   })}
                   value={vm.comment}
                   onChange={(e) => vm.setComment(e.currentTarget.value)}
+                  maxLength={MANAGER_COMMENT_MAX_LEN}
                   autosize
                   minRows={4}
                   required

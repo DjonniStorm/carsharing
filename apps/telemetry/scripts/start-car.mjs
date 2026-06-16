@@ -130,7 +130,7 @@ const dockerArgs = [
   '-e',
   `ROUTING_PROFILE=${process.env.ROUTING_PROFILE || 'driving'}`,
   '-e',
-  `IDLE_TELEMETRY_INTERVAL_SEC=${process.env.IDLE_TELEMETRY_INTERVAL_SEC || '60'}`,
+  `IDLE_TELEMETRY_INTERVAL_SEC=${process.env.IDLE_TELEMETRY_INTERVAL_SEC || '10'}`,
   '-e',
   `ACTIVE_TELEMETRY_INTERVAL_SEC=${process.env.ACTIVE_TELEMETRY_INTERVAL_SEC || '10'}`,
   '-e',

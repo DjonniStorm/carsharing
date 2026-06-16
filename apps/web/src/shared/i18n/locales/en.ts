@@ -188,7 +188,8 @@ export const en = {
     carReturnToServiceCheckDriverContact:
       "Contacted the driver / situation clarified (optional)",
     carReturnToServiceManagerComment: "Manager comment",
-    carReturnToServiceManagerCommentHint: "At least {{min}} characters",
+    carReturnToServiceManagerCommentHint:
+      "Between {{min}} and {{max}} characters",
     carReturnToServiceConfirmReady:
       "I confirm the vehicle is ready for new trips",
     carReturnToServiceCurrentStatus: "Current status",

@@ -5,7 +5,6 @@ import {
   Select,
   Stack,
   Text,
-  Textarea,
   TextInput,
   Title,
 } from "@mantine/core";
@@ -36,8 +35,6 @@ type Props = {
   tariffPresetId: string | null;
   onTariffPresetChange: (value: string | null) => void;
   selectedTariffPreset: TariffRead | null;
-  rulesJson: string;
-  onRulesJsonChange: (value: string) => void;
   submitting: boolean;
   onSave: () => void;
   saveLabel?: string;
@@ -56,8 +53,6 @@ export function GeozoneEditForm({
   tariffPresetId,
   onTariffPresetChange,
   selectedTariffPreset,
-  rulesJson,
-  onRulesJsonChange,
   submitting,
   onSave,
   saveLabel,
@@ -134,16 +129,6 @@ export function GeozoneEditForm({
           </Text>
         </Stack>
       ) : null}
-      <Textarea
-        label={t(LANG_KEYS.pages.geozonesCreateRulesOptional)}
-        placeholder={t(LANG_KEYS.pages.geozonesCreateRulesPlaceholder)}
-        value={rulesJson}
-        onChange={(e) => onRulesJsonChange(e.currentTarget.value)}
-        minLength={FIELD_LIMITS.NON_EMPTY_STRING_MIN}
-        maxLength={FIELD_LIMITS.GEOZONE_RULES_JSON_MAX}
-        autosize
-        minRows={2}
-      />
       <Button onClick={onSave} loading={submitting} disabled={submitDisabled}>
         {submitText}
       </Button>

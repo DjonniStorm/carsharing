@@ -57,7 +57,12 @@ const UsersListPage = () => {
   const [error] = useAtom(usersListErrorAtom);
   const load = useAction(loadUsersList);
 
-  const { query, setQuery, debouncedQuery } = useDebouncedSearch();
+  const {
+    query,
+    setQuery,
+    debouncedQuery,
+    maxLength: searchMaxLength,
+  } = useDebouncedSearch();
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<UsersStatusFilter>("all");
 
@@ -136,6 +141,7 @@ const UsersListPage = () => {
           <TextInput
             label={t(LANG_KEYS.pages.usersListSearchLabel)}
             placeholder={t(LANG_KEYS.pages.usersListSearchPlaceholder)}
+            maxLength={searchMaxLength}
             value={query}
             onChange={(e) => {
               setQuery(e.currentTarget.value);

@@ -133,7 +133,7 @@ const DashboardPage = () => {
               style={{
                 position: "absolute",
                 left: OVERLAY_EDGE_PX,
-                bottom: OVERLAY_EDGE_PX,
+                top: OVERLAY_EDGE_PX,
                 zIndex: 2,
                 pointerEvents: "auto",
                 maxWidth: 280,

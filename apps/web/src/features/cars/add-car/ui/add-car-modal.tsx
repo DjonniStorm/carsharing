@@ -19,6 +19,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { useTranslation } from "react-i18next";
 
+import { FIELD_LIMITS } from "@carsharing/validation";
+
 import { addCarFormSchema, type AddCarFormOutput } from "@/entities/car";
 
 import { carsApi } from "@/features/cars/api";
@@ -132,6 +134,7 @@ const AddCarModal = ({ opened, onClose, onCreated }: AddCarModalProps) => {
                 withAsterisk
                 label={t(LANG_KEYS.pages.carsAddFieldBrand)}
                 key={form.key("brand")}
+                maxLength={FIELD_LIMITS.CAR_STRING_MAX}
                 placeholder="Toyota"
                 {...form.getInputProps("brand")}
               />
@@ -142,6 +145,7 @@ const AddCarModal = ({ opened, onClose, onCreated }: AddCarModalProps) => {
                 withAsterisk
                 label={t(LANG_KEYS.pages.carsAddFieldModel)}
                 key={form.key("model")}
+                maxLength={FIELD_LIMITS.CAR_STRING_MAX}
                 placeholder="Camry"
                 {...form.getInputProps("model")}
               />
@@ -152,6 +156,7 @@ const AddCarModal = ({ opened, onClose, onCreated }: AddCarModalProps) => {
                 withAsterisk
                 label={t(LANG_KEYS.pages.carsAddFieldPlate)}
                 key={form.key("licensePlate")}
+                maxLength={FIELD_LIMITS.CAR_STRING_MAX}
                 placeholder="A000AA777"
                 {...form.getInputProps("licensePlate")}
               />
@@ -162,6 +167,7 @@ const AddCarModal = ({ opened, onClose, onCreated }: AddCarModalProps) => {
                 withAsterisk
                 label={t(LANG_KEYS.pages.carsAddFieldColor)}
                 key={form.key("color")}
+                maxLength={FIELD_LIMITS.CAR_STRING_MAX}
                 placeholder="Red"
                 {...form.getInputProps("color")}
               />

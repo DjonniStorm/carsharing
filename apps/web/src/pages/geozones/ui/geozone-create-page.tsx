@@ -100,8 +100,6 @@ const GeozoneCreatePage = () => {
             tariffPresetId={tariffs.tariffPresetId}
             onTariffPresetChange={tariffs.onTariffPresetChange}
             selectedTariffPreset={tariffs.selectedTariffPreset}
-            rulesJson={form.rulesJson}
-            onRulesJsonChange={form.setRulesJson}
             submitting={submit.submitting}
             submitDisabled={!submit.user?.id}
             saveLabel={t(LANG_KEYS.pages.geozonesCreateSubmit)}

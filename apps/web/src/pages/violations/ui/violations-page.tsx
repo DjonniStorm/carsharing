@@ -47,6 +47,7 @@ const ViolationsPage = () => {
     query: searchQuery,
     setQuery: setSearchQuery,
     debouncedQuery: debouncedSearch,
+    maxLength: searchMaxLength,
   } = useDebouncedSearch();
   const [typeFilter, setTypeFilter] = useState<ViolationStatus[]>([]);
 
@@ -141,6 +142,7 @@ const ViolationsPage = () => {
               <TextInput
                 style={{ flex: "1 1 220px", minWidth: 200 }}
                 placeholder={t(LANG_KEYS.pages.violationsSearchPlaceholder)}
+                maxLength={searchMaxLength}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.currentTarget.value);

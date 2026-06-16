@@ -121,8 +121,6 @@ const GeozoneEditPage = () => {
             tariffPresetId={vm.tariffPresetId}
             onTariffPresetChange={vm.onTariffPresetChange}
             selectedTariffPreset={vm.selectedTariffPreset}
-            rulesJson={vm.rulesJson}
-            onRulesJsonChange={vm.setRulesJson}
             submitting={vm.submitting}
             onSave={() => void vm.handleSave()}
           />

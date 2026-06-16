@@ -191,7 +191,8 @@ export const ru = {
     carReturnToServiceCheckDriverContact:
       "Связался с водителем / ситуация прояснена (необязательно)",
     carReturnToServiceManagerComment: "Комментарий менеджера",
-    carReturnToServiceManagerCommentHint: "Минимум {{min}} символов",
+    carReturnToServiceManagerCommentHint:
+      "От {{min}} до {{max}} символов",
     carReturnToServiceConfirmReady:
       "Подтверждаю, что автомобиль готов к новым поездкам",
     carReturnToServiceCurrentStatus: "Текущий статус",
