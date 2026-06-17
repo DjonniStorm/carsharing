@@ -13,6 +13,10 @@ import type { useGeozoneFormFields } from "@/features/geozones/hooks/use-geozone
 import type { useGeozoneMapDraw } from "@/features/geozones/hooks/use-geozone-map-draw";
 import type { useGeozoneTariffPresets } from "@/features/geozones/hooks/use-geozone-tariff-presets";
 import {
+  GEOZONE_PARKING_ZERO_PRICING,
+  isParkingGeozone,
+} from "@/features/geozones/lib/geozone-pricing";
+import {
   firstGeozoneFormErrorMessage,
   parseGeozoneMetaForm,
   parseGeozoneTariffPresetId,
@@ -90,12 +94,16 @@ export function useGeozoneEditSave({
         ? JSON.stringify(rulesParsed.value ?? null)
         : "__invalid__";
 
+      const parkingZone = isParkingGeozone(type);
       const presetCurrent = tariffPresetId ?? null;
       const presetInitial = initialVersion.tariffPresetId ?? null;
+      const pricingDirty = parkingZone
+        ? initialMeta?.type !== type || presetInitial !== null
+        : presetCurrent !== presetInitial;
 
       versionDirty =
         ringJson !== initialVersion.ringJson ||
-        presetCurrent !== presetInitial ||
+        pricingDirty ||
         rulesNorm !== initialVersion.rulesJson;
     }
 
@@ -138,7 +146,9 @@ export function useGeozoneEditSave({
       }
     }
 
-    if (versionDirty) {
+    const parkingZone = isParkingGeozone(type);
+
+    if (versionDirty && !parkingZone) {
       const presetParsed = parseGeozoneTariffPresetId(tariffPresetId);
       if (!presetParsed.success) {
         setFormError(firstGeozoneFormErrorMessage(presetParsed));
@@ -185,15 +195,19 @@ export function useGeozoneEditSave({
         if (!rulesParsed.ok || !closedRing) {
           return;
         }
-        const presetParsed = parseGeozoneTariffPresetId(tariffPresetId);
-        if (!presetParsed.success) {
-          return;
-        }
         const pub: GeozoneVersionCreateBody = {
           geometry: ringToMultiPolygon(closedRing),
           rules: rulesParsed.value ?? null,
-          tariffPresetId: presetParsed.data,
         };
+        if (parkingZone) {
+          Object.assign(pub, GEOZONE_PARKING_ZERO_PRICING);
+        } else {
+          const presetParsed = parseGeozoneTariffPresetId(tariffPresetId);
+          if (!presetParsed.success) {
+            return;
+          }
+          pub.tariffPresetId = presetParsed.data;
+        }
         await geozonesApi.publishVersion(geozoneId, pub);
       }
 

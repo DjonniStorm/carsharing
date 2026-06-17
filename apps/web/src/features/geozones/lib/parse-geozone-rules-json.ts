@@ -7,7 +7,7 @@ export type ParsedGeozoneRules =
   | { ok: true; value: Record<string, unknown> | null }
   | { ok: false; message?: string };
 
-/** Разбор textarea «правила версии»: пусто → null; иначе объект JSON. */
+/** Разбор textarea «правила версии»: пусто => null; иначе объект JSON. */
 export function parseGeozoneRulesJson(raw: string): ParsedGeozoneRules {
   const trimmed = raw.trim();
   if (trimmed.length > FIELD_LIMITS.GEOZONE_RULES_JSON_MAX) {

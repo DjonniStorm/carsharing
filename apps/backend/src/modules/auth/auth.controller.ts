@@ -13,6 +13,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiTags,
+  ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
@@ -25,6 +26,10 @@ import { LoginResponseDto } from './dto/login-response.dto';
 import { PatchMeDto } from './dto/patch-me.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RegisterResponseDto } from './dto/register-response.dto';
+import { FirebaseRecaptchaParamsResponseDto } from './dto/firebase-recaptcha-params-response.dto';
+import { SendVerificationCodeDto } from './dto/send-verification-code.dto';
+import { SendVerificationCodeResponseDto } from './dto/send-verification-code-response.dto';
+import { VerifyAccountDto } from './dto/verify-account.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import type { AuthenticatedUser } from './types/authenticated-user';
 
@@ -77,9 +82,8 @@ export class AuthController {
   @ApiOperation({
     summary: 'Публичная регистрация',
     description:
-      'Роль по умолчанию DRIVER; при OPEN_MANAGER_SELF_REGISTER=true можно передать MANAGER или DRIVER. SYSTEM_ADMIN недоступен. ' +
-      'Если AUTH_SKIP_VERIFICATION=true — как раньше: сразу активная учётная запись и JWT. ' +
-      'Иначе создаётся неактивная запись, на email уходит код подтверждения (нужен SMTP в NOTIFICATION_EMAIL_*); JWT после подтверждения кода (отдельный эндпоинт позже).',
+      'Роль по умолчанию DRIVER; при OPEN_MANAGER_SELF_REGISTER=true можно передать MANAGER или DRIVER. ' +
+      'Если AUTH_SKIP_VERIFICATION=true — сразу JWT. Иначе isActive=false; код отправляется через POST /auth/send-verification-code.',
   })
   @ApiResponse({ status: 201, type: RegisterResponseDto })
   @ApiConflictResponse({
@@ -89,14 +93,54 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
+  @Get('firebase-recaptcha-params')
+  @Public()
+  @ApiOperation({
+    summary: 'Параметры reCAPTCHA для SMS (Firebase Phone Auth)',
+    description:
+      'Возвращает recaptchaSiteKey для виджета на mobile-клиенте перед POST /auth/send-verification-code с channel=sms.',
+  })
+  @ApiResponse({ status: 200, type: FirebaseRecaptchaParamsResponseDto })
+  async getFirebaseRecaptchaParams(): Promise<FirebaseRecaptchaParamsResponseDto> {
+    return this.authService.getFirebaseRecaptchaParams();
+  }
+
+  @Post('send-verification-code')
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  @ApiOperation({
+    summary: 'Отправить код подтверждения регистрации',
+    description:
+      'Канал email (SMTP) или sms (Firebase Phone Auth + recaptchaToken). Пользователь должен существовать и быть неактивным (isActive=false).',
+  })
+  @ApiResponse({ status: 200, type: SendVerificationCodeResponseDto })
+  @ApiTooManyRequestsResponse({ description: 'Повторный запрос раньше чем через 60 сек' })
+  async sendVerificationCode(
+    @Body() dto: SendVerificationCodeDto,
+  ): Promise<SendVerificationCodeResponseDto> {
+    return this.authService.sendVerificationCode(dto);
+  }
+
+  @Post('verify-account')
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  @ApiOperation({
+    summary: 'Подтвердить регистрацию по коду',
+    description:
+      'Email-код (bcrypt) или SMS-код (Firebase). При успехе isActive=true и JWT.',
+  })
+  @ApiResponse({ status: 200, type: LoginResponseDto })
+  @ApiResponse({ status: 400, description: 'Неверный или просроченный код' })
+  async verifyAccount(@Body() dto: VerifyAccountDto): Promise<LoginResponseDto> {
+    return this.authService.verifyAccount(dto);
+  }
+
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
   @Public()
   @ApiOperation({
-    summary: 'Подтвердить email после регистрации',
-    description:
-      'Передаётся email и 6-значный код из письма. При успехе учётная запись активируется (isActive), выдаётся JWT. ' +
-      'Код держится только в памяти сервера до перезапуска.',
+    summary: 'Подтвердить email (alias verify-account)',
+    description: 'Обратная совместимость с mobile-клиентом.',
   })
   @ApiResponse({ status: 200, type: LoginResponseDto })
   @ApiResponse({ status: 400, description: 'Неверный или просроченный код' })

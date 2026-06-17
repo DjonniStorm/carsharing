@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../domain/auth_result.dart';
+import '../domain/verification_channel.dart';
 import 'auth_api.dart';
 
 class AuthRepository {
@@ -14,13 +15,20 @@ class AuthRepository {
   }) async {
     final data = await _api.login(login: login, password: password);
     final token = (data['access_token'] as String?)?.trim();
-    if (token == null || token.isEmpty) {
-      throw DioException(
-        requestOptions: RequestOptions(path: '/auth/login'),
-        message: 'Empty access_token',
+    if (token != null && token.isNotEmpty) {
+      return AuthSuccess(token);
+    }
+    if (data['requiresVerification'] == true) {
+      return AuthRequiresVerification(
+        email: (data['email'] as String?)?.trim() ?? '',
+        phone: (data['phone'] as String?)?.trim() ?? '',
+        message: (data['message'] as String?)?.trim() ?? '',
       );
     }
-    return AuthSuccess(token);
+    throw DioException(
+      requestOptions: RequestOptions(path: '/auth/login'),
+      message: 'Unexpected login response',
+    );
   }
 
   Future<AuthResult> register({
@@ -39,10 +47,10 @@ class AuthRepository {
     if (token != null && token.isNotEmpty) {
       return AuthSuccess(token);
     }
-    final requires = data['requiresVerification'] == true;
-    if (requires) {
+    if (data['requiresVerification'] == true) {
       return AuthRequiresVerification(
-        email: email,
+        email: (data['email'] as String?)?.trim() ?? email,
+        phone: (data['phone'] as String?)?.trim() ?? phone,
         message: (data['message'] as String?)?.trim() ?? '',
       );
     }
@@ -52,19 +60,55 @@ class AuthRepository {
     );
   }
 
-  Future<AuthResult> verifyEmail({
+  Future<String> fetchFirebaseRecaptchaSiteKey() async {
+    final data = await _api.getFirebaseRecaptchaParams();
+    final siteKey = (data['recaptchaSiteKey'] as String?)?.trim();
+    if (siteKey == null || siteKey.isEmpty) {
+      throw DioException(
+        requestOptions: RequestOptions(path: '/auth/firebase-recaptcha-params'),
+        message: 'Empty recaptchaSiteKey',
+      );
+    }
+    return siteKey;
+  }
+
+  Future<SendVerificationCodeResult> sendVerificationCode({
+    required String email,
+    required VerificationChannel channel,
+    String? recaptchaToken,
+  }) async {
+    final data = await _api.sendVerificationCode(
+      email: email,
+      channel: channel.apiValue,
+      recaptchaToken: recaptchaToken,
+    );
+    final sentChannel = VerificationChannel.fromApiValue(
+      (data['channel'] as String?)?.trim(),
+    );
+    if (sentChannel == null) {
+      throw DioException(
+        requestOptions: RequestOptions(path: '/auth/send-verification-code'),
+        message: 'Unexpected send-verification-code response',
+      );
+    }
+    return SendVerificationCodeResult(
+      channel: sentChannel,
+      message: (data['message'] as String?)?.trim() ?? '',
+    );
+  }
+
+  Future<AuthResult> verifyAccount({
     required String email,
     required String code,
   }) async {
-    final data = await _api.verifyEmail(email: email, code: code);
+    final data = await _api.verifyAccount(email: email, code: code);
     final token = (data['access_token'] as String?)?.trim();
     if (token == null || token.isEmpty) {
       throw DioException(
-        requestOptions: RequestOptions(path: '/auth/verify-email'),
+        requestOptions: RequestOptions(path: '/auth/verify-account'),
         message: 'Empty access_token',
       );
     }
     return AuthSuccess(token);
   }
 }
-

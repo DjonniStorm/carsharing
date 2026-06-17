@@ -135,7 +135,7 @@ model TariffPreset {
 }
 
 /// Поездка. `status` — числовые значения `TripStatus` в коде. `distance` / `duration` — совместимость со старым API (например км / ч); детализация — `distanceMeters`, биллинг — `charged*`, `price*`.
-/// Ставки для расчёта — только из **версии геозоны** (`geoZoneVersionId` → `geo_zone_version`).
+/// Ставки для расчёта — только из **версии геозоны** (`geoZoneVersionId` => `geo_zone_version`).
 model Trip {
   id         String    @id @default(uuid()) @db.Uuid()
   startedAt  DateTime  @map("start_time")

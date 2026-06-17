@@ -312,7 +312,7 @@ export class TripRepository implements ITripRepository {
 
   /**
    * Числа для LIMIT/OFFSET подставляем как литералы: иначе Prisma может передавать
-   * параметры как numeric и Postgres отвечает «LIMIT must be integer» → 500.
+   * параметры как numeric и Postgres отвечает «LIMIT must be integer» => 500.
    */
   private paginationSql(limit: number, offset: number): Prisma.Sql {
     if (

@@ -1,6 +1,8 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useAction, useAtom } from "@reatom/react";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
+
+import type { ViolationRead } from "@/entities/violation";
 
 import {
   loadTripGeozoneForMap,
@@ -17,6 +19,8 @@ import {
   resetTripViewPageExtras,
 } from "@/features/trips/model/trip-view-page-state";
 import { ROUTES } from "@/shared/config/routes-paths";
+
+const EMPTY_VIOLATIONS: ViolationRead[] = [];
 
 export function useTripViewLoad() {
   const navigate = useNavigate();
@@ -45,7 +49,9 @@ export function useTripViewLoad() {
       resetView();
       resetExtras();
     };
-  }, [tripId, loadFull, loadEmailNotices, resetView, resetExtras]);
+    // Reatom actions are stable; reload only when tripId changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- tripId-only load lifecycle
+  }, [tripId]);
 
   const versionId = data?.trip?.geoZoneVersionId;
   useEffect(() => {
@@ -73,7 +79,7 @@ export function useTripViewLoad() {
 
   const trip = data?.trip;
   const car = data?.car;
-  const violations = data?.violations ?? [];
+  const violations = data?.violations ?? EMPTY_VIOLATIONS;
   const routePoints = data?.points ?? [];
   const loading = status === "loading" && !data;
   const errorMessage =
@@ -81,6 +87,15 @@ export function useTripViewLoad() {
       ? errorState.message
       : null;
   const tripMapZoneLoading = tripGeozoneStatus === "loading";
+
+  const reloadFull = useCallback(
+    () => loadFull(tripId),
+    [tripId, loadFull],
+  );
+  const reloadEmailNotices = useCallback(
+    () => loadEmailNotices(tripId),
+    [tripId, loadEmailNotices],
+  );
 
   return {
     tripId,
@@ -92,7 +107,7 @@ export function useTripViewLoad() {
     loading,
     errorMessage,
     tripMapZoneLoading,
-    reloadFull: () => loadFull(tripId),
-    reloadEmailNotices: () => loadEmailNotices(tripId),
+    reloadFull,
+    reloadEmailNotices,
   };
 }

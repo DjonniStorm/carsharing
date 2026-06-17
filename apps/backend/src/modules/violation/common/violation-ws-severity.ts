@@ -4,7 +4,7 @@ import { ViolationStatus } from '../entities/violation.status';
 /**
  * Грубая шкала серьёзности для live-панели (до появления отдельного поля в БД).
  *
- * Пример: SPEEDING / OUT_OF_GEOZONE → high, WRONG_PARKING → medium, LOW_FUEL → low.
+ * Пример: SPEEDING / OUT_OF_GEOZONE => high, WRONG_PARKING => medium, LOW_FUEL => low.
  */
 export function violationSeverityForWs(
   type: ViolationStatus,

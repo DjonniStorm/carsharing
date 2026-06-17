@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   UnauthorizedException,
@@ -11,6 +13,7 @@ import * as bcrypt from 'bcryptjs';
 
 import { getNotificationConfig } from 'src/shared/notification/notification.config';
 import { NotificationService } from 'src/shared/notification/notification.service';
+import { Throttle } from 'src/shared/throttle/throttle';
 import { EMAIL_REGEX } from 'src/shared/regexp/email';
 import {
   EmailAlreadyExistsException,
@@ -26,27 +29,28 @@ import type { UserEntity } from 'src/modules/user/entities/user.entity';
 import { isOpenManagerSelfRegisterEnabled } from './open-manager-register.config';
 import type { JwtPayload } from './types/jwt-payload';
 import type { LoginDto } from './dto/login.dto';
+import type { LoginResponseDto } from './dto/login-response.dto';
 import type { PatchMeDto } from './dto/patch-me.dto';
 import type { RegisterDto } from './dto/register.dto';
 import type { RegisterResponseDto } from './dto/register-response.dto';
+import type { SendVerificationCodeDto } from './dto/send-verification-code.dto';
+import type { SendVerificationCodeResponseDto } from './dto/send-verification-code-response.dto';
+import type { VerifyAccountDto } from './dto/verify-account.dto';
 import type { VerifyEmailDto } from './dto/verify-email.dto';
 import { isAuthSkipVerification } from './auth-skip-verification.config';
 import {
-  setPendingEmailVerification,
-  getPendingEmailVerification,
-  deletePendingEmailVerification,
-} from './email-verification.store';
+  setPendingVerification,
+  getPendingVerification,
+  deletePendingVerification,
+} from './account-verification.store';
+import { VerificationChannel } from './verification-channel.enum';
 
-/**
- * Время жизни кода подтверждения email в миллисекундах.
- * 15 минут
- */
-const EMAIL_VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
-/**
- * Длина кода подтверждения email.
- * 6 цифр
- */
-const EMAIL_VERIFICATION_CODE_LENGTH = 6;
+/** Время жизни pending-кода подтверждения (15 мин). */
+const VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000;
+/** Длина кода подтверждения email (6 цифр). */
+const VERIFICATION_CODE_LENGTH = 6;
+/** Минимальный интервал между send-verification-code на пользователя. */
+const SEND_VERIFICATION_THROTTLE_MS = 60 * 1000;
 
 function randomDigits(length: number): string {
   let s = '';
@@ -56,8 +60,14 @@ function randomDigits(length: number): string {
   return s;
 }
 
+function normalizeE164Phone(phone: string): string {
+  return phone.trim().replace(/\s/g, '');
+}
+
 @Injectable()
 export class AuthService {
+  private readonly sendVerificationThrottle = new Throttle();
+
   constructor(
     @Inject(IUserRepositoryToken)
     private readonly users: IUserRepository,
@@ -66,25 +76,27 @@ export class AuthService {
     private readonly notifications: NotificationService,
   ) {}
 
-  async login(dto: LoginDto): Promise<{ access_token: string }> {
+  async login(dto: LoginDto): Promise<LoginResponseDto> {
     const user = await this.findUserForLogin(dto.login.trim());
-    if (!user) {
+    if (!user || user.isDeleted) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    if (user.isDeleted || !user.isActive) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+
     const ok = await bcrypt.compare(dto.password, user.passwordHash);
     if (!ok) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload: JwtPayload = {
-      sub: user.id,
-      role: user.role,
-      email: user.email,
-    };
-    const access_token = await this.jwtService.signAsync(payload);
+    if (!user.isActive) {
+      return {
+        requiresVerification: true,
+        email: user.email,
+        phone: user.phone,
+        message: 'Подтвердите регистрацию',
+      };
+    }
+
+    const access_token = await this.signAccessToken(user);
     return { access_token };
   }
 
@@ -94,9 +106,9 @@ export class AuthService {
 
     if (!skipVerification) {
       const notificationCfg = getNotificationConfig();
-      if (!notificationCfg.email) {
+      if (!notificationCfg.email && !notificationCfg.firebasePhone) {
         throw new BadRequestException(
-          'Подтверждение email включено (AUTH_SKIP_VERIFICATION не задан или false), но SMTP не настроен. Укажите NOTIFICATION_EMAIL_* в окружении или установите AUTH_SKIP_VERIFICATION=true для локальных тестов.',
+          'Подтверждение регистрации включено, но не настроен ни SMTP (NOTIFICATION_EMAIL_*), ни Firebase Phone Auth (FIREBASE_*). Установите AUTH_SKIP_VERIFICATION=true для локальных тестов.',
         );
       }
     }
@@ -114,39 +126,15 @@ export class AuthService {
       );
 
       if (skipVerification) {
-        const payload: JwtPayload = {
-          sub: created.id,
-          role: created.role,
-          email: created.email,
-        };
-        const access_token = await this.jwtService.signAsync(payload);
+        const access_token = await this.signAccessTokenFromRead(created);
         return { access_token };
-      }
-
-      const code = randomDigits(EMAIL_VERIFICATION_CODE_LENGTH);
-      const expiresAt = Date.now() + EMAIL_VERIFICATION_CODE_TTL_MS;
-      const codeHash = await bcrypt.hash(code, 10);
-      setPendingEmailVerification(created.email, {
-        userId: created.id,
-        codeHash,
-        expiresAt,
-      });
-
-      try {
-        await this.notifications.sendVerificationCode({
-          code,
-          email: created.email,
-        });
-      } catch (err) {
-        throw new BadRequestException(
-          `Не удалось отправить код подтверждения: ${err instanceof Error ? err.message : String(err)}`,
-        );
       }
 
       return {
         requiresVerification: true,
-        message:
-          'На указанный email отправлен код подтверждения. После ввода кода учётная запись будет активирована.',
+        email: created.email,
+        phone: created.phone,
+        message: 'Выберите способ подтверждения регистрации',
       };
     } catch (error) {
       if (error instanceof EmailAlreadyExistsException) {
@@ -163,50 +151,195 @@ export class AuthService {
     }
   }
 
-  /**
-   * Подтверждение email по коду из письма: выставляет `isActive: true` и выдаёт JWT.
-   * Код хранится только в памяти процесса (см. `email-verification.store.ts`).
-   */
-  async verifyEmail(dto: VerifyEmailDto): Promise<{ access_token: string }> {
+  async getFirebaseRecaptchaParams(): Promise<{ recaptchaSiteKey: string }> {
+    const notificationCfg = getNotificationConfig();
+    if (!notificationCfg.firebasePhone) {
+      throw new BadRequestException('Канал SMS не настроен (FIREBASE_API_KEY)');
+    }
+
+    try {
+      return await this.notifications.getFirebaseRecaptchaParams();
+    } catch (err) {
+      throw new BadRequestException(
+        `Не удалось получить параметры reCAPTCHA: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
+  async sendVerificationCode(
+    dto: SendVerificationCodeDto,
+  ): Promise<SendVerificationCodeResponseDto> {
     const emailTrim = dto.email.trim();
-    const pending = getPendingEmailVerification(emailTrim);
+    const user = await this.users.findByEmail(emailTrim);
+    if (!user || user.isDeleted) {
+      throw new BadRequestException('Пользователь не найден');
+    }
+    if (user.isActive) {
+      throw new BadRequestException('Учётная запись уже активирована');
+    }
+
+    const throttleKey = `verify-send:${user.id}`;
+    if (!this.sendVerificationThrottle.allow(throttleKey, SEND_VERIFICATION_THROTTLE_MS)) {
+      throw new HttpException(
+        'Код уже отправлен. Повторите запрос через минуту.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    const notificationCfg = getNotificationConfig();
+    const expiresAt = Date.now() + VERIFICATION_CODE_TTL_MS;
+
+    if (dto.channel === VerificationChannel.Email) {
+      if (!notificationCfg.email) {
+        throw new BadRequestException(
+          'Канал email не настроен (NOTIFICATION_EMAIL_*)',
+        );
+      }
+
+      const code = randomDigits(VERIFICATION_CODE_LENGTH);
+      const codeHash = await bcrypt.hash(code, 10);
+      setPendingVerification(emailTrim, {
+        channel: VerificationChannel.Email,
+        userId: user.id,
+        codeHash,
+        expiresAt,
+      });
+
+      try {
+        await this.notifications.sendVerificationCode({
+          code,
+          email: user.email,
+        });
+      } catch (err) {
+        deletePendingVerification(emailTrim);
+        throw new BadRequestException(
+          `Не удалось отправить код на email: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+
+      return {
+        channel: VerificationChannel.Email,
+        message: 'Код подтверждения отправлен на email',
+      };
+    }
+
+    if (!notificationCfg.firebasePhone) {
+      throw new BadRequestException(
+        'Канал SMS не настроен (FIREBASE_API_KEY)',
+      );
+    }
+
+    const recaptchaToken = dto.recaptchaToken?.trim();
+    if (!recaptchaToken) {
+      throw new BadRequestException(
+        'Для SMS нужен recaptchaToken (reCAPTCHA на клиенте)',
+      );
+    }
+
+    try {
+      const { sessionInfo } = await this.notifications.sendFirebasePhoneVerification(
+        user.phone,
+        recaptchaToken,
+      );
+      setPendingVerification(emailTrim, {
+        channel: VerificationChannel.Sms,
+        userId: user.id,
+        sessionInfo,
+        expiresAt,
+      });
+    } catch (err) {
+      throw new BadRequestException(
+        `Не удалось отправить SMS: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+
+    return {
+      channel: VerificationChannel.Sms,
+      message: 'Код подтверждения отправлен по SMS',
+    };
+  }
+
+  async verifyAccount(dto: VerifyAccountDto): Promise<{ access_token: string }> {
+    const emailTrim = dto.email.trim();
+    const pending = getPendingVerification(emailTrim);
     if (!pending) {
       throw new BadRequestException(
-        'Код недействителен или истёк. Зарегистрируйтесь снова.',
+        'Код недействителен или истёк. Запросите новый код.',
       );
     }
 
     const user = await this.users.findByEmail(emailTrim);
     if (!user || user.isDeleted) {
-      deletePendingEmailVerification(emailTrim);
+      deletePendingVerification(emailTrim);
       throw new BadRequestException('Пользователь не найден');
     }
     if (user.id !== pending.userId) {
-      deletePendingEmailVerification(emailTrim);
+      deletePendingVerification(emailTrim);
       throw new BadRequestException('Код не соответствует email');
     }
+    if (user.isActive) {
+      deletePendingVerification(emailTrim);
+      throw new BadRequestException('Учётная запись уже активирована');
+    }
 
-    const codeOk = await bcrypt.compare(dto.code.trim(), pending.codeHash);
-    if (!codeOk) {
-      throw new BadRequestException('Неверный код');
+    const codeTrim = dto.code.trim();
+
+    if (pending.channel === VerificationChannel.Email) {
+      const codeOk = await bcrypt.compare(codeTrim, pending.codeHash);
+      if (!codeOk) {
+        throw new BadRequestException('Неверный код');
+      }
+    } else {
+      try {
+        const result = await this.notifications.verifyFirebasePhoneCode(
+          pending.sessionInfo,
+          codeTrim,
+        );
+        if (
+          normalizeE164Phone(result.phoneNumber) !== normalizeE164Phone(user.phone)
+        ) {
+          throw new BadRequestException('Номер телефона не совпадает с учётной записью');
+        }
+      } catch (err) {
+        if (err instanceof BadRequestException) {
+          throw err;
+        }
+        throw new BadRequestException(
+          err instanceof Error ? err.message : 'Неверный код',
+        );
+      }
     }
 
     await this.users.setIsActive(user.id, true);
-    deletePendingEmailVerification(emailTrim);
+    deletePendingVerification(emailTrim);
 
+    const access_token = await this.signAccessToken(user);
+    return { access_token };
+  }
+
+  /** Alias для backward compat (mobile). */
+  async verifyEmail(dto: VerifyEmailDto): Promise<{ access_token: string }> {
+    return this.verifyAccount(dto);
+  }
+
+  private async signAccessToken(user: UserEntity): Promise<string> {
     const payload: JwtPayload = {
       sub: user.id,
       role: user.role,
       email: user.email,
     };
-    const access_token = await this.jwtService.signAsync(payload);
-    return { access_token };
+    return this.jwtService.signAsync(payload);
   }
 
-  /**
-   * Без OPEN_MANAGER_SELF_REGISTER поле `role` в теле запрещено (всегда DRIVER).
-   * С флагом — можно передать MANAGER или DRIVER; SYSTEM_ADMIN по-прежнему только через админский API.
-   */
+  private async signAccessTokenFromRead(user: ReadUserEntity): Promise<string> {
+    const payload: JwtPayload = {
+      sub: user.id,
+      role: user.role,
+      email: user.email,
+    };
+    return this.jwtService.signAsync(payload);
+  }
+
   private resolveRegisterRole(dto: RegisterDto): UserRole {
     const open = isOpenManagerSelfRegisterEnabled();
 
@@ -252,7 +385,6 @@ export class AuthService {
     return this.userService.update(userId, { name });
   }
 
-  /** Проверка, что пользователь из JWT всё ещё существует и может пользоваться API. */
   async getCurrentUser(userId: string): Promise<ReadUserEntity> {
     try {
       const user = await this.userService.findById(userId);

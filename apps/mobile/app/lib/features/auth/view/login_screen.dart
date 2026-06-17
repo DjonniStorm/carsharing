@@ -11,6 +11,7 @@ import '../../../shared/widgets/password_text_field.dart';
 import '../../profile/cubit/profile_cubit.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
+import '../domain/auth_result.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -93,12 +94,28 @@ class _LoginScreenState extends State<LoginScreen> {
                       return FilledButton(
                         onPressed: loading
                             ? null
-                            : () {
+                            : () async {
                                 if (!_formKey.currentState!.validate()) return;
-                                context.read<AuthCubit>().login(
-                                      login: _loginCtrl.text.trim(),
-                                      password: _passwordCtrl.text,
+                                final cubit = context.read<AuthCubit>();
+                                final res = await cubit.login(
+                                  login: _loginCtrl.text.trim(),
+                                  password: _passwordCtrl.text,
+                                );
+
+                                if (!context.mounted) return;
+                                if (res is AuthRequiresVerification) {
+                                  context.go(
+                                    AppRoutes.verifyAccount(
+                                      email: res.email,
+                                      phone: res.phone,
+                                    ),
+                                  );
+                                  if (res.message.isNotEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(res.message)),
                                     );
+                                  }
+                                }
                               },
                         child: loading
                             ? const SizedBox(

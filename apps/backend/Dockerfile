@@ -29,7 +29,7 @@ FROM install AS build
 COPY packages packages
 COPY apps/backend apps/backend
 
-# Сначала собираем общие пакеты, потом prisma generate и nest build
+# Prod: workspace-пакеты notification + validation (без них nest/tsc не соберётся)
 RUN pnpm --filter @carsharing/notification build \
  && pnpm --filter @carsharing/validation build \
  && pnpm --filter @carsharing/backend exec prisma generate \

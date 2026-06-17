@@ -58,3 +58,14 @@ export class CarInActiveTripException extends Error {
     this.name = 'CarInActiveTripException';
   }
 }
+
+/** Нельзя вернуть авто в AVAILABLE, пока есть открытые блокирующие нарушения. */
+export class CarReactivationBlockedException extends Error {
+  constructor(
+    message: string,
+    public readonly carId: string,
+  ) {
+    super(message);
+    this.name = 'CarReactivationBlockedException';
+  }
+}

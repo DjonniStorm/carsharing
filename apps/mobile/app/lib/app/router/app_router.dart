@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../shared/storage/secure_token_storage.dart';
 import '../../features/auth/view/login_screen.dart';
 import '../../features/auth/view/register_screen.dart';
-import '../../features/auth/view/verify_email_screen.dart';
+import '../../features/auth/view/verify_account_screen.dart';
 import '../../features/map/view/map_screen.dart';
 import '../../features/profile/view/profile_screen.dart';
 import '../../features/settings/view/settings_screen.dart';
@@ -47,7 +47,8 @@ class AppRouter {
           path: AppRoutes.verifyEmail,
           builder: (context, state) {
             final email = state.uri.queryParameters['email'] ?? '';
-            return VerifyEmailScreen(email: email);
+            final phone = state.uri.queryParameters['phone'] ?? '';
+            return VerifyAccountScreen(email: email, phone: phone);
           },
         ),
         GoRoute(

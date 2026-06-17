@@ -45,6 +45,7 @@ const TripsListPage = () => {
     query: searchQuery,
     setQuery: setSearchQuery,
     debouncedQuery: debouncedSearch,
+    maxLength: searchMaxLength,
   } = useDebouncedSearch();
   const [statusFilter, setStatusFilter] = useState<TripStatus[]>([]);
 
@@ -125,6 +126,7 @@ const TripsListPage = () => {
               <TextInput
                 style={{ flex: "1 1 220px", minWidth: 200 }}
                 placeholder={t(LANG_KEYS.pages.tripsSearchPlaceholder)}
+                maxLength={searchMaxLength}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.currentTarget.value);

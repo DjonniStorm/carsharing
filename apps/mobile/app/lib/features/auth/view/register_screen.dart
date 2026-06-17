@@ -177,7 +177,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 if (!context.mounted) return;
                                 if (res is AuthRequiresVerification) {
                                   context.go(
-                                    '${AppRoutes.verifyEmail}?email=${Uri.encodeComponent(res.email)}',
+                                    AppRoutes.verifyAccount(
+                                      email: res.email,
+                                      phone: res.phone,
+                                    ),
                                   );
                                   if (res.message.isNotEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(

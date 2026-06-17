@@ -1,6 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../shared/api/dio_error_message.dart';
 import '../data/trip_history_api.dart';
 import '../data/trip_history_repository.dart';
 import '../domain/trip_history_short_info_read.dart';
@@ -97,6 +99,8 @@ class TripHistoryListCubit extends Cubit<TripHistoryListState> {
         startedAfterIso: _startedAfterIso,
         startedBeforeIso: _startedBeforeIso,
       ));
+    } on DioException catch (e) {
+      emit(TripHistoryListFailure(dioErrorMessage(e)));
     } catch (e) {
       emit(TripHistoryListFailure(e.toString()));
     }

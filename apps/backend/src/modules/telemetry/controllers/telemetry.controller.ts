@@ -77,15 +77,7 @@ export class TelemetryController implements ITelemetryController {
       carId,
       status: TripStatus.ACTIVE,
     });
-    if (active) {
-      return active;
-    }
-
-    const [started] = await this.tripService.findMany({
-      carId,
-      status: TripStatus.STARTED,
-    });
-    return started ?? null;
+    return active ?? null;
   }
 
   @Get('cars/:carId/active-trip')

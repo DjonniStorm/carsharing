@@ -3,7 +3,7 @@ import { createRoute, redirect } from "@tanstack/react-router";
 import { DashboardRouteLayout } from "@/app/layouts/dashboard-route-layout";
 import { rootRoute } from "@/app/routes/root-route";
 import { ensureDashboardAuth } from "@/app/routes/route-guards";
-import { CarsPage } from "@/pages/cars";
+import { CarsPage, CarReturnToServicePage } from "@/pages/cars";
 import { DashboardPage } from "@/pages/dashboard";
 import {
   GeozoneCreatePage,
@@ -47,6 +47,20 @@ export const dashboardCarsRoute = createRoute({
   getParentRoute: () => dashboardShellRoute,
   path: "/dashboard/cars",
   component: CarsPage,
+});
+
+export const dashboardCarReturnToServiceRoute = createRoute({
+  getParentRoute: () => dashboardShellRoute,
+  path: "/dashboard/cars/$carId/return-to-service",
+  beforeLoad: ({ params }) => {
+    if (!isUuidString(params.carId)) {
+      throw redirect({
+        to: ROUTES.error,
+        search: { reason: "car_invalid_id" },
+      });
+    }
+  },
+  component: CarReturnToServicePage,
 });
 
 export const dashboardTripsRoute = createRoute({

@@ -42,7 +42,7 @@ import { createTripWsEvent } from '../../trip/realtime/trip-events.emitter';
 export class TelemetryService implements ITelemetryService {
   private readonly logger = new Logger(TelemetryService.name);
   private readonly ingestThrottle = new Throttle();
-  /** Отдельный throttle для WS: не спамим `trip.route.point` и `car.location` чаще ingest-периода. */
+  /** Отдельный throttle для WS: не спамим `trip.route.point` и `car.location` чаще периода. */
   private readonly wsThrottle = new Throttle();
 
   private readonly carFuelThrottle = new Throttle();
@@ -85,8 +85,7 @@ export class TelemetryService implements ITelemetryService {
         },
         createdAtMs: Date.now(),
       });
-      // Для MVP/разработки: принимаем запрос, но не пишем в БД.
-      // Клиенту можно вернуть последнюю точку через GET /telemetry/trip/:tripId.
+      // Принимаем запрос, но не пишем в БД.
       const read = new TelemetryRead();
       read.id = '';
       read.timestamp = input.timestamp;
@@ -168,10 +167,10 @@ export class TelemetryService implements ITelemetryService {
 
   /**
    * После сохранённой точки шлём два параллельных канала:
-   * - `trip.route.point` → комната поездки (водитель/менеджер на trip);
-   * - `car.location.updated` → комната машины (менеджерская карта).
+   * - `trip.route.point` => комната поездки (водитель/менеджер на trip);
+   * - `car.location.updated` => комната машины (менеджерская карта).
    *
-   * Пример подписки менеджера на машину: `subscribe.car` → room `car:{carId}`.
+   * Пример подписки менеджера на машину: `subscribe.car` => room `car:{carId}`.
    */
   private async publishTripRealtimeFromTelemetry(
     input: TelemetryCreate,

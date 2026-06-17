@@ -1,0 +1,138 @@
+# Prod-стек: один env — deploy/.env.prod (compose --env-file + env_file backend).
+#   cp deploy/.env.prod.example deploy/.env.prod
+#   ./deploy/scripts/init-letsencrypt.sh
+
+name: carsharing-prod
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: carsharing-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-carsharing}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-carsharing}
+      POSTGRES_DB: ${POSTGRES_DB:-carsharing}
+    ports:
+      - '${POSTGRES_PUBLISH_PORT:-5432}:5432'
+    volumes:
+      - carsharing_pg_data:/var/lib/postgresql/data
+    networks: [carsharing]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER:-carsharing}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ..
+      dockerfile: apps/backend/Dockerfile
+    container_name: carsharing-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env.prod
+    environment:
+      # Перекрывает DATABASE_URL из .env.prod (там localhost для локальной dev)
+      DATABASE_URL: postgresql://${POSTGRES_USER:-carsharing}:${POSTGRES_PASSWORD:-carsharing}@postgres:5432/${POSTGRES_DB:-carsharing}?schema=public
+    expose:
+      - '3000'
+    networks: [carsharing]
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?}
+        VITE_YANDEX_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY:-}
+        VITE_OPEN_MANAGER_SELF_REGISTER: ${VITE_OPEN_MANAGER_SELF_REGISTER:-false}
+    image: carsharing-web:latest
+    container_name: carsharing-web
+    restart: unless-stopped
+    expose:
+      - '80'
+    networks: [carsharing]
+
+  # Edge HTTPS. Запускать после init-letsencrypt.sh (нужны сертификаты в certbot_etc).
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: carsharing-proxy
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      DOMAIN: ${DOMAIN:?}
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - certbot_etc:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    depends_on:
+      - web
+      - backend
+    networks: [carsharing]
+
+  # Только renew (каждые 12h). Первый выпуск — deploy/scripts/init-letsencrypt.sh
+  certbot:
+    image: certbot/certbot:latest
+    container_name: carsharing-certbot
+    volumes:
+      - certbot_etc:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: /bin/sh -c
+    command: >
+      "trap exit TERM;
+      while :; do
+        certbot renew --quiet;
+        sleep 12h & wait $${!};
+      done"
+    networks: [carsharing]
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: carsharing-prometheus
+    restart: unless-stopped
+    ports:
+      - '${PROMETHEUS_PUBLISH_PORT:-9090}:9090'
+    volumes:
+      - ../apps/backend/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - carsharing_prom_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=7d'
+      - '--storage.tsdb.retention.size=512MB'
+    networks: [carsharing]
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    container_name: carsharing-grafana
+    restart: unless-stopped
+    ports:
+      - '${GRAFANA_PUBLISH_PORT:-3001}:3000'
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_DEFAULT_THEME: dark
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3001}
+    volumes:
+      - ../apps/backend/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../apps/backend/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - carsharing_grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks: [carsharing]
+
+volumes:
+  carsharing_pg_data:
+  carsharing_prom_data:
+  carsharing_grafana_data:
+  certbot_etc:
+  certbot_www:
+
+networks:
+  carsharing:
+    name: carsharing

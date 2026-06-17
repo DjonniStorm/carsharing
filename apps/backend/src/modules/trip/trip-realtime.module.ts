@@ -14,13 +14,13 @@ import { ITripRealtimeOutboxToken } from './realtime/trip-realtime.outbox.interf
  * - Любой домен (telemetry, violation, billing) может импортировать только этот модуль
  *   и публиковать события через `ITripRealtimeOutboxToken`, не зная про Nest WS-декораторы.
  *
- * Пример потока «воркер → WS»:
+ * Пример потока «воркер => WS»:
  * ```
  * ViolationService.create(...)
- *   → ViolationTripRealtimePublisher
- *   → ITripRealtimeOutboxToken.publish(envelope)
- *   → LoggerTripRealtimeOutbox
- *   → TripGateway.publish → room trip:{uuid}
+ *   => ViolationTripRealtimePublisher
+ *   => ITripRealtimeOutboxToken.publish(envelope)
+ *   => LoggerTripRealtimeOutbox
+ *   => TripGateway.publish => room trip:{uuid}
  * ```
  */
 @Module({

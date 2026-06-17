@@ -1,4 +1,5 @@
 import { Group, Loader, Paper, Stack, Text } from "@mantine/core";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { GeozoneRead } from "@/entities/geozone";
@@ -14,7 +15,7 @@ type Props = {
   zoneLoading: boolean;
 };
 
-export function TripViewRouteMapSection({
+export const TripViewRouteMapSection = memo(function TripViewRouteMapSection({
   apiKey,
   points,
   tripGeozone,
@@ -44,4 +45,4 @@ export function TripViewRouteMapSection({
       </Stack>
     </Paper>
   );
-}
+});

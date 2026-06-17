@@ -461,7 +461,7 @@ describe('GeozoneService', () => {
   });
 
   describe('GeozoneMapper (через сервис)', () => {
-    it('read → entity → read сохраняет стабильные поля', async () => {
+    it('read => entity => read сохраняет стабильные поля', async () => {
       const created = await service.create(buildGeozoneCreate(createdByUserId));
       const withVersion = await service.findById(created.id, {
         withCurrentVersion: true,
@@ -476,7 +476,7 @@ describe('GeozoneService', () => {
       expect(roundtrip.currentVersionId).toBe(withVersion.currentVersionId);
     });
 
-    it('версия: read → entity → read', async () => {
+    it('версия: read => entity => read', async () => {
       const zone = await service.create(buildGeozoneCreate(createdByUserId));
       const version = await service.findVersionById(zone.currentVersionId!);
       const entity = GeozoneMapper.toGeozoneVersionEntity(version);

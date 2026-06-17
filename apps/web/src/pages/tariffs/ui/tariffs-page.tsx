@@ -46,6 +46,7 @@ const TariffsPage = () => {
     query: searchQuery,
     setQuery: setSearchQuery,
     debouncedQuery: debouncedSearch,
+    maxLength: searchMaxLength,
   } = useDebouncedSearch();
   const [presetFilter, setPresetFilter] = useState<TariffPresetFilter>("");
   const [hideDeleted, setHideDeleted] = useState(true);
@@ -106,22 +107,17 @@ const TariffsPage = () => {
     const list = rows ?? [];
     let active = 0;
     let deleted = 0;
-    let defaultActive = 0;
     for (const row of list) {
       if (row.isDeleted) {
         deleted += 1;
       } else {
         active += 1;
-        if (row.isDefault) {
-          defaultActive += 1;
-        }
       }
     }
     return {
       total: list.length,
       active,
       deleted,
-      defaultActive,
     };
   }, [rows]);
 
@@ -147,14 +143,10 @@ const TariffsPage = () => {
         </Alert>
       ) : (
         <Stack gap="xl" mt="lg">
-          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
             {statPaper(LANG_KEYS.pages.tariffsStatTotal, stats.total)}
             {statPaper(LANG_KEYS.pages.tariffsStatActive, stats.active)}
             {statPaper(LANG_KEYS.pages.tariffsStatDeleted, stats.deleted)}
-            {statPaper(
-              LANG_KEYS.pages.tariffsStatDefaultActive,
-              stats.defaultActive,
-            )}
           </SimpleGrid>
 
           <Stack gap="md">
@@ -163,6 +155,7 @@ const TariffsPage = () => {
               <TextInput
                 style={{ flex: "1 1 220px", minWidth: 200 }}
                 placeholder={t(LANG_KEYS.pages.tariffsSearchPlaceholder)}
+                maxLength={searchMaxLength}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.currentTarget.value);

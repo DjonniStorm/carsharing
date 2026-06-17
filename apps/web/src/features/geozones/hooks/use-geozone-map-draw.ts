@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { FIELD_LIMITS } from "@carsharing/validation";
+
 import type { GeozoneDrawMode } from "@/features/geozones/create-geozone/ui/geozone-draw-map";
 import {
   ensureClosedRing,
@@ -11,6 +13,8 @@ type CompletePolygonOptions = {
   onValidationError?: (message: string) => void;
   onSuccess?: () => void;
 };
+
+const POLYGON_VERTICES_MAX = FIELD_LIMITS.GEOZONE_POLYGON_VERTICES_MAX;
 
 export function useGeozoneMapDraw(opts?: {
   resetGeometryOnDrawModeChange?: boolean;
@@ -68,7 +72,11 @@ export function useGeozoneMapDraw(opts?: {
         setRectangleAnchor(null);
         return;
       }
-      setPolygonVertices((vertices) => [...vertices, lngLat]);
+      setPolygonVertices((vertices) =>
+        vertices.length >= POLYGON_VERTICES_MAX
+          ? vertices
+          : [...vertices, lngLat],
+      );
     },
     [closedRing, drawMode, rectangleAnchor],
   );

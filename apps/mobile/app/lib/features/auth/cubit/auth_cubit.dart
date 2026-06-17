@@ -7,6 +7,7 @@ import '../../../shared/api/dio_error_message.dart';
 import '../../../shared/storage/secure_token_storage.dart';
 import '../data/auth_repository.dart';
 import '../domain/auth_result.dart';
+import '../domain/verification_channel.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -34,22 +35,28 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  Future<void> login({
+  Future<AuthResult?> login({
     required String login,
     required String password,
   }) async {
     emit(const AuthLoading());
     try {
       final res = await _repository.login(login: login, password: password);
-      final token = (res as AuthSuccess).accessToken;
-      await _tokenStorage.writeAccessToken(token);
-      emit(AuthAuthorized(token));
+      if (res is AuthSuccess) {
+        await _tokenStorage.writeAccessToken(res.accessToken);
+        emit(AuthAuthorized(res.accessToken));
+      } else {
+        emit(const AuthUnauthorized());
+      }
+      return res;
     } on DioException catch (e) {
       emit(AuthError(dioErrorMessage(e)));
       emit(const AuthUnauthorized());
+      return null;
     } catch (e) {
       emit(AuthError(e.toString()));
       emit(const AuthUnauthorized());
+      return null;
     }
   }
 
@@ -81,13 +88,29 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  Future<void> verifyEmail({
+  Future<String> fetchFirebaseRecaptchaSiteKey() {
+    return _repository.fetchFirebaseRecaptchaSiteKey();
+  }
+
+  Future<SendVerificationCodeResult> sendVerificationCode({
+    required String email,
+    required VerificationChannel channel,
+    String? recaptchaToken,
+  }) {
+    return _repository.sendVerificationCode(
+      email: email,
+      channel: channel,
+      recaptchaToken: recaptchaToken,
+    );
+  }
+
+  Future<void> verifyAccount({
     required String email,
     required String code,
   }) async {
     emit(const AuthLoading());
     try {
-      final res = await _repository.verifyEmail(email: email, code: code);
+      final res = await _repository.verifyAccount(email: email, code: code);
       final token = (res as AuthSuccess).accessToken;
       await _tokenStorage.writeAccessToken(token);
       emit(AuthAuthorized(token));

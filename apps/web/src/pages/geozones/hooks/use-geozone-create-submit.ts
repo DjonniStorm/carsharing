@@ -11,6 +11,10 @@ import type { useGeozoneFormFields } from "@/features/geozones/hooks/use-geozone
 import type { useGeozoneMapDraw } from "@/features/geozones/hooks/use-geozone-map-draw";
 import type { useGeozoneTariffPresets } from "@/features/geozones/hooks/use-geozone-tariff-presets";
 import {
+  GEOZONE_PARKING_ZERO_PRICING,
+  isParkingGeozone,
+} from "@/features/geozones/lib/geozone-pricing";
+import {
   isValidClosedRing,
   ringToMultiPolygon,
 } from "@/features/geozones/lib/geojson-ring";
@@ -61,8 +65,11 @@ export function useGeozoneCreateSubmit({ form, map, tariffs }: Args) {
       return;
     }
 
-    const presetParsed = parseGeozoneTariffPresetId(tariffPresetId);
-    if (!presetParsed.success) {
+    const parkingZone = isParkingGeozone(metaParsed.data.type);
+    const presetParsed = parkingZone
+      ? null
+      : parseGeozoneTariffPresetId(tariffPresetId);
+    if (presetParsed && !presetParsed.success) {
       setFormError(firstGeozoneFormErrorMessage(presetParsed));
       return;
     }
@@ -87,8 +94,13 @@ export function useGeozoneCreateSubmit({ form, map, tariffs }: Args) {
       color: metaParsed.data.color,
       geometry: ringToMultiPolygon(closedRing),
       createdByUserId: user.id,
-      tariffPresetId: presetParsed.data,
     };
+
+    if (parkingZone) {
+      Object.assign(body, GEOZONE_PARKING_ZERO_PRICING);
+    } else if (presetParsed?.success) {
+      body.tariffPresetId = presetParsed.data;
+    }
 
     if (rulesParsed.value !== null) {
       body.rules = rulesParsed.value;

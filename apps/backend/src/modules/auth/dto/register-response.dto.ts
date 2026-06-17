@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-/** Ответ POST /auth/register: либо сразу JWT, либо запрос подтверждения email. */
+/** Ответ POST /auth/register: либо сразу JWT, либо запрос подтверждения. */
 export class RegisterResponseDto {
   @ApiPropertyOptional({
     description:
@@ -9,9 +9,15 @@ export class RegisterResponseDto {
   access_token?: string;
 
   @ApiPropertyOptional({
-    description: 'true — нужно ввести код из письма (JWT пока не выдаём)',
+    description: 'true — нужно подтвердить регистрацию (JWT пока не выдаём)',
   })
   requiresVerification?: boolean;
+
+  @ApiPropertyOptional({ description: 'Email зарегистрированного пользователя' })
+  email?: string;
+
+  @ApiPropertyOptional({ description: 'Телефон зарегистрированного пользователя' })
+  phone?: string;
 
   @ApiPropertyOptional({
     description: 'Пояснение для клиента',

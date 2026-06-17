@@ -54,7 +54,7 @@ class DioFactory {
         onError: (e, handler) async {
           developer.log(
             'ERROR ${e.requestOptions.method} ${e.requestOptions.uri} '
-            '→ status=${e.response?.statusCode}, type=${e.type}, msg=${e.message}',
+            '=> status=${e.response?.statusCode}, type=${e.type}, msg=${e.message}',
             name: 'Dio',
             error: e,
           );

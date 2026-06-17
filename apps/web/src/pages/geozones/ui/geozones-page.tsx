@@ -44,6 +44,7 @@ const GeozonesPage = () => {
     query: nameQuery,
     setQuery: setNameQuery,
     debouncedQuery: debouncedName,
+    maxLength: searchMaxLength,
   } = useDebouncedSearch();
   const [typeFilter, setTypeFilter] = useState<GeozoneType[]>([]);
 
@@ -125,7 +126,7 @@ const GeozonesPage = () => {
         </Alert>
       ) : (
         <Stack gap="xl" mt="lg">
-          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
             {statPaper(LANG_KEYS.pages.geozonesStatTotal, totalActive)}
             {statPaper(
               LANG_KEYS.pages.geozonesTypeRental,
@@ -135,10 +136,6 @@ const GeozonesPage = () => {
               LANG_KEYS.pages.geozonesTypeParking,
               byType[GeozoneType.PARKING],
             )}
-            {statPaper(
-              LANG_KEYS.pages.geozonesTypeOther,
-              byType[GeozoneType.OTHER],
-            )}
           </SimpleGrid>
 
           <Stack gap="md">
@@ -147,6 +144,7 @@ const GeozonesPage = () => {
               <TextInput
                 style={{ flex: "1 1 220px", minWidth: 200 }}
                 placeholder={t(LANG_KEYS.pages.geozonesSearchPlaceholder)}
+                maxLength={searchMaxLength}
                 value={nameQuery}
                 onChange={(event) => {
                   setNameQuery(event.currentTarget.value);

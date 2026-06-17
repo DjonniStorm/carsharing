@@ -33,11 +33,6 @@ export function buildVerificationEmail(code: string): VerificationEmailContent {
   };
 }
 
-/** Короткий текст SMS с кодом (латиница/цифры — надёжнее для SMS). */
-export function buildVerificationSmsBody(code: string): string {
-  return `Код подтверждения: ${code}. Carsharing`;
-}
-
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')

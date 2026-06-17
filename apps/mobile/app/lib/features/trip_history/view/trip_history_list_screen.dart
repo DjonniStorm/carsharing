@@ -30,13 +30,24 @@ class _TripHistoryListScreenState extends State<TripHistoryListScreen> {
     return local.toUtc().toIso8601String();
   }
 
+  static DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  bool _isDateRangeInvalid() {
+    if (_fromDate == null || _toDate == null) return false;
+    return _dateOnly(_fromDate!).isAfter(_dateOnly(_toDate!));
+  }
+
   Future<void> _pickFrom() async {
     final now = DateTime.now();
-    final initial = _fromDate ?? now;
+    final minDate = DateTime(now.year - 5);
+    final maxDate = _toDate ?? DateTime(now.year + 1);
+    var initial = _fromDate ?? now;
+    if (initial.isBefore(minDate)) initial = minDate;
+    if (initial.isAfter(maxDate)) initial = maxDate;
     final picked = await showDatePicker(
       context: context,
-      firstDate: DateTime(now.year - 5),
-      lastDate: DateTime(now.year + 1),
+      firstDate: minDate,
+      lastDate: maxDate,
       initialDate: initial,
     );
     if (picked != null && mounted) setState(() => _fromDate = picked);
@@ -44,17 +55,27 @@ class _TripHistoryListScreenState extends State<TripHistoryListScreen> {
 
   Future<void> _pickTo() async {
     final now = DateTime.now();
-    final initial = _toDate ?? now;
+    final minDate = _fromDate ?? DateTime(now.year - 5);
+    final maxDate = DateTime(now.year + 1);
+    var initial = _toDate ?? (_fromDate ?? now);
+    if (initial.isBefore(minDate)) initial = minDate;
+    if (initial.isAfter(maxDate)) initial = maxDate;
     final picked = await showDatePicker(
       context: context,
-      firstDate: DateTime(now.year - 5),
-      lastDate: DateTime(now.year + 1),
+      firstDate: minDate,
+      lastDate: maxDate,
       initialDate: initial,
     );
     if (picked != null && mounted) setState(() => _toDate = picked);
   }
 
   void _applyFilter(BuildContext context) {
+    if (_isDateRangeInvalid()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('trip_history.filter_date_range_invalid'.tr())),
+      );
+      return;
+    }
     context.read<TripHistoryListCubit>().loadFirstPage(
           startedAfterIso: _fromDate != null ? _isoStartLocalDay(_fromDate!) : null,
           startedBeforeIso: _toDate != null ? _isoEndLocalDay(_toDate!) : null,

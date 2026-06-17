@@ -15,7 +15,7 @@ export function ensureClosedRing(ring: YMapLngLat[]): YMapLngLat[] {
   return [...ring, first];
 }
 
-/** Одна оболочка без дыр → RFC 7946 MultiPolygon. */
+/** Одна оболочка без дыр => RFC 7946 MultiPolygon. */
 export function ringToMultiPolygon(ring: YMapLngLat[]): GeoJSONMultiPolygon {
   const closed = ensureClosedRing(ring);
   return {
@@ -44,12 +44,12 @@ export function rectangleFromDiagonal(
   ];
 }
 
-/** Минимум треугольник: 3 уникальные вершины + замыкание → 4 точки в кольце. */
+/** Минимум треугольник: 3 уникальные вершины + замыкание => 4 точки в кольце. */
 export function isValidClosedRing(ring: YMapLngLat[]): boolean {
   return ring.length >= 4;
 }
 
-/** Внешнее кольцо первого полигона MultiPolygon → замкнутое кольцо [lon, lat]. */
+/** Внешнее кольцо первого полигона MultiPolygon => замкнутое кольцо [lon, lat]. */
 export function multiPolygonFirstOuterRing(
   mp: GeoJSONMultiPolygon,
 ): YMapLngLat[] | null {

@@ -11,9 +11,9 @@ import { ViolationJobName } from '../../violation-jobs';
 type WorkerInternals = { tick: () => Promise<void> };
 
 /**
- * Очередь → tick; логика правил — в `handlers/tests/unit/*.handler.spec.ts`.
+ * Очередь => tick; логика правил — в `handlers/tests/unit/*.handler.spec.ts`.
  */
-describe('ViolationBackgroundWorker (очередь → tick)', () => {
+describe('ViolationBackgroundWorker (очередь => tick)', () => {
   const tripId = '33333333-3333-3333-3333-333333333333';
 
   it('игнорирует неизвестное имя джоба и не вызывает violationService.create', async () => {
@@ -43,7 +43,7 @@ describe('ViolationBackgroundWorker (очередь → tick)', () => {
     expect(violationService.create).not.toHaveBeenCalled();
   });
 
-  it('для RentalMovementZoneCheck вызывает isPointInsideVersion (точка вне → create)', async () => {
+  it('для RentalMovementZoneCheck вызывает isPointInsideVersion (точка вне => create)', async () => {
     const isPointInsideVersion = vi.fn().mockResolvedValue(false);
     const create = vi.fn().mockResolvedValue(undefined);
     const geoZoneVersionId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';

@@ -13,3 +13,5 @@ dist
 
 # agents
 agents/**
+
+test-firebase

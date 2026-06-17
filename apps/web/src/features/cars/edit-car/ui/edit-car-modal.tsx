@@ -5,6 +5,8 @@ import { useAction } from "@reatom/react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { FIELD_LIMITS } from "@carsharing/validation";
+
 import type { CarRead, CarUpdateBody } from "@/entities/car";
 import { carsApi } from "@/features/cars/api";
 import {
@@ -100,6 +102,7 @@ const EditCarModal = ({ car, opened, onClose, onSaved }: EditCarModalProps) => {
                   withAsterisk
                   label={t(LANG_KEYS.pages.carsAddFieldBrand)}
                   key={form.key("brand")}
+                  maxLength={FIELD_LIMITS.CAR_STRING_MAX}
                   {...form.getInputProps("brand")}
                 />
               </Grid.Col>
@@ -108,6 +111,7 @@ const EditCarModal = ({ car, opened, onClose, onSaved }: EditCarModalProps) => {
                   withAsterisk
                   label={t(LANG_KEYS.pages.carsAddFieldModel)}
                   key={form.key("model")}
+                  maxLength={FIELD_LIMITS.CAR_STRING_MAX}
                   {...form.getInputProps("model")}
                 />
               </Grid.Col>
@@ -116,6 +120,7 @@ const EditCarModal = ({ car, opened, onClose, onSaved }: EditCarModalProps) => {
                   withAsterisk
                   label={t(LANG_KEYS.pages.carsAddFieldColor)}
                   key={form.key("color")}
+                  maxLength={FIELD_LIMITS.CAR_STRING_MAX}
                   {...form.getInputProps("color")}
                 />
               </Grid.Col>

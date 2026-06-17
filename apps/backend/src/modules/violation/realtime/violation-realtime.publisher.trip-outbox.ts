@@ -20,12 +20,12 @@ import type { IViolationRealtimePublisher } from './violation-realtime.publisher
 import { violationSeverityForWs } from '../common/violation-ws-severity';
 
 /**
- * Реализация IViolationRealtimePublisher поверх общего trip-outbox → TripGateway.
+ * Реализация IViolationRealtimePublisher поверх общего trip-outbox => TripGateway.
  *
  * Пример комнаты на клиенте (manager подписан на поездку):
  * ```
  * socket.emit('subscribe.trip', { tripId })
- * // сервер кладёт сокет в room `trip:{tripId}` → приходит envelope `violation.created`
+ * // сервер кладёт сокет в room `trip:{tripId}` => приходит envelope `violation.created`
  * ```
  */
 @Injectable()

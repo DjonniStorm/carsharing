@@ -7,6 +7,8 @@ export const ROUTES = {
     overview: "/dashboard",
     profile: "/dashboard/profile",
     cars: "/dashboard/cars",
+    carReturnToService: (carId: string): string =>
+      `/dashboard/cars/${encodeURIComponent(carId)}/return-to-service`,
     geozones: "/dashboard/geozones",
     geozonesNew: "/dashboard/geozones/new",
     geozonesEdit: (geozoneId: string): string =>

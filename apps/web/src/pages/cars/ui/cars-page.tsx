@@ -59,7 +59,12 @@ const CarsPage = () => {
   const [error] = useAtom(carsListErrorAtom);
   const load = useAction(loadCarsList);
 
-  const { query, setQuery, debouncedQuery } = useDebouncedSearch();
+  const {
+    query,
+    setQuery,
+    debouncedQuery,
+    maxLength: searchMaxLength,
+  } = useDebouncedSearch();
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [editingCar, setEditingCar] = useState<CarRead | null>(null);
 
@@ -228,6 +233,7 @@ const CarsPage = () => {
               <TextInput
                 style={{ flex: "1 1 220px", minWidth: 200 }}
                 placeholder={t(LANG_KEYS.pages.carsSearchPlaceholder)}
+                maxLength={searchMaxLength}
                 value={query}
                 onChange={(e) => {
                   setQuery(e.currentTarget.value);
