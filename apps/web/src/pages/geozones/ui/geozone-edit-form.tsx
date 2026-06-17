@@ -14,6 +14,7 @@ import { FIELD_LIMITS } from "@carsharing/validation";
 
 import type { GeozoneType } from "@/entities/geozone";
 import type { TariffRead } from "@/entities/tariff";
+import { isParkingGeozone } from "@/features/geozones/lib/geozone-pricing";
 import { LANG_KEYS } from "@/shared/i18n/keys";
 
 function formatTariffAmount(n: number): string {
@@ -60,6 +61,7 @@ export function GeozoneEditForm({
 }: Props) {
   const { t } = useTranslation();
   const submitText = saveLabel ?? t(LANG_KEYS.pages.geozonesEditSave);
+  const showTariffPreset = !isParkingGeozone(type);
 
   return (
     <Stack gap="md">
@@ -89,45 +91,51 @@ export function GeozoneEditForm({
         format="hex"
         swatches={["#228be6", "#40c057", "#fab005", "#fa5252", "#be4bdb"]}
       />
-      <Select
-        label={t(LANG_KEYS.pages.geozonesCreateFieldTariffPreset)}
-        data={tariffPresetSelectData}
-        value={tariffPresetId ?? ""}
-        onChange={(v) => {
-          onTariffPresetChange(v && v !== "" ? v : null);
-        }}
-        disabled={tariffPresetSelectData.length === 0}
-      />
-      <Alert color="gray" variant="light">
-        {t(LANG_KEYS.pages.geozonesCreateTariffPresetHint)}
-      </Alert>
-      {selectedTariffPreset ? (
-        <Stack gap={6}>
-          <Text size="sm">
-            <Text span c="dimmed">
-              {t(LANG_KEYS.pages.geozonesCreateFieldPricePerMinute)}
-            </Text>{" "}
-            <Text span fw={500}>
-              {formatTariffAmount(selectedTariffPreset.pricePerMinute)}
-            </Text>
-          </Text>
-          <Text size="sm">
-            <Text span c="dimmed">
-              {t(LANG_KEYS.pages.geozonesCreateFieldPricePerKm)}
-            </Text>{" "}
-            <Text span fw={500}>
-              {formatTariffAmount(selectedTariffPreset.pricePerKm)}
-            </Text>
-          </Text>
-          <Text size="sm">
-            <Text span c="dimmed">
-              {t(LANG_KEYS.pages.geozonesCreateFieldPausePricePerMinute)}
-            </Text>{" "}
-            <Text span fw={500}>
-              {formatTariffAmount(selectedTariffPreset.pausePricePerMinute)}
-            </Text>
-          </Text>
-        </Stack>
+      {showTariffPreset ? (
+        <>
+          <Select
+            label={t(LANG_KEYS.pages.geozonesCreateFieldTariffPreset)}
+            data={tariffPresetSelectData}
+            value={tariffPresetId ?? ""}
+            onChange={(v) => {
+              onTariffPresetChange(v && v !== "" ? v : null);
+            }}
+            disabled={tariffPresetSelectData.length === 0}
+          />
+          <Alert color="gray" variant="light">
+            {t(LANG_KEYS.pages.geozonesCreateTariffPresetHint)}
+          </Alert>
+          {selectedTariffPreset ? (
+            <Stack gap={6}>
+              <Text size="sm">
+                <Text span c="dimmed">
+                  {t(LANG_KEYS.pages.geozonesCreateFieldPricePerMinute)}
+                </Text>{" "}
+                <Text span fw={500}>
+                  {formatTariffAmount(selectedTariffPreset.pricePerMinute)}
+                </Text>
+              </Text>
+              <Text size="sm">
+                <Text span c="dimmed">
+                  {t(LANG_KEYS.pages.geozonesCreateFieldPricePerKm)}
+                </Text>{" "}
+                <Text span fw={500}>
+                  {formatTariffAmount(selectedTariffPreset.pricePerKm)}
+                </Text>
+              </Text>
+              <Text size="sm">
+                <Text span c="dimmed">
+                  {t(LANG_KEYS.pages.geozonesCreateFieldPausePricePerMinute)}
+                </Text>{" "}
+                <Text span fw={500}>
+                  {formatTariffAmount(
+                    selectedTariffPreset.pausePricePerMinute,
+                  )}
+                </Text>
+              </Text>
+            </Stack>
+          ) : null}
+        </>
       ) : null}
       <Button onClick={onSave} loading={submitting} disabled={submitDisabled}>
         {submitText}

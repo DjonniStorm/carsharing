@@ -126,7 +126,7 @@ const GeozonesPage = () => {
         </Alert>
       ) : (
         <Stack gap="xl" mt="lg">
-          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
             {statPaper(LANG_KEYS.pages.geozonesStatTotal, totalActive)}
             {statPaper(
               LANG_KEYS.pages.geozonesTypeRental,
@@ -135,10 +135,6 @@ const GeozonesPage = () => {
             {statPaper(
               LANG_KEYS.pages.geozonesTypeParking,
               byType[GeozoneType.PARKING],
-            )}
-            {statPaper(
-              LANG_KEYS.pages.geozonesTypeOther,
-              byType[GeozoneType.OTHER],
             )}
           </SimpleGrid>
 
